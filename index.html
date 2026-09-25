@@ -27,7 +27,7 @@
         .page-container { position: relative; width: 100%; aspect-ratio: 1 / 1.414; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 6px; overflow: hidden; contain: strict; will-change: transform; transform: translateZ(0); }
         .bg-layer, .draw-layer, .line-preview-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform-origin: top left; }
         .bg-layer { z-index: 1; pointer-events: none; }
-        .draw-layer { z-index: 2; cursor: crosshair; touch-action: none; } /* Touch-action none vital para evitar desvanecimientos táctiles */
+        .draw-layer { z-index: 2; cursor: crosshair; touch-action: none; } 
         .line-preview-layer { z-index: 12; pointer-events: none; display: none; }
 
         /* Elementos Pegados (Imágenes / PDFs) */
@@ -40,7 +40,9 @@
         /* Controles de Objeto Pegado */
         .object-tools { position: absolute; top: 5px; right: 5px; display: none; gap: 4px; z-index: 8; pointer-events: auto; }
         .pasted-element.active-element .object-tools { display: flex; }
-        .object-tools button { border: 0; background: rgba(15,23,42,.9); color: #fff; border-radius: 6px; width: 28px; height: 28px; font-size: 14px; cursor: pointer; }
+        .object-tools button { border: 0; background: rgba(15,23,42,.9); color: #fff; border-radius: 6px; width: 28px; height: 28px; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .object-tools button:hover { background: #2563eb; }
+        .object-tools button.btn-delete:hover { background: #ef4444; }
         .pasted-element.pdf-background { z-index: 1 !important; }
         .pasted-element.pdf-locked { cursor: default !important; }
         .pasted-element.pdf-background .resize-handle, .pasted-element.pdf-locked .resize-handle, .pasted-element.pdf-background .object-tools, .pasted-element.pdf-locked .object-tools { display: none !important; }
@@ -67,10 +69,14 @@
         #nb-overlay.open { display: block; }
 
         /* PDF Studio */
-        #pdfStudio { position: fixed; z-index: 4800; top: 70px; right: 16px; width: min(600px, calc(100vw - 32px)); height: min(65vh, 600px); background: #1e293b; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); display: none; flex-direction: column; resize: both; overflow: hidden; }
+        #pdfStudio { position: fixed; z-index: 4800; top: 70px; right: 16px; width: min(720px, calc(100vw - 32px)); height: min(70vh, 600px); background: #1e293b; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); display: none; flex-direction: column; resize: both; overflow: hidden; }
         #pdfStudio.open { display: flex; }
         .pdf-head { height: 46px; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #0f172a; border-bottom: 1px solid #334155; cursor: move; user-select: none; }
         .pdf-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px; background: #1e293b; border-bottom: 1px solid #334155; }
+        .pdf-search-box { display: flex; flex: 1; min-width: 220px; background: #0f172a; border: 1px solid #475569; border-radius: 20px; overflow: hidden; }
+        .pdf-search-box input { flex: 1; background: transparent; border: none; color: #fff; padding: 6px 12px; outline: none; font-size: 13px; }
+        .pdf-search-box button { background: #2563eb; border: none; color: #fff; padding: 6px 14px; border-radius: 0 20px 20px 0; cursor: pointer; font-weight: bold; }
+        .pdf-search-box button:hover { background: #1d4ed8; }
         #pdfLibrary { display: flex; gap: 6px; padding: 10px; background: #0f172a; border-bottom: 1px solid #334155; overflow-x: auto; scrollbar-width: none; }
         .pdf-chip { border: 1px solid #475569; background: #1e293b; border-radius: 20px; padding: 6px 12px; font-size: 12px; cursor: pointer; white-space: nowrap; }
         .pdf-chip.active { border-color: #3b82f6; background: rgba(59,130,246,0.2); }
@@ -90,7 +96,7 @@
     <!-- BARRA DE HERRAMIENTAS -->
     <div id="toolbar">
         <div class="tool-group" style="border-right:none;">
-            <button onclick="togglePdfStudio()">📄 Recortar PDFs</button>
+            <button onclick="togglePdfStudio()">📄 PDF Studio & Buscador</button>
         </div>
         <div class="tool-group">
             <button id="btnPen" class="active" onclick="setTool('pen')">✒️ Lapicera</button>
@@ -114,7 +120,7 @@
             <button onclick="addPage()">➕ Nueva Hoja</button>
             <button onclick="duplicatePage()">📑 Duplicar</button>
             <button onclick="clearCurrentPage()" style="color:#ff6b6b;">🗑️ Limpiar</button>
-            <button onclick="document.getElementById('anyFileInput').click()">📎 Insertar Imagen/Archivo</button>
+            <button onclick="document.getElementById('anyFileInput').click()">📎 Insertar Archivo/Imagen</button>
             <input type="file" id="anyFileInput" style="display:none" multiple onchange="handleAnyFile(event)">
         </div>
         <div class="tool-group" style="border-right: none;">
@@ -143,21 +149,30 @@
       <div id="nb-list"></div>
     </aside>
 
-    <!-- PDF STUDIO -->
+    <!-- PDF STUDIO Y BUSCADOR -->
     <div id="pdfStudio">
       <div class="pdf-head" id="pdfDragHandle">
-          <strong id="pdfTitle">📄 Lector y Recortes PDF</strong><span style="flex:1"></span>
+          <strong id="pdfTitle">📄 PDF Studio Universitario</strong><span style="flex:1"></span>
           <button onclick="pdfZoom(-1)">−</button><span id="pdfZoomLabel" style="font-size:12px; margin:0 5px;">100%</span><button onclick="pdfZoom(1)">+</button>
           <button onclick="togglePdfStudio()" style="margin-left:10px; background:transparent; border:none; font-size:16px;">✕</button>
       </div>
+      
+      <!-- NUEVA BARRA DE BÚSQUEDA DE PDFs EN GOOGLE -->
+      <div class="pdf-bar" style="background: #0f172a; padding-bottom: 5px;">
+          <div class="pdf-search-box">
+              <input id="pdfGoogleSearchInput" type="text" placeholder="🔍 Buscar documentos o libros en PDF por todo internet..." onkeydown="if(event.key==='Enter') searchGooglePDF()">
+              <button onclick="searchGooglePDF()">Buscar PDF</button>
+          </div>
+      </div>
+
       <div class="pdf-bar">
         <input id="pdfFileInput" type="file" accept="application/pdf" style="width:160px; font-size:11px;">
         <button onclick="pdfPrevPage()">◀</button><span id="pdfPageLabel" style="font-size:12px; font-weight:bold; margin:0 5px;">Sin PDF</span><button onclick="pdfNextPage()">▶</button>
         <button id="pdfCropBtn" onclick="togglePdfCrop()" style="margin-left:auto; background:#2563eb; border-color:#3b82f6;">✂️ Recortar Área</button>
-        <button id="pdfPasteBtn" onclick="pastePdfCropToNotebook()" style="background:#059669; border-color:#10b981;">📋 Pegar en Hoja</button>
+        <button id="pdfPasteBtn" onclick="pastePdfCropToNotebook()" style="background:#059669; border-color:#10b981;">📋 Pegar Recorte</button>
       </div>
       <div id="pdfLibrary"><div style="font-size:12px; color:#94a3b8;">Sube un PDF para verlo aquí.</div></div>
-      <div id="pdfView" class="pdf-view"><div style="font-size:13px; color:#94a3b8;">Selecciona un PDF de la lista o carga uno nuevo.</div></div>
+      <div id="pdfView" class="pdf-view"><div style="font-size:13px; color:#94a3b8;">Selecciona un PDF de la lista, busca en internet o carga uno nuevo.</div></div>
     </div>
 
     <!-- SCRIPT PRINCIPAL: MOTOR GRÁFICO OPTIMIZADO -->
@@ -173,11 +188,8 @@
         let activePastedElement = null;
         let drawRectCache = null;
         const notebookEl = document.getElementById('notebook');
-
-        // MULTIPLICADOR DE RESOLUCIÓN (Evita el desenfoque en pantallas modernas)
         const PIXEL_RATIO = window.devicePixelRatio || 2;
 
-        // SISTEMA DE ALERTAS (TOAST)
         function toast(msg){
             const el = document.getElementById('toast'); if(!el) return;
             el.textContent = msg; el.classList.add('show');
@@ -185,16 +197,13 @@
             window.__toastTimer = setTimeout(() => el.classList.remove('show'), 1500);
         }
 
-        // PANTALLA COMPLETA
         function toggleFullScreen() {
             if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
             else if (document.exitFullscreen) document.exitFullscreen();
         }
 
-        // INICIO
         window.onload = () => { if (pagesData.length === 0) addPage(); };
 
-        // CONFIGURACIÓN DE HERRAMIENTAS
         function setTool(tool) {
             currentTool = tool;
             ['btnPen','btnPencil','btnLine','btnEraser'].forEach(id => document.getElementById(id).classList.remove('active'));
@@ -218,7 +227,6 @@
 
             container.addEventListener('pointerdown', () => { activePageContainer = container; updatePageIndicator(); });
             
-            // Forzar configuración anti-fading en el contexto
             const drawCtx = drawCanvas.getContext('2d', { willReadFrequently: true });
             drawCtx.lineCap = 'round';
             drawCtx.lineJoin = 'round';
@@ -241,7 +249,7 @@
                 const img = new Image();
                 img.onload = () => {
                     pageObj.drawCtx.save(); 
-                    pageObj.drawCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset scale
+                    pageObj.drawCtx.setTransform(1, 0, 0, 1, 0, 0); 
                     pageObj.drawCtx.drawImage(img, 0, 0, pageObj.drawCanvas.width, pageObj.drawCanvas.height);
                     pageObj.drawCtx.restore();
                 };
@@ -257,11 +265,8 @@
             updatePageIndicator();
         }
 
-        // REDIMENSIÓN PERFECTA (Resolución Nativa y Anti-Clear)
         function resizePageCanvases(page) {
             const rect = page.container.getBoundingClientRect(); 
-            
-            // Guardar estado actual en memoria usando dibujado directo (Evita el lag del toDataURL)
             let tempCanvas = null;
             if (page.drawCanvas.width > 0) {
                 tempCanvas = document.createElement('canvas');
@@ -269,25 +274,19 @@
                 tempCanvas.height = page.drawCanvas.height;
                 tempCanvas.getContext('2d').drawImage(page.drawCanvas, 0, 0);
             }
-
-            // Aplicar Pixel Ratio
             page.bgCanvas.width = Math.round(rect.width * PIXEL_RATIO); 
             page.bgCanvas.height = Math.round(rect.height * PIXEL_RATIO);
             page.drawCanvas.width = Math.round(rect.width * PIXEL_RATIO); 
             page.drawCanvas.height = Math.round(rect.height * PIXEL_RATIO);
             
-            // Escalar contexto para que las coordenadas CSS coincidan con los píxeles reales
             page.bgCtx.setTransform(PIXEL_RATIO, 0, 0, PIXEL_RATIO, 0, 0); 
             page.drawCtx.setTransform(PIXEL_RATIO, 0, 0, PIXEL_RATIO, 0, 0);
-
-            // Restaurar configuración vital del lápiz
             page.drawCtx.lineCap = 'round';
             page.drawCtx.lineJoin = 'round';
 
-            // Restaurar imagen anterior sin desvanecimientos
             if (tempCanvas) {
                 page.drawCtx.save();
-                page.drawCtx.setTransform(1, 0, 0, 1, 0, 0); // Dibujar 1:1 en píxeles reales
+                page.drawCtx.setTransform(1, 0, 0, 1, 0, 0);
                 page.drawCtx.drawImage(tempCanvas, 0, 0, page.drawCanvas.width, page.drawCanvas.height);
                 page.drawCtx.restore();
             }
@@ -336,7 +335,7 @@
             ind.textContent=`Hoja ${pagesData.length?idx:0} de ${pagesData.length}`;
         }
 
-        // ================= MOTOR DE DIBUJO (ANTI-FADING) =================
+        // ================= MOTOR DE DIBUJO =================
         function setupDrawingEvents(page) {
             const canvas = page.drawCanvas;
             canvas.addEventListener('pointerdown', (e) => { try{canvas.setPointerCapture(e.pointerId)}catch(_){} startDrawing(e, page); }, {passive:false});
@@ -375,7 +374,6 @@
             e.preventDefault(); 
             const ctx = page.drawCtx; 
             const rect = drawRectCache;
-            // Usar getCoalescedEvents para capturar cada micro-movimiento del lápiz
             const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; 
 
             if (currentTool === 'line') {
@@ -394,7 +392,7 @@
 
                 if(currentTool === 'eraser') {
                     ctx.globalCompositeOperation = 'destination-out';
-                    ctx.lineWidth = strokeSize * 8; // Goma generosa
+                    ctx.lineWidth = strokeSize * 8; 
                     ctx.strokeStyle = 'rgba(0,0,0,1)';
                     ctx.globalAlpha = 1;
                 } else {
@@ -402,16 +400,12 @@
                     ctx.strokeStyle = strokeColor;
                     
                     if (currentTool === 'pen') {
-                        // FIX DEFINITIVO ANTI-FADING (LAPICERA):
-                        // 1. Ignorar la presión del dispositivo (para que los finales del trazo no desaparezcan).
-                        // 2. Opacidad siempre al 100%.
                         ctx.globalAlpha = 1;
                         ctx.lineWidth = strokeSize; 
                     } else if (currentTool === 'pencil') {
-                        // Lápiz: Mantiene comportamiento realista (presión suave + semi transparencia)
                         let pressure = ev.pressure || 1;
                         ctx.globalAlpha = 0.4;
-                        ctx.lineWidth = strokeSize * Math.max(0.2, pressure); // Mínimo 20% grosor para no desaparecer
+                        ctx.lineWidth = strokeSize * Math.max(0.2, pressure); 
                     }
                 }
                 
@@ -440,17 +434,54 @@
             scheduleAutosave();
         }
 
-        // REDIMENSIÓN DE PANTALLA (Gatilla el re-dibujo sin perder calidad)
         let resizeTimeout;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(() => {
-                pagesData.forEach((page) => {
-                    resizePageCanvases(page); 
-                    drawBackground(page);
-                });
-            }, 100); // Pequeño debounce para no saturar
+                pagesData.forEach((page) => { resizePageCanvases(page); drawBackground(page); });
+            }, 100);
         });
+
+
+        // ================= POSICIONAMIENTO INTELIGENTE (SCROLL-AWARE) =================
+        function getVisibleContainer() {
+            let target = activePageContainer || (pagesData.length > 0 ? pagesData[0].container : null);
+            if (!target) return null;
+            
+            // Buscar cuál es la hoja que se está viendo más en la pantalla actualmente
+            let maxVis = 0;
+            pagesData.forEach(p => {
+                const r = p.container.getBoundingClientRect();
+                // Calcular cuánto de la hoja es visible en la ventana
+                const vis = Math.max(0, Math.min(window.innerHeight, r.bottom) - Math.max(0, r.top));
+                if (vis > maxVis) {
+                    maxVis = vis;
+                    target = p.container;
+                }
+            });
+            activePageContainer = target; // Actualizar hoja activa internamente
+            updatePageIndicator();
+            return target;
+        }
+
+        function getCenterPosRelative(container, objWidth, objHeight) {
+            const r = container.getBoundingClientRect();
+            // Área visible de la hoja
+            const visTop = Math.max(0, r.top);
+            const visBot = Math.min(window.innerHeight, r.bottom);
+            
+            // Centro vertical de la parte visible
+            const centerY = visTop + (visBot - visTop) / 2;
+            
+            // Traducir a coordenadas locales relativas a la hoja
+            let localY = centerY - r.top - (objHeight / 2);
+            let localX = (r.width / 2) - (objWidth / 2);
+            
+            return { 
+                x: Math.max(10, localX), 
+                y: Math.max(10, Math.min(localY, r.height - objHeight - 10)) 
+            };
+        }
 
 
         // ================= OBJETOS Y ARCHIVOS =================
@@ -469,9 +500,17 @@
 
             const resizeHandle = document.createElement('div'); resizeHandle.className = 'resize-handle';
             const tools=document.createElement('div'); tools.className='object-tools';
-            const lockBtn=document.createElement('button'); lockBtn.textContent='🔒'; 
-            const bgBtn=document.createElement('button'); bgBtn.textContent='📌'; 
-            tools.append(lockBtn,bgBtn);
+            
+            const lockBtn = document.createElement('button'); lockBtn.textContent='🔒'; lockBtn.title="Bloquear/Desbloquear";
+            const bgBtn = document.createElement('button'); bgBtn.textContent='📌'; bgBtn.title="Fondo fijo";
+            
+            // BOTÓN DE ELIMINAR AÑADIDO
+            const deleteBtn = document.createElement('button'); 
+            deleteBtn.textContent='🗑️'; 
+            deleteBtn.className = 'btn-delete';
+            deleteBtn.title = "Eliminar elemento";
+            
+            tools.append(lockBtn, bgBtn, deleteBtn);
 
             wrapper.appendChild(img); wrapper.appendChild(resizeHandle); wrapper.appendChild(tools); container.appendChild(wrapper);
 
@@ -479,6 +518,15 @@
 
             lockBtn.onclick = e => { e.stopPropagation(); wrapper.classList.toggle('pdf-locked'); lockBtn.textContent=wrapper.classList.contains('pdf-locked')?'🔓':'🔒'; markPastedElementChanged(wrapper); };
             bgBtn.onclick = e => { e.stopPropagation(); wrapper.classList.toggle('pdf-background'); wrapper.classList.add('pdf-locked'); lockBtn.textContent='🔓'; markPastedElementChanged(wrapper); toast(wrapper.classList.contains('pdf-background') ? '📌 Fijado como fondo' : 'Liberado de fondo');};
+            
+            // Acción Eliminar
+            deleteBtn.onclick = e => { 
+                e.stopPropagation(); 
+                wrapper.remove(); 
+                activePastedElement = null; 
+                scheduleAutosave(); 
+                toast('🗑️ Recorte eliminado');
+            };
             
             let isDragging = false, dragPointerId = null, grabOffsetX = 0, grabOffsetY = 0, pendingLeft = 0, pendingTop = 0, dragRaf = 0;
             const applyDrag = () => { if(isDragging) { wrapper.style.left = pendingLeft + 'px'; wrapper.style.top = pendingTop + 'px'; } dragRaf=0; };
@@ -508,16 +556,23 @@
         }
 
         function deselectPastedElements() { document.querySelectorAll('.pasted-element').forEach(el => el.classList.remove('active-element')); activePastedElement = null; }
-        
-        // BORRAR CON TECLADO
         window.addEventListener('keydown', (e) => { if((e.key === 'Delete' || e.key === 'Backspace') && activePastedElement && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName||'')) { activePastedElement.remove(); activePastedElement = null; scheduleAutosave(); } });
 
-        // INSERTAR CUALQUIER ARCHIVO / IMAGEN
+        // INSERTAR IMAGEN (CENTRA AUTOMÁTICAMENTE)
         async function handleAnyFile(e) {
             const files = e.target.files; if (!files || files.length === 0) return;
             for (let file of files) {
                 if (file.type.startsWith('image/')) {
-                    const reader = new FileReader(); reader.onload = (ev) => { let target = activePageContainer || pagesData[pagesData.length-1].container; createPastedImage(ev.target.result, target, 50, 50, 300, null); }; reader.readAsDataURL(file);
+                    const reader = new FileReader(); 
+                    reader.onload = (ev) => { 
+                        const target = getVisibleContainer(); 
+                        if(!target) return;
+                        const w = Math.min(target.clientWidth - 40, 300);
+                        // Calculamos posición asumiendo un alto provisional, la imagen se ajustará
+                        const pos = getCenterPosRelative(target, w, 200);
+                        createPastedImage(ev.target.result, target, pos.x, pos.y, w, null); 
+                    }; 
+                    reader.readAsDataURL(file);
                 } else if (file.type === 'application/pdf') {
                     if(typeof loadFile === 'function') { await loadFile(file); if(!document.getElementById('pdfStudio').classList.contains('open')) togglePdfStudio(); }
                 } else {
@@ -526,8 +581,7 @@
             } e.target.value = '';
         }
 
-
-        // ================= GUARDADO Y MATERIAS (SIN LAG) =================
+        // ================= GUARDADO Y MATERIAS =================
         const NB_KEY = 'cuadernosMaterias_pro';
         let currentId = null;
         function uid(){return 'nb_'+Date.now()+'_'+Math.random().toString(36).slice(2,8)}
@@ -536,23 +590,17 @@
         
         function snapshotNotebook(){ 
             return {bg:document.getElementById('bgType')?.value||'rayada', pages:pagesData.map(p=>{ 
-                // Guardar como webp calidad 80% es mucho más rápido que PNG
                 if(p._dirtySave || !p._savedImgData){ p._savedImgData=p.drawCanvas.toDataURL('image/webp',0.80); p._dirtySave=false; } 
                 return {imgData:p._savedImgData,elements:[...p.container.querySelectorAll('.pasted-element')].map(el=>({ src:el.querySelector('img')?.src, x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background') }))}; 
             })}; 
         }
         
-        // El autoguardado ahora tiene un "debounce" largo para asegurar que NUNCA interrumpa mientras estás escribiendo.
         let saveTimer=0;
         function scheduleAutosave(){ 
             clearTimeout(saveTimer); 
-            // Espera 2.5 segundos de inactividad antes de guardar
             saveTimer = setTimeout(() => { 
-                if(window.requestIdleCallback) {
-                    requestIdleCallback(() => flushNotebookNow());
-                } else {
-                    flushNotebookNow();
-                }
+                if(window.requestIdleCallback) requestIdleCallback(() => flushNotebookNow());
+                else flushNotebookNow();
             }, 2500); 
         }
         
@@ -589,27 +637,10 @@
         });
         window.addEventListener('beforeunload',()=>flushNotebookNow());
 
-        // BACKUPS JSON
-        function descargarRespaldo() {
-            flushNotebookNow();
-            const data = { materias: localStorage.getItem(NB_KEY) };
-            const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
-            const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "Cuadernos_Backup_" + new Date().toISOString().split('T')[0] + ".json"; a.click(); URL.revokeObjectURL(a.href); toast('📥 Backup descargado');
-        }
-        function cargarRespaldo() {
-            const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
-            input.onchange = function(e) {
-                const file = e.target.files[0]; if (!file) return;
-                const reader = new FileReader();
-                reader.onload = function(evento) {
-                    try { const datos = JSON.parse(evento.target.result); if (datos.materias) localStorage.setItem(NB_KEY, datos.materias); alert("¡Respaldo restaurado correctamente!"); location.reload(); } 
-                    catch (err) { alert("Error: Archivo de backup no válido."); }
-                }; reader.readAsText(file);
-            }; input.click();
-        }
+        function descargarRespaldo() { flushNotebookNow(); const data = { materias: localStorage.getItem(NB_KEY) }; const blob = new Blob([JSON.stringify(data)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "Cuadernos_Backup_" + new Date().toISOString().split('T')[0] + ".json"; a.click(); URL.revokeObjectURL(a.href); toast('📥 Backup descargado'); }
+        function cargarRespaldo() { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = function(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(evento) { try { const datos = JSON.parse(evento.target.result); if (datos.materias) localStorage.setItem(NB_KEY, datos.materias); alert("¡Respaldo restaurado correctamente!"); location.reload(); } catch (err) { alert("Error: Archivo de backup no válido."); } }; reader.readAsText(file); }; input.click(); }
 
-
-        // ================= PDF STUDIO Y RECORTES =================
+        // ================= PDF STUDIO, BUSCADOR WEB Y RECORTES =================
         const PDF_DB='cuadernoPDFs_pro', PDF_STORE='pdfs';
         let pdfDoc=null,pdfPage=1,pdfScale=1.2,pdfCrop=false,pdfCropRect=null,currentPdfId=null;
         
@@ -618,6 +649,16 @@
         async function dbGet(id){const db=await openDB();return new Promise((res)=>{const r=db.transaction(PDF_STORE).objectStore(PDF_STORE).get(id);r.onsuccess=()=>res(r.result);})}
         async function dbList(nb){const db=await openDB();return new Promise((res)=>{const r=db.transaction(PDF_STORE).objectStore(PDF_STORE).index('notebook').getAll(nb);r.onsuccess=()=>res(r.result||[]);})}
         
+        // BUSCADOR GOOGLE PDF
+        window.searchGooglePDF = function() {
+            const query = document.getElementById('pdfGoogleSearchInput').value.trim();
+            if(!query) return;
+            // Se usa filetype:pdf para decirle al motor de Google que solo indexe y devuelva archivos PDF
+            const url = 'https://www.google.com/search?q=' + encodeURIComponent(query + ' filetype:pdf') + '&udm=14';
+            window.open(url, '_blank', 'noopener,noreferrer');
+            toast('Buscando PDFs en internet...');
+        };
+
         window.togglePdfStudio = async function(){ const el=document.getElementById('pdfStudio'); el.classList.toggle('open'); if(el.classList.contains('open')) await refreshPdfLibrary(); };
         window.pdfZoom = function(d){ pdfScale=Math.max(.65,Math.min(3.0,pdfScale+d*.2)); document.getElementById('pdfZoomLabel').textContent=Math.round(pdfScale*100)+'%'; if(pdfDoc)renderPdfPage(pdfPage); };
         
@@ -634,7 +675,7 @@
             let start=null;
             wrap.onpointerdown=e=>{ if(!pdfCrop)return; e.preventDefault(); const r=wrap.getBoundingClientRect(); start={x:Math.max(0,Math.min(r.width,e.clientX-r.left)),y:Math.max(0,Math.min(r.height,e.clientY-r.top))}; wrap.setPointerCapture?.(e.pointerId); pdfCropRect={x:start.x,y:start.y,w:0,h:0}; crop.style.display='block'; crop.style.left=start.x+'px'; crop.style.top=start.y+'px'; crop.style.width='0px'; crop.style.height='0px'; };
             wrap.onpointermove=e=>{ if(!pdfCrop||!start)return; const r=wrap.getBoundingClientRect(); const ex=Math.max(0,Math.min(r.width,e.clientX-r.left)), ey=Math.max(0,Math.min(r.height,e.clientY-r.top)); const x=Math.min(start.x,ex),y=Math.min(start.y,ey),w=Math.abs(ex-start.x),h=Math.abs(ey-start.y); pdfCropRect={x,y,w,h}; crop.style.left=x+'px';crop.style.top=y+'px';crop.style.width=w+'px';crop.style.height=h+'px'; };
-            const finish=e=>{if(!start)return;wrap.releasePointerCapture?.(e.pointerId);start=null;if(pdfCropRect&&pdfCropRect.w>15)toast('✂️ Área seleccionada. Toca "Pegar en Hoja"');else{pdfCropRect=null;crop.style.display='none';}};
+            const finish=e=>{if(!start)return;wrap.releasePointerCapture?.(e.pointerId);start=null;if(pdfCropRect&&pdfCropRect.w>15)toast('✂️ Área seleccionada. Toca "Pegar Recorte"');else{pdfCropRect=null;crop.style.display='none';}};
             wrap.onpointerup=finish; wrap.onpointercancel=finish;
         }
 
@@ -658,6 +699,7 @@
             if(!pdfCrop){const c=document.getElementById('pdfView').querySelector('.pdf-crop-box');if(c)c.style.display='none'}
         };
         
+        // PEGADO CENTRADO DE RECORTES PDF
         window.pastePdfCropToNotebook=function(){
             if(!pdfDoc||!pdfCropRect||pdfCropRect.w<8){toast('⚠️ Selecciona un área del PDF primero arrastrando el mouse');return}
             const wrap=document.getElementById('pdfView').querySelector('.pdf-page-wrap'),canvas=wrap?.querySelector('canvas'); if(!wrap||!canvas)return;
@@ -668,24 +710,32 @@
             out.getContext('2d').drawImage(canvas,sx0,sy0,sw,sh,0,0,sw,sh);
             const src=out.toDataURL('image/png');
             
-            let target = activePageContainer || pagesData[pagesData.length-1].container;
-            // Pegarlo centrado arriba
-            createPastedImage(src, target, 50, 50, Math.min(target.clientWidth-80, sw));
+            // Buscar hoja visible actualmente y calcular posición de pegado central
+            const target = getVisibleContainer();
+            if(!target) return;
+            
+            // Calculamos ancho y alto del recorte escalado al cuaderno
+            const maxW = target.clientWidth - 40;
+            const finalW = Math.min(maxW, sw);
+            const finalH = finalW * (sh / sw); 
+            
+            // Obtener coordenadas 'x' e 'y' relativas al scroll actual
+            const pos = getCenterPosRelative(target, finalW, finalH);
+
+            createPastedImage(src, target, pos.x, pos.y, finalW, finalH);
             
             pdfCrop=false; 
             document.getElementById('pdfCropBtn').textContent='✂️ Recortar Área'; 
             document.getElementById('pdfCropBtn').style.background='#2563eb';
             wrap.querySelector('.pdf-crop-box').style.display='none'; 
-            toast('📋 Recorte pegado en la hoja activa');
+            toast('📋 Recorte pegado y centrado en la vista actual');
         };
 
-        // Arrastre simple de la ventana del PDF
         const studio=document.getElementById('pdfStudio'), handle=document.getElementById('pdfDragHandle'); let pdfDrag=null;
         handle.addEventListener('pointerdown', e => { if(e.target.closest('button'))return; const r=studio.getBoundingClientRect(); pdfDrag={x:e.clientX-r.left,y:e.clientY-r.top}; handle.setPointerCapture?.(e.pointerId); });
         handle.addEventListener('pointermove', e => { if(!pdfDrag)return; studio.style.left=Math.max(0,e.clientX-pdfDrag.x)+'px'; studio.style.top=Math.max(0,e.clientY-pdfDrag.y)+'px'; studio.style.right='auto'; });
         handle.addEventListener('pointerup', () => pdfDrag=null);
         
-        // Inicializar PDF.js worker
         import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs').then(mod=>{ window.__pdfjs=mod; mod.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs'; }).catch(() => toast("Cargando motor de PDF..."));
     </script>
 </body>
