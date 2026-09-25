@@ -2,500 +2,135 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MathAR Pro - Geometría Avanzada en Realidad Aumentada</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Three.js, Controls, ARButton & Math.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/webxr/ARButton.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Gráfico Three.js - Garantizado</title>
     <style>
-        :root { --glass-bg: rgba(9, 9, 11, 0.75); --glass-border: rgba(255, 255, 255, 0.1); }
-        * { font-family: 'Inter', sans-serif; touch-action: none; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        .font-math { font-family: 'Fira Code', monospace; letter-spacing: -0.5px; }
-
-        body { margin: 0; overflow: hidden; background-color: #000; }
-        
-        #canvas-container { position: absolute; inset: 0; z-index: 10; }
-        #fallback-bg { background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #020617 100%); position: absolute; inset: 0; z-index: 5; transition: opacity 0.5s; }
-        .grid-pattern { background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 30px 30px; width: 100%; height: 100%; }
-
-        /* AR Button Estilizado */
-        #ARButton { bottom: 30px !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 50 !important; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; border-radius: 16px !important; font-family: 'Inter', sans-serif !important; font-weight: 600 !important; border: 1px solid rgba(255,255,255,0.25) !important; box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5) !important; padding: 14px 28px !important; color: white !important; font-size: 0.95rem !important; }
-
-        /* Estética Glassmorphism Avanzada */
-        .panel-glass { background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); }
-        .card-glass { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; }
-
-        .ui-hidden { opacity: 0; pointer-events: none; transform: translateY(120%); }
-        .modal-hidden { opacity: 0; pointer-events: none; transform: scale(0.95) translate(-50%, -50%); top: 50%; left: 50%; }
-
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 4px; }
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #ffffff; cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255, 255, 255, 0.15); border-radius: 2px; }
-        
-        .math-key { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; color: #e4e4e7; font-family: 'Fira Code', monospace; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; padding: 12px 0; transition: all 0.1s; }
-        .math-key:active { transform: scale(0.92); background: rgba(255, 255, 255, 0.15); }
-        .math-key.primary { background: rgba(99, 102, 241, 0.25); color: #818cf8; font-weight: bold; border-color: rgba(99, 102, 241, 0.4); }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050505;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        .info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffffff;
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            pointer-events: none;
+            letter-spacing: 1px;
+            font-size: 14px;
+        }
     </style>
 </head>
-<body class="text-zinc-100 select-none">
+<body>
 
-    <div id="fallback-bg"><div class="grid-pattern"></div></div>
-    <div id="canvas-container"></div>
+    <div class="info">MOTOR GRÁFICO ACTIVO - 60 FPS</div>
 
-    <!-- UI Overlay (Interfaz flotante optimizada para móvil y escritorio) -->
-    <div id="ui-layer" class="absolute inset-0 z-20 pointer-events-none flex flex-col justify-between p-4 overflow-hidden">
-        
-        <!-- Header -->
-        <header class="flex justify-between items-start w-full pointer-events-auto">
-            <div class="panel-glass px-4 py-3 rounded-2xl flex items-center gap-3 shadow-xl">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/40">
-                    <i class="fa-solid fa-shapes text-sm"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-sm tracking-wide text-white">MathAR Pro $\mathbb{R}^3$</h1>
-                    <p class="text-[10px] text-emerald-400 font-semibold uppercase tracking-widest"><i class="fa-solid fa-bolt mr-1"></i>WebXR AR Engine</p>
-                </div>
-            </div>
-
-            <div class="flex gap-2">
-                <button id="btn-equation" class="panel-glass hover:bg-indigo-500/20 text-indigo-300 w-11 h-11 rounded-2xl flex items-center justify-center transition-all border-indigo-500/30 shadow-xl" title="Graficar función">
-                    <i class="fa-solid fa-calculator text-base"></i>
-                </button>
-                <button id="btn-axes" class="panel-glass hover:bg-emerald-500/20 text-emerald-400 w-11 h-11 rounded-2xl flex items-center justify-center transition-all border-emerald-500/30 shadow-xl" title="Cambiar vista de ejes">
-                    <i id="icon-axes" class="fa-solid fa-ruler-combined text-base"></i>
-                </button>
-                <button id="btn-toggle-ui" class="panel-glass hover:bg-white/10 text-zinc-300 w-11 h-11 rounded-2xl flex items-center justify-center transition-all shadow-xl" title="Ocultar interfaz">
-                    <i id="ui-eye-icon" class="fa-solid fa-eye-slash text-base"></i>
-                </button>
-            </div>
-        </header>
-
-        <!-- Paneles Inferiores -->
-        <div id="ui-bottom-panels" class="w-full flex flex-col md:flex-row justify-between items-end gap-4 pointer-events-none transition-all duration-500 mb-16 md:mb-0">
-            <!-- Selector de sólidos y parámetros -->
-            <div class="panel-glass rounded-3xl w-full md:w-80 flex flex-col shadow-2xl pointer-events-auto overflow-hidden max-h-[45vh]">
-                <div class="bg-black/30 border-b border-white/5 p-2 flex overflow-x-auto gap-2 hide-scrollbar" id="shape-selector-container"></div>
-                <div class="p-4 overflow-y-auto space-y-4">
-                    <div id="dynamic-controls" class="space-y-3"></div>
-                    <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-white/5">
-                        <button id="btn-toggle-wireframe" class="card-glass text-xs py-2.5 text-zinc-300 hover:bg-white/10 transition"><i class="fa-solid fa-border-all mr-1 text-indigo-400"></i> Estilo</button>
-                        <div class="card-glass py-2.5 px-3 flex justify-between items-center relative cursor-pointer hover:bg-white/10 transition">
-                            <span class="text-xs text-zinc-300"><i class="fa-solid fa-palette mr-1 text-violet-400"></i> Color</span>
-                            <input type="color" id="shape-color" value="#818cf8" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                            <div class="w-4 h-4 rounded-full border border-white/30 shadow" id="color-indicator" style="background-color: #818cf8;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Panel Analítico / Fórmulas -->
-            <div class="panel-glass rounded-3xl w-full md:w-72 flex flex-col shadow-2xl pointer-events-auto p-4 max-h-[35vh] overflow-y-auto">
-                <h2 class="text-xs font-bold text-indigo-300 mb-3 uppercase tracking-wider flex items-center"><i class="fa-solid fa-square-root-variable mr-2"></i> Propiedades Analíticas</h2>
-                <div id="formula-display" class="space-y-2 text-[11px] font-math text-zinc-300 bg-black/20 p-3 rounded-xl border border-white/5"></div>
-                <p id="educational-tip" class="text-[10px] text-zinc-400 mt-3 border-t border-white/10 pt-2 leading-relaxed"></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Teclado Matemático Avanzado (Modal) -->
-    <div id="equation-modal" class="fixed z-50 panel-glass p-5 rounded-3xl w-[95%] max-w-md modal-hidden transition-all duration-300 pointer-events-auto border-indigo-500/40 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 shadow-2xl">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-calculator text-indigo-400 mr-2"></i> Graficador Superficial z = f(x,y)</h2>
-            <button id="btn-close-equation" class="text-zinc-400 hover:text-white w-8 h-8 rounded-full bg-white/5 flex items-center justify-center transition"><i class="fa-solid fa-times"></i></button>
-        </div>
-        
-        <div class="card-glass p-3.5 mb-4 flex items-center gap-3 bg-black/50 border-indigo-500/30">
-            <span class="font-math text-indigo-400 font-bold text-lg">z =</span>
-            <input type="text" id="eq-input" readonly class="bg-transparent w-full outline-none text-white font-math text-lg tracking-wide" value="sin(x)*cos(y)">
-        </div>
-
-        <div class="grid grid-cols-5 gap-2 mb-2">
-            <button class="math-key primary" onclick="typeEq('x')">x</button>
-            <button class="math-key primary" onclick="typeEq('y')">y</button>
-            <button class="math-key" onclick="typeEq('^')">^</button>
-            <button class="math-key" onclick="typeEq('sqrt(')">√</button>
-            <button class="math-key text-rose-400 bg-rose-500/10 border-rose-500/20" onclick="typeEq('DEL')"><i class="fa-solid fa-delete-left"></i></button>
-            
-            <button class="math-key" onclick="typeEq('sin(')">sin</button>
-            <button class="math-key" onclick="typeEq('cos(')">cos</button>
-            <button class="math-key" onclick="typeEq('tan(')">tan</button>
-            <button class="math-key" onclick="typeEq('(')">(</button>
-            <button class="math-key" onclick="typeEq(')')">)</button>
-            
-            <button class="math-key bg-white/5" onclick="typeEq('7')">7</button>
-            <button class="math-key bg-white/5" onclick="typeEq('8')">8</button>
-            <button class="math-key bg-white/5" onclick="typeEq('9')">9</button>
-            <button class="math-key" onclick="typeEq('pi')">π</button>
-            <button class="math-key primary" onclick="typeEq('/')">÷</button>
-            
-            <button class="math-key bg-white/5" onclick="typeEq('4')">4</button>
-            <button class="math-key bg-white/5" onclick="typeEq('5')">5</button>
-            <button class="math-key bg-white/5" onclick="typeEq('6')">6</button>
-            <button class="math-key" onclick="typeEq('e')">e</button>
-            <button class="math-key primary" onclick="typeEq('*')">×</button>
-            
-            <button class="math-key bg-white/5" onclick="typeEq('1')">1</button>
-            <button class="math-key bg-white/5" onclick="typeEq('2')">2</button>
-            <button class="math-key bg-white/5" onclick="typeEq('3')">3</button>
-            <button class="math-key" onclick="typeEq('.')">.</button>
-            <button class="math-key primary" onclick="typeEq('-')">-</button>
-
-            <button class="math-key bg-white/5 col-span-2" onclick="typeEq('0')">0</button>
-            <button class="math-key text-rose-400 bg-rose-500/10" onclick="typeEq('CLEAR')">AC</button>
-            <button class="math-key bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold col-span-2 shadow-lg shadow-indigo-500/30 border-none" onclick="executeGraph()">Graficar</button>
-        </div>
-    </div>
-
-    <!-- Toast de Notificación -->
-    <div id="toast-notification" class="fixed top-20 left-1/2 -translate-x-1/2 z-[60] panel-glass px-4 py-2.5 rounded-full text-xs font-semibold text-white flex items-center gap-2.5 opacity-0 transition-all duration-300 pointer-events-none shadow-2xl border-indigo-500/40">
-        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
-        <span id="toast-message">Notificación</span>
-    </div>
-
-    <script>
-        // --- BASE DE DATOS DE SÓLIDOS Y SUPERFICIES ---
-        const SHAPES_DATA = {
-            paraboloid: { 
-                name: 'Paraboloide Elíptico', icon: 'fa-bowl-food', params: { a: 1, b: 1 }, 
-                sliders: [{ id: 'a', label: 'Escala Eje X (a)', min: 0.5, max: 3, step: 0.1, val: 1 }, { id: 'b', label: 'Escala Eje Y (b)', min: 0.5, max: 3, step: 0.1, val: 1 }], 
-                createGeometry: (p) => createParametric((u,v,t) => { const r = u * 2; const theta = v * Math.PI * 2; const x = r * Math.cos(theta) * p.a; const z = r * Math.sin(theta) * p.b; const y = (x*x)/(p.a*p.a) + (z*z)/(p.b*p.b); t.set(x, y - 1.5, z); }), 
-                formulas: { func: 'z = x²/a² + y²/b²', type: 'Superficie Cuádrica en R³', sim: 'Simétrica respecto al eje Z' }, 
-                tip: 'Superficie con un punto mínimo absoluto en el vértice. Utilizada frecuentemente en cálculo multivariable para optimización.' 
-            },
-            sphere: { 
-                name: 'Esfera Geométrica', icon: 'fa-globe', params: { radius: 1.3 }, 
-                sliders: [{ id: 'radius', label: 'Radio (r)', min: 0.5, max: 2.2, step: 0.1, val: 1.3 }], 
-                createGeometry: (p) => new THREE.SphereGeometry(p.radius, 36, 36), 
-                formulas: { func: 'x² + y² + z² = r²', type: 'Superficie Esférica', sim: 'Simetría radial perfecta' }, 
-                tip: 'Cuerpo geométrico cerrado cuyas coordenadas se describen óptimamente mediante transformaciones a coordenadas esféricas.' 
-            },
-            hyperboloid: { 
-                name: 'Hiperboloide de 1 Hoja', icon: 'fa-hourglass-half', params: { c: 1 }, 
-                sliders: [{ id: 'c', label: 'Garganta (c)', min: 0.5, max: 2, step: 0.1, val: 1 }], 
-                createGeometry: (p) => createParametric((u,v,t) => { const v_val = (u - 0.5) * 4; const theta = v * Math.PI * 2; const r = Math.sqrt(1 + (v_val*v_val)/(p.c*p.c)); const x = r * Math.cos(theta) * 1.2; const z = r * Math.sin(theta) * 1.2; t.set(x, v_val, z); }), 
-                formulas: { func: 'x²/a² + y²/b² - z²/c² = 1', type: 'Superficie Reglada', sim: 'Simetría hiperbólica' }, 
-                tip: 'Notable propiedad geométrica: a pesar de ser una superficie curva curvos, puede construirse enteramente con líneas rectas.' 
-            },
-            torus: { 
-                name: 'Toroide (Toro)', icon: 'fa-circle-dot', params: { R: 1.2, r: 0.4 }, 
-                sliders: [{ id: 'R', label: 'Radio Mayor (R)', min: 0.8, max: 2, step: 0.1, val: 1.2 }, { id: 'r', label: 'Radio Menor (r)', min: 0.2, max: 0.8, step: 0.1, val: 0.4 }], 
-                createGeometry: (p) => new THREE.TorusGeometry(p.R, p.r, 24, 48), 
-                formulas: { func: 'Topología R³ / Superficie toroidal', type: 'Superficie de Revolución', sim: 'Revolución circular cerrada' }, 
-                tip: 'Superficie generada por una circunferencia que gira alrededor de un eje coplanar exterior.' 
-            },
-            cone: { 
-                name: 'Cono Circular', icon: 'fa-mountain', params: { h: 2, r: 1 }, 
-                sliders: [{ id: 'h', label: 'Altura (h)', min: 1, max: 3, step: 0.1, val: 2 }, { id: 'r', label: 'Radio Base (r)', min: 0.5, max: 2, step: 0.1, val: 1 }], 
-                createGeometry: (p) => new THREE.ConeGeometry(p.r, p.h, 32), 
-                formulas: { func: 'z = √(x² + y²)', type: 'Cono Cuádrico', sim: 'Simetría cónica axial' }, 
-                tip: 'Superficie reglada generada por el desplazamiento de una recta generatriz que pasa por un vértice fijo.' 
+    <!-- Importación directa de Three.js mediante ESM oficial -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
             }
-        };
-
-        let currentShapeKey = 'paraboloid';
-        let activeMaterialMode = 'both', currentColorHex = '#818cf8', uiVisible = true;
-        let scene, camera, renderer, controls;
-        let shapeGroup, axesGroup, containerGroup; 
-        let isARMode = false;
-        let previousTouch = null;
-
-        function createParametric(func, slices=40, stacks=40) {
-            const geometry = new THREE.BufferGeometry();
-            const indices = [], vertices = [];
-            const p = new THREE.Vector3();
-            for (let i = 0; i <= stacks; i++) {
-                const v = i / stacks;
-                for (let j = 0; j <= slices; j++) {
-                    const u = j / slices;
-                    func(u, v, p);
-                    vertices.push(p.x, p.y, p.z);
-                }
-            }
-            for (let i = 0; i < stacks; i++) {
-                for (let j = 0; j < slices; j++) {
-                    const a = i * (slices + 1) + (j + 1), b = i * (slices + 1) + j, c = (i + 1) * (slices + 1) + j, d = (i + 1) * (slices + 1) + (j + 1);
-                    indices.push(a, b, d); indices.push(b, c, d);
-                }
-            }
-            geometry.setIndex(indices); geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-            geometry.computeVertexNormals(); return geometry;
         }
+    </script>
 
-        function init() {
-            const container = document.getElementById('canvas-container');
-            scene = new THREE.Scene();
-            
-            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(3, 3, 4);
+    <script type="module">
+        import * as THREE from 'three';
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        // 1. Inicialización de Escena, Cámara y Renderizador
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050505, 0.035);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 15;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // 2. Iluminación Avanzada
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x3b82f6, 50, 50);
+        pointLight1.position.set(5, 5, 5);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xec4899, 50, 50);
+        pointLight2.position.set(-5, -5, 5);
+        scene.add(pointLight2);
+
+        // 3. Creación de Objetos Geométricos Complejos (Mesh con Material PBR)
+        const geometry = new THREE.IcosahedronGeometry(2.5, 2);
+        const material = new THREE.MeshPhysicalMaterial({
+            color: 0x1e3a8a,
+            metalness: 0.9,
+            roughness: 0.1,
+            wireframe: false,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1
+        });
+
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        // Estructura anidada en órbita para mayor realismo visual
+        const wireGeometry = new THREE.IcosahedronGeometry(3.0, 1);
+        const wireMaterial = new THREE.MeshBasicMaterial({
+            color: 0x60a5fa,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.3
+        });
+        const wireMesh = new THREE.Mesh(wireGeometry, wireMaterial);
+        scene.add(wireMesh);
+
+        // 4. Gestión del Redimensionamiento de Ventana
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.xr.enabled = true; // Habilitar soporte WebXR AR nativo
-            container.appendChild(renderer.domElement);
+        });
 
-            // Botón de Realidad Aumentada WebXR optimizado
-            document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+        // 5. Bucle de Renderizado de Alto Rendimiento (Anidación por Frame)
+        let clock = new THREE.Clock();
 
-            // Contenedor principal para control de transformaciones espaciales
-            containerGroup = new THREE.Group();
-            scene.add(containerGroup);
+        function animate() {
+            requestAnimationFrame(animate);
 
-            // Grupo de la figura geométrica
-            shapeGroup = new THREE.Group();
-            containerGroup.add(shapeGroup);
+            const elapsedTime = clock.getElapsedTime();
 
-            // Ejes cartesianos 3D profesionales con rejilla
-            axesGroup = new THREE.Group();
-            const axesHelper = new THREE.AxesHelper(3);
-            axesHelper.material.linewidth = 3;
-            axesGroup.add(axesHelper);
-            axesGroup.add(new THREE.GridHelper(6, 12, 0x6366f1, 0x334155));
-            containerGroup.add(axesGroup);
+            // Rotaciones dinámicas complejas
+            mesh.rotation.x = elapsedTime * 0.4;
+            mesh.rotation.y = elapsedTime * 0.6;
 
-            // Sistema de iluminación avanzado (ambiental + direccional con brillo especular)
-            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
-            directionalLight.position.set(5, 12, 6);
-            scene.add(directionalLight);
-            
-            const secondaryLight = new THREE.DirectionalLight(0x818cf8, 0.4);
-            secondaryLight.position.set(-5, -5, -5);
-            scene.add(secondaryLight);
+            wireMesh.rotation.x = -elapsedTime * 0.3;
+            wireMesh.rotation.y = -elapsedTime * 0.5;
 
-            // Controles de órbita para navegador web
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
+            // Efecto de pulsación orgánica
+            const scale = 1 + Math.sin(elapsedTime * 2) * 0.08;
+            mesh.scale.set(scale, scale, scale);
 
-            // Eventos de entrada y salida de Realidad Aumentada (WebXR)
-            renderer.xr.addEventListener('sessionstart', () => { 
-                isARMode = true; 
-                document.getElementById('fallback-bg').style.opacity = '0';
-                // Posicionar el modelo enfrente del usuario a una distancia ergonómica en AR
-                containerGroup.position.set(0, 0, -1.8); 
-                containerGroup.scale.set(0.35, 0.35, 0.35); 
-                toast('¡Modo Realidad Aumentada activo!');
-            });
-            
-            renderer.xr.addEventListener('sessionend', () => { 
-                isARMode = false; 
-                document.getElementById('fallback-bg').style.opacity = '1';
-                containerGroup.position.set(0, 0, 0);
-                containerGroup.scale.set(1, 1, 1);
-                camera.position.set(3, 3, 4);
-                controls.target.set(0, 0, 0);
-                toast('Modo escritorio restaurado');
-            });
-
-            // Gestos táctiles fluidos para rotar la figura manualmente en AR con el dedo
-            renderer.domElement.addEventListener('touchstart', (e) => {
-                if(isARMode && e.touches.length === 1) { 
-                    previousTouch = { x: e.touches[0].pageX, y: e.touches[0].pageY }; 
-                }
-            });
-            
-            renderer.domElement.addEventListener('touchmove', (e) => {
-                if(isARMode && e.touches.length === 1 && previousTouch) {
-                    const deltaX = e.touches[0].pageX - previousTouch.x;
-                    const deltaY = e.touches[0].pageY - previousTouch.y;
-                    shapeGroup.rotation.y += deltaX * 0.012;
-                    shapeGroup.rotation.x += deltaY * 0.012;
-                    previousTouch = { x: e.touches[0].pageX, y: e.touches[0].pageY };
-                }
-            });
-            
-            renderer.domElement.addEventListener('touchend', () => { previousTouch = null; });
-
-            window.addEventListener('resize', () => { 
-                camera.aspect = window.innerWidth / window.innerHeight; 
-                camera.updateProjectionMatrix(); 
-                renderer.setSize(window.innerWidth, window.innerHeight); 
-            });
-
-            updateShape();
-            renderUI();
-            
-            // Loop de renderizado en tiempo real
-            renderer.setAnimationLoop(() => {
-                if (!isARMode) {
-                    controls.update();
-                } else {
-                    // Animación sutil de levitación en el aire durante la sesión de AR
-                    shapeGroup.position.y = Math.sin(Date.now() * 0.0015) * 0.08;
-                }
-                renderer.render(scene, camera);
-            });
+            renderer.render(scene, camera);
         }
 
-        function updateShape() {
-            const data = SHAPES_DATA[currentShapeKey];
-            while (shapeGroup.children.length) {
-                const child = shapeGroup.children[0];
-                if(child.geometry) child.geometry.dispose();
-                if(child.material) child.material.dispose();
-                shapeGroup.remove(child);
-            }
-            
-            const geo = data.createGeometry(data.params);
-            geo.center();
-
-            // Material avanzado con reflejo y aspecto holográfico moderno
-            const mat = new THREE.MeshPhysicalMaterial({ 
-                color: currentColorHex, 
-                roughness: 0.25, 
-                metalness: 0.3, 
-                clearcoat: 0.5,
-                clearcoatRoughness: 0.1,
-                transparent: true, 
-                opacity: activeMaterialMode === 'wireframe' ? 0.05 : 0.88, 
-                side: THREE.DoubleSide 
-            });
-            
-            const mesh = new THREE.Mesh(geo, mat);
-            shapeGroup.add(mesh);
-
-            // Capa de malla estructural (Wireframe) configurable
-            if (activeMaterialMode !== 'solid') {
-                const wireMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 });
-                shapeGroup.add(new THREE.LineSegments(new THREE.WireframeGeometry(geo), wireMat));
-            }
-
-            // Actualizar panel analítico
-            document.getElementById('formula-display').innerHTML = `
-                <div class="flex justify-between items-center"><span class="text-zinc-400">Modelo</span><span class="text-emerald-300 font-bold">${data.formulas.func}</span></div>
-                <div class="flex justify-between items-center mt-1.5"><span class="text-zinc-400">Tipo</span><span class="text-indigo-300">${data.formulas.type}</span></div>
-                <div class="flex justify-between items-center mt-1.5"><span class="text-zinc-400">Propiedad</span><span class="text-amber-300">${data.formulas.sim}</span></div>
-            `;
-            document.getElementById('educational-tip').textContent = data.tip;
-        }
-
-        function renderUI() {
-            const cont = document.getElementById('shape-selector-container'); 
-            cont.innerHTML = '';
-            
-            Object.keys(SHAPES_DATA).forEach(k => {
-                const btn = document.createElement('button');
-                btn.className = `px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 shadow ${k === currentShapeKey ? 'bg-indigo-600 text-white shadow-indigo-600/30' : 'bg-white/5 text-zinc-400 hover:bg-white/10'}`;
-                btn.innerHTML = `<i class="fa-solid ${SHAPES_DATA[k].icon}"></i> ${SHAPES_DATA[k].name}`;
-                btn.onclick = () => { currentShapeKey = k; renderUI(); updateShape(); };
-                cont.appendChild(btn);
-            });
-
-            const dyn = document.getElementById('dynamic-controls'); 
-            dyn.innerHTML = '';
-            
-            SHAPES_DATA[currentShapeKey].sliders.forEach(s => {
-                const div = document.createElement('div');
-                div.innerHTML = `
-                    <div class="flex justify-between text-[11px] mb-1.5 font-medium"><span class="text-zinc-300">${s.label}</span><span id="v-${s.id}" class="text-indigo-400 font-math">${SHAPES_DATA[currentShapeKey].params[s.id].toFixed(1)}</span></div>
-                    <input type="range" min="${s.min}" max="${s.max}" step="${s.step}" value="${SHAPES_DATA[currentShapeKey].params[s.id]}">
-                `;
-                dyn.appendChild(div);
-                div.querySelector('input').addEventListener('input', (e) => {
-                    SHAPES_DATA[currentShapeKey].params[s.id] = parseFloat(e.target.value);
-                    document.getElementById(`v-${s.id}`).textContent = SHAPES_DATA[currentShapeKey].params[s.id].toFixed(1);
-                    updateShape();
-                });
-            });
-        }
-
-        // --- SISTEMA DE ECUACIONES PERSONALIZADAS ---
-        const eqInput = document.getElementById('eq-input');
-        window.typeEq = (val) => {
-            if(val === 'CLEAR') eqInput.value = '';
-            else if(val === 'DEL') eqInput.value = eqInput.value.slice(0, -1);
-            else eqInput.value += val;
-        };
-
-        window.executeGraph = () => {
-            const expr = eqInput.value;
-            try {
-                const compiled = math.compile(expr);
-                const k = 'eq_' + Date.now();
-                SHAPES_DATA[k] = {
-                    name: `z = ${expr.substring(0,8)}...`, icon: 'fa-wave-square', params: { s: 5 },
-                    sliders: [{ id: 's', label: 'Dominio Espacial (L)', min: 2, max: 10, step: 1, val: 5 }],
-                    createGeometry: (p) => createParametric((u,v,t) => {
-                        const x = (u - 0.5) * p.s; const y = (v - 0.5) * p.s;
-                        let z = 0; try { z = compiled.evaluate({x, y}); if(isNaN(z) || !isFinite(z)) z = 0; } catch(e){}
-                        t.set(x, z * 0.3, -y); // Coordenadas normalizadas para visualización en 3D
-                    }, 45, 45),
-                    formulas: { func: `z = ${expr}`, type: 'Superficie Paramétrica Custom', sim: 'Definido por usuario' }, 
-                    tip: 'Superficie matemática generada mediante compilación de expresiones en tiempo real. Activa la Realidad Aumentada para ubicarla en tu entorno.'
-                };
-                currentShapeKey = k; 
-                renderUI(); 
-                updateShape();
-                document.getElementById('equation-modal').classList.add('modal-hidden');
-                toast('¡Superficie generada con éxito!');
-            } catch (e) { 
-                toast('Error de sintaxis en la expresión matemática'); 
-            }
-        };
-
-        function toast(msg) {
-            const t = document.getElementById('toast-notification');
-            document.getElementById('toast-message').textContent = msg;
-            t.classList.remove('opacity-0', 'pointer-events-none');
-            setTimeout(() => t.classList.add('opacity-0', 'pointer-events-none'), 3500);
-        }
-
-        window.onload = () => {
-            init();
-            document.getElementById('btn-equation').onclick = () => document.getElementById('equation-modal').classList.remove('modal-hidden');
-            document.getElementById('btn-close-equation').onclick = () => document.getElementById('equation-modal').classList.add('modal-hidden');
-            
-            document.getElementById('btn-toggle-ui').onclick = () => {
-                uiVisible = !uiVisible;
-                document.getElementById('ui-bottom-panels').classList.toggle('ui-hidden');
-                document.getElementById('ui-eye-icon').className = uiVisible ? 'fa-solid fa-eye-slash text-base' : 'fa-solid fa-eye text-base';
-            };
-            
-            document.getElementById('shape-color').oninput = (e) => { 
-                currentColorHex = e.target.value; 
-                document.getElementById('color-indicator').style.backgroundColor = currentColorHex; 
-                updateShape(); 
-            };
-            
-            document.getElementById('btn-toggle-wireframe').onclick = () => { 
-                activeMaterialMode = activeMaterialMode === 'both' ? 'solid' : (activeMaterialMode === 'solid' ? 'wireframe' : 'both'); 
-                updateShape(); 
-                toast(`Estilo visual cambiado`);
-            };
-            
-            let axesState = 1;
-            document.getElementById('btn-axes').onclick = () => {
-                axesState = (axesState + 1) % 3;
-                if(axesState === 1) { // 3D Completo
-                    axesGroup.visible = true; 
-                    controls.minPolarAngle = 0; controls.maxPolarAngle = Math.PI; controls.enableRotate = true;
-                    toast('Ejes R³ y Rejilla activados');
-                } else if(axesState === 2) { // Vista Cenital 2D
-                    axesGroup.visible = true;
-                    camera.position.set(0, 10, 0); camera.lookAt(0,0,0);
-                    controls.minPolarAngle = 0; controls.maxPolarAngle = 0; controls.enableRotate = false;
-                    toast('Plano Cartesiano 2D (Vista Superior)');
-                } else { // Ocultos
-                    axesGroup.visible = false; controls.enableRotate = true;
-                    toast('Ejes ocultos (Vista limpia)');
-                }
-            };
-        };
+        animate();
     </script>
 </body>
 </html>
