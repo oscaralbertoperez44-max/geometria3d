@@ -2,135 +2,348 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motor Gráfico Three.js - Garantizado</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MathAR & Measure Pro - Realidad Aumentada</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Three.js y WebXR ARButton -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/webxr/ARButton.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #050505;
-        }
-        canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
-        .info {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #ffffff;
-            font-family: monospace;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.2);
-            pointer-events: none;
-            letter-spacing: 1px;
-            font-size: 14px;
-        }
+        * { font-family: 'Inter', sans-serif; touch-action: none; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        .font-math { font-family: 'Fira Code', monospace; }
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        
+        #canvas-container { position: absolute; inset: 0; z-index: 10; }
+        #fallback-bg { background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #020617 100%); position: absolute; inset: 0; z-index: 5; transition: opacity 0.5s; }
+        
+        /* Botón AR Nativo Estilizado */
+        #ARButton { bottom: 25px !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 100 !important; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; border-radius: 16px !important; font-weight: 600 !important; border: 1px solid rgba(255,255,255,0.3) !important; box-shadow: 0 10px 30px rgba(99, 102, 241, 0.6) !important; padding: 14px 28px !important; color: white !important; font-size: 1rem !important; }
+
+        .panel-glass { background: rgba(9, 9, 11, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+        .card-glass { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; }
+        
+        .ui-hidden { opacity: 0; pointer-events: none; transform: translateY(100px); }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
     </style>
 </head>
-<body>
+<body class="text-zinc-100 select-none">
 
-    <div class="info">MOTOR GRÁFICO ACTIVO - 60 FPS</div>
+    <div id="fallback-bg">
+        <div class="w-full h-full opacity-20" style="background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 30px 30px;"></div>
+    </div>
+    
+    <div id="canvas-container"></div>
 
-    <!-- Importación directa de Three.js mediante ESM oficial -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    <!-- Interfaz de Control (UI) -->
+    <div id="ui-layer" class="absolute inset-0 z-30 pointer-events-none flex flex-col justify-between p-4">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-start w-full pointer-events-auto">
+            <div class="panel-glass px-4 py-3 rounded-2xl flex items-center gap-3 shadow-xl">
+                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/40">
+                    <i class="fa-solid fa-cube text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm tracking-wide text-white">MathAR & Measure</h1>
+                    <p class="text-[10px] text-emerald-400 font-semibold uppercase tracking-widest"><i class="fa-solid fa-camera mr-1"></i>AR WebXR Engine</p>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button id="btn-mode-shape" class="panel-glass bg-indigo-600/30 text-indigo-300 px-4 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-2 border-indigo-500/40 shadow-xl transition active:scale-95">
+                    <i class="fa-solid fa-shapes"></i> <span id="mode-text">Figuras R³</span>
+                </button>
+                <button id="btn-clear" class="panel-glass hover:bg-rose-500/20 text-rose-400 w-11 h-11 rounded-2xl flex items-center justify-center transition shadow-xl" title="Limpiar escena">
+                    <i class="fa-solid fa-trash-can text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Panel Inferior Dinámico -->
+        <div class="w-full max-w-md mx-auto pointer-events-auto transition-all duration-300 mb-16">
+            
+            <!-- Selector de Figuras Geométricas -->
+            <div id="panel-shapes" class="panel-glass rounded-3xl p-4 shadow-2xl space-y-3">
+                <div class="flex justify-between items-center text-xs font-semibold text-zinc-400 px-1">
+                    <span>SELECCIONAR FIGURA</span>
+                    <span class="text-indigo-400 text-[10px]">Toca la pantalla en AR para colocar</span>
+                </div>
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="selectShape('cube')" class="shape-btn card-glass p-2.5 flex flex-col items-center gap-1 text-xs text-indigo-300 border-indigo-500/40 bg-indigo-500/10"><i class="fa-solid fa-cube text-base"></i>Cubo</button>
+                    <button onclick="selectShape('sphere')" class="shape-btn card-glass p-2.5 flex flex-col items-center gap-1 text-xs text-zinc-300 hover:bg-white/10"><i class="fa-solid fa-globe text-base"></i>Esfera</button>
+                    <button onclick="selectShape('cylinder')" class="shape-btn card-glass p-2.5 flex flex-col items-center gap-1 text-xs text-zinc-300 hover:bg-white/10"><i class="fa-solid fa-database text-base"></i>Cilindro</button>
+                    <button onclick="selectShape('pyramid')" class="shape-btn card-glass p-2.5 flex flex-col items-center gap-1 text-xs text-zinc-300 hover:bg-white/10"><i class="fa-solid fa-mountain text-base"></i>Pirámide</button>
+                </div>
+                <div id="math-info" class="card-glass p-3 text-[11px] font-math space-y-1 bg-black/40">
+                    <div class="flex justify-between text-zinc-400"><span>Volumen (V):</span> <span id="val-vol" class="text-emerald-300 font-bold">1.00 m³</span></div>
+                    <div class="flex justify-between text-zinc-400"><span>Área Sup. (A):</span> <span id="val-area" class="text-indigo-300 font-bold">6.00 m²</span></div>
+                </div>
+            </div>
+
+            <!-- Panel de Medición en Vivo (Oculto inicialmente) -->
+            <div id="panel-measure" class="panel-glass rounded-3xl p-4 shadow-2xl space-y-3 hidden">
+                <div class="flex justify-between items-center text-xs font-semibold text-zinc-400 px-1">
+                    <span>CINTA MÉTRICA VIRTUAL</span>
+                    <span class="text-emerald-400 text-[10px]">Mide distancias reales</span>
+                </div>
+                <div class="card-glass p-4 text-center bg-black/40">
+                    <p class="text-xs text-zinc-400 mb-1">Distancia medida:</p>
+                    <h2 id="measure-distance" class="text-2xl font-bold font-math text-emerald-400">0.00 cm</h2>
+                </div>
+                <p class="text-[10px] text-zinc-400 text-center">Toca dos puntos distintos en el suelo para trazar una línea de medición exacta.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast de Notificación -->
+    <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 panel-glass px-4 py-2 rounded-full text-xs font-medium text-white opacity-0 transition duration-300 pointer-events-none shadow-xl border-indigo-500/40">
+        <span id="toast-text">Notificación</span>
+    </div>
+
+    <script>
+        let scene, camera, renderer, reticle, controller;
+        let currentShape = 'cube';
+        let currentMode = 'shapes'; // 'shapes' o 'measure'
+        let placedObjects = [];
+        
+        // Variables para medición
+        let measurePoints = [];
+        let measureLine = null;
+
+        const SHAPE_CONFIGS = {
+            cube: { geo: () => new THREE.BoxGeometry(0.3, 0.3, 0.3), vol: (s=0.3) => Math.pow(s,3).toFixed(3) + ' m³', area: (s=0.3) => (6*Math.pow(s,2)).toFixed(3) + ' m²' },
+            sphere: { geo: () => new THREE.SphereGeometry(0.2, 32, 32), vol: (r=0.2) => ((4/3)*Math.PI*Math.pow(r,3)).toFixed(3) + ' m³', area: (r=0.2) => (4*Math.PI*Math.pow(r,2)).toFixed(3) + ' m²' },
+            cylinder: { geo: () => new THREE.CylinderGeometry(0.15, 0.15, 0.4, 32), vol: (r=0.15, h=0.4) => (Math.PI*Math.pow(r,2)*h).toFixed(3) + ' m³', area: (r=0.15, h=0.4) => (2*Math.PI*r*(r+h)).toFixed(3) + ' m²' },
+            pyramid: { geo: () => new THREE.ConeGeometry(0.2, 0.4, 4), vol: (r=0.2, h=0.4) => ((1/3)*Math.PI*Math.pow(r,2)*h).toFixed(3) + ' m³', area: () => 'Variable' }
+        };
+
+        function init() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.xr.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Botón AR con soporte para Hit-Test (detección de superficies del piso/mesa)
+            document.body.appendChild(ARButton.createButton(renderer, { 
+                requiredFeatures: ['hit-test'],
+                optionalFeatures: ['dom-overlay'],
+                domOverlay: { root: document.getElementById('ui-layer') }
+            }));
+
+            // Iluminación
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 10, 7);
+            scene.add(light);
+
+            // Retícula de posicionamiento AR (anillo que parpadea sobre el suelo detectado)
+            reticle = new THREE.Mesh(
+                new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
+                new THREE.MeshBasicMaterial({ color: 0x6366f1 })
+            );
+            reticle.matrixAutoUpdate = false;
+            reticle.visible = false;
+            scene.add(reticle);
+
+            // Controlador táctil para colocar figuras o medir al hacer tap en la pantalla
+            controller = renderer.xr.getSession() ? renderer.xr.getController(0) : null;
+            if(!controller) {
+                // Fallback para eventos de toque en modo XR
+                const xrController = renderer.xr.getController(0);
+                xrController.addEventListener('select', onSelect);
+                scene.add(xrController);
+            }
+
+            // Evento táctil directo en celulares cuando se usa WebXR
+            window.addEventListener('resize', onWindowResize);
+
+            // Ocultar fondo estético cuando inicia AR
+            renderer.xr.addEventListener('sessionstart', () => {
+                document.getElementById('fallback-bg').style.opacity = '0';
+                showToast('Apunta al suelo y mueve el celular para detectar superficie');
+            });
+            renderer.xr.addEventListener('sessionend', () => {
+                document.getElementById('fallback-bg').style.opacity = '1';
+                showToast('Sesión AR finalizada');
+            });
+
+            // Loop de animación y detección de superficies (Hit Test)
+            let hitTestSource = null;
+            let hitTestSourceRequested = false;
+
+            renderer.setAnimationLoop((timestamp, frame) => {
+                if (frame) {
+                    const referenceSpace = renderer.xr.getReferenceSpace();
+                    const session = renderer.xr.getSession();
+
+                    if (!hitTestSourceRequested) {
+                        session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                            session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                                hitTestSource = source;
+                            });
+                        });
+                        session.requestReferenceSpace('local').then((space) => {
+                            // referencia local
+                        });
+                        hitTestSourceRequested = true;
+                    }
+
+                    if (hitTestSource) {
+                        const hitTestResults = frame.getHitTestResults(hitTestSource);
+                        if (hitTestResults.length > 0) {
+                            const hit = hitTestResults[0];
+                            reticle.visible = true;
+                            reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+                        } else {
+                            reticle.visible = false;
+                        }
+                    }
+                }
+                renderer.render(scene, camera);
+            });
+        }
+
+        // Acción al hacer Tap en la pantalla en modo AR
+        function onSelect() {
+            if (reticle.visible) {
+                if (currentMode === 'shapes') {
+                    // Colocar figura geométrica analítica
+                    const config = SHAPE_CONFIGS[currentShape];
+                    const geometry = config.geo();
+                    const material = new THREE.MeshPhysicalMaterial({ 
+                        color: 0x818cf8, 
+                        roughness: 0.2, 
+                        metalness: 0.3, 
+                        clearcoat: 0.5,
+                        transparent: true,
+                        opacity: 0.9 
+                    });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    
+                    mesh.position.setFromMatrixPosition(reticle.matrix);
+                    mesh.position.y += 0.15; // Elevar ligeramente sobre el suelo
+                    scene.add(mesh);
+                    placedObjects.push(mesh);
+                    
+                    showToast(`Figura colocada: Volumen ${config.vol()}`);
+                } else if (currentMode === 'measure') {
+                    // Modo CINTA MÉTRICA: Registrar puntos de distancia
+                    const pos = new THREE.Vector3();
+                    pos.setFromMatrixPosition(reticle.matrix);
+                    
+                    measurePoints.push(pos);
+                    
+                    // Colocar esfera marcadora pequeña
+                    const dotGeo = new THREE.SphereGeometry(0.02, 16, 16);
+                    const dotMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+                    const dot = new THREE.Mesh(dotGeo, dotMat);
+                    dot.position.copy(pos);
+                    scene.add(dot);
+                    placedObjects.push(dot);
+
+                    if (measurePoints.length === 2) {
+                        const dist = measurePoints[0].distanceTo(measurePoints[1]);
+                        document.getElementById('measure-distance').textContent = (dist * 100).toFixed(1) + ' cm';
+                        
+                        // Dibujar línea de medición
+                        const lineMat = new THREE.LineBasicMaterial({ color: 0x10b981, linewidth: 5 });
+                        const lineGeo = new THREE.BufferGeometry().setFromPoints(measurePoints);
+                        measureLine = new THREE.Line(lineGeo, lineMat);
+                        scene.add(measureLine);
+                        placedObjects.push(measureLine);
+
+                        showToast(`Distancia calculada: ${(dist * 100).toFixed(1)} cm`);
+                        measurePoints = []; // Reiniciar para nueva medición
+                    } else {
+                        showToast('Primer punto fijado. Toca el segundo punto.');
+                    }
+                }
             }
         }
-    </script>
 
-    <script type="module">
-        import * as THREE from 'three';
-
-        // 1. Inicialización de Escena, Cámara y Renderizador
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050505, 0.035);
-
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 15;
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        document.body.appendChild(renderer.domElement);
-
-        // 2. Iluminación Avanzada
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        scene.add(ambientLight);
-
-        const pointLight1 = new THREE.PointLight(0x3b82f6, 50, 50);
-        pointLight1.position.set(5, 5, 5);
-        scene.add(pointLight1);
-
-        const pointLight2 = new THREE.PointLight(0xec4899, 50, 50);
-        pointLight2.position.set(-5, -5, 5);
-        scene.add(pointLight2);
-
-        // 3. Creación de Objetos Geométricos Complejos (Mesh con Material PBR)
-        const geometry = new THREE.IcosahedronGeometry(2.5, 2);
-        const material = new THREE.MeshPhysicalMaterial({
-            color: 0x1e3a8a,
-            metalness: 0.9,
-            roughness: 0.1,
-            wireframe: false,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.1
+        // Evento global para el toque de colocación en WebXR
+        window.addEventListener('click', () => {
+            if(renderer.xr.isPresenting) {
+                onSelect();
+            }
         });
 
-        const mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
+        function selectShape(shapeName) {
+            currentShape = shapeName;
+            document.querySelectorAll('.shape-btn').forEach(btn => {
+                btn.classList.remove('border-indigo-500/40', 'bg-indigo-500/10', 'text-indigo-300');
+                btn.classList.add('text-zinc-300');
+            });
+            event.currentTarget.classList.add('border-indigo-500/40', 'bg-indigo-500/10', 'text-indigo-300');
+            
+            const cfg = SHAPE_CONFIGS[shapeName];
+            document.getElementById('val-vol').textContent = cfg.vol();
+            document.getElementById('val-area').textContent = cfg.area();
+            showToast(`Seleccionado: ${shapeName.toUpperCase()}`);
+        }
 
-        // Estructura anidada en órbita para mayor realismo visual
-        const wireGeometry = new THREE.IcosahedronGeometry(3.0, 1);
-        const wireMaterial = new THREE.MeshBasicMaterial({
-            color: 0x60a5fa,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.3
-        });
-        const wireMesh = new THREE.Mesh(wireGeometry, wireMaterial);
-        scene.add(wireMesh);
+        // Alternar entre modo Figuras y modo Medición
+        const btnMode = document.getElementById('btn-mode-shape');
+        btnMode.onclick = () => {
+            if (currentMode === 'shapes') {
+                currentMode = 'measure';
+                document.getElementById('mode-text').textContent = 'Medición AR';
+                btnMode.className = 'panel-glass bg-emerald-600/30 text-emerald-300 px-4 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-2 border-emerald-500/40 shadow-xl';
+                document.getElementById('panel-shapes').classList.add('hidden');
+                document.getElementById('panel-measure').classList.remove('hidden');
+                showToast('Modo Medición Activado');
+            } else {
+                currentMode = 'shapes';
+                document.getElementById('mode-text').textContent = 'Figuras R³';
+                btnMode.className = 'panel-glass bg-indigo-600/30 text-indigo-300 px-4 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-2 border-indigo-500/40 shadow-xl';
+                document.getElementById('panel-measure').classList.add('hidden');
+                document.getElementById('panel-shapes').classList.remove('hidden');
+                showToast('Modo Figuras Geométricas Activado');
+            }
+        };
 
-        // 4. Gestión del Redimensionamiento de Ventana
-        window.addEventListener('resize', () => {
+        // Botón limpiar escena
+        document.getElementById('btn-clear').onclick = () => {
+            placedObjects.forEach(obj => {
+                scene.remove(obj);
+                if(obj.geometry) obj.geometry.dispose();
+                if(obj.material) obj.material.dispose();
+            });
+            placedObjects = [];
+            measurePoints = [];
+            showToast('Escena limpiada');
+        };
+
+        function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        // 5. Bucle de Renderizado de Alto Rendimiento (Anidación por Frame)
-        let clock = new THREE.Clock();
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const elapsedTime = clock.getElapsedTime();
-
-            // Rotaciones dinámicas complejas
-            mesh.rotation.x = elapsedTime * 0.4;
-            mesh.rotation.y = elapsedTime * 0.6;
-
-            wireMesh.rotation.x = -elapsedTime * 0.3;
-            wireMesh.rotation.y = -elapsedTime * 0.5;
-
-            // Efecto de pulsación orgánica
-            const scale = 1 + Math.sin(elapsedTime * 2) * 0.08;
-            mesh.scale.set(scale, scale, scale);
-
-            renderer.render(scene, camera);
         }
 
-        animate();
+        function showToast(text) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-text').textContent = text;
+            t.classList.remove('opacity-0');
+            setTimeout(() => t.classList.add('opacity-0'), 3000);
+        }
+
+        window.onload = init;
     </script>
 </body>
 </html>
