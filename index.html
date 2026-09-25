@@ -290,9 +290,12 @@
 #readingModeBar button{border:0!important;background:#303744!important;color:#fff!important;border-radius:999px!important;padding:8px 12px!important;font-size:12px!important;cursor:pointer}
 #readingModeBar .reading-label{font-size:11px;opacity:.8;padding:0 4px}
 body.reading-mode{background:#26282d!important;overflow-x:hidden!important;color:#111!important} body.reading-mode *{border-color:#777!important;accent-color:#555!important} body.reading-mode button,body.reading-mode input,body.reading-mode select,body.reading-mode textarea{color:#111!important;background:#f4f4f4!important;border-color:#777!important;box-shadow:none!important} body.reading-mode svg{filter:grayscale(1)!important}
-body.reading-mode #toolbar{display:none!important}
+
+/* Mantener activa y visible la herramienta seleccionada en modo lectura */
+body.reading-mode #toolbar button.active {background:#4caf50!important; color:#000!important; border-color:#4caf50!important;}
+
 body.reading-mode .page-container{box-shadow:0 18px 55px rgba(0,0,0,.46);filter:grayscale(1) brightness(.985);transition:filter .25s ease,box-shadow .25s ease}
-body.reading-mode #toolbar,body.reading-mode #scientificCalc,body.reading-mode .enhanced-panel,body.reading-mode .pageIndicator,body.reading-mode .toast,body.reading-mode .notebook,body.reading-mode .nb-launcher,body.reading-mode #nb-overlay,body.reading-mode #nb-drawer,body.reading-mode #pdfStudio,body.reading-mode #pdfStudyModal,body.reading-mode #readingModeBar{filter:grayscale(1) contrast(1.02)} body.reading-mode .notebook,body.reading-mode .notebook *{color-scheme:light}
+body.reading-mode #scientificCalc,body.reading-mode .enhanced-panel,body.reading-mode .pageIndicator,body.reading-mode .toast,body.reading-mode .notebook,body.reading-mode .nb-launcher,body.reading-mode #nb-overlay,body.reading-mode #nb-drawer,body.reading-mode #pdfStudio,body.reading-mode #pdfStudyModal,body.reading-mode #readingModeBar{filter:grayscale(1) contrast(1.02)} body.reading-mode .notebook,body.reading-mode .notebook *{color-scheme:light}
 body.reading-mode.reading-warm .page-container{filter:grayscale(1) brightness(.96)}
 body.reading-mode #readingModeBar{display:flex}
 body.reading-mode.reading-warm{background:#3a342c!important}
