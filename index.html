@@ -3,381 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuaderno Universitario Avanzado - Herramientas y Fixes</title>
+    <title>Cuaderno Universitario - Versión Ligera y Rápida</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root {
-            --bg-color: #2c2c2c;
-            --toolbar-bg: #1a1a1a;
-            --text-color: #fff;
-            --accent: #4caf50;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* Toolbar Top */
-        #toolbar {
-            position: sticky;
-            top: 0;
-            width: 100%;
-            background: var(--toolbar-bg);
-            padding: 10px 20px;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            flex-wrap: wrap;
-        }
-
-        button, select, input[type="range"] {
-            background: #333;
-            color: white;
-            border: 1px solid #555;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-
-        button:hover, select:hover {
-            background: #444;
-            border-color: var(--accent);
-        }
-
-        button.active {
-            background: var(--accent);
-            color: #000;
-            font-weight: bold;
-            border-color: var(--accent);
-        }
-
-        input[type="color"] {
-            -webkit-appearance: none;
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            background: transparent;
-            padding: 0;
-        }
-        input[type="color"]::-webkit-color-swatch-wrapper {
-            padding: 0;
-        }
-        input[type="color"]::-webkit-color-swatch {
-            border: 2px solid #555;
-            border-radius: 5px;
-        }
-
-        .tool-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-right: 1px solid #555;
-            padding-right: 15px;
-        }
-
-        /* Contenedor de las Hojas */
-        #notebook {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            padding: 20px;
-            width: 95%; 
-            max-width: 1400px; 
-        }
-
-        /* Estructura de la Hoja */
-        .page-container {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 1 / 1.414; 
-            background: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-            border-radius: 4px;
-            overflow: hidden;
-            touch-action: none; /* Mejor control de fluidez para Wacom/Táctil aquí */
-        }
-
-        /* Capas de la hoja */
-        .bg-layer, .draw-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        .bg-layer {
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        .draw-layer {
-            z-index: 2;
-            cursor: crosshair;
-        }
-
-        /* Imágenes Pegadas */
-        .pasted-element {
-            position: absolute;
-            z-index: 3;
-            border: 2px dashed transparent;
-            cursor: move;
-            user-select: none;
-        }
+        :root { --bg-color: #2c2c2c; --toolbar-bg: #1a1a1a; --text-color: #fff; --accent: #4caf50; --ui-bg:rgba(18,18,18,.94); --ui-border:rgba(255,255,255,.12); }
+        body { margin: 0; padding: 0; background-color: var(--bg-color); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: var(--text-color); display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; overscroll-behavior:none; }
         
-        .pasted-element:hover {
-            border-color: rgba(0, 120, 215, 0.5);
-        }
+        /* Toolbar */
+        #toolbar { position: sticky; top: 0; width: 100%; background: var(--toolbar-bg); padding: 8px 12px; display: flex; gap: 7px; justify-content: flex-start; align-items: center; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.5); overflow-x: auto; scrollbar-width: thin; backdrop-filter: blur(14px); }
+        button, select, input[type="range"] { background: #333; color: white; border: 1px solid #555; padding: 7px 10px; border-radius: 5px; cursor: pointer; font-size: 13px; transition: all 0.2s; white-space: nowrap; }
+        button:hover, select:hover { background: #444; border-color: var(--accent); }
+        button.active { background: var(--accent); color: #000; font-weight: bold; border-color: var(--accent); }
+        input[type="color"] { -webkit-appearance: none; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; background: transparent; padding: 0; }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: 2px solid #555; border-radius: 5px; }
+        .tool-group { display: flex; align-items: center; gap: 6px; border-right: 1px solid #555; padding-right: 8px; flex-shrink: 0; }
 
-        .pasted-element.active-element {
-            border-color: #0078d7;
-        }
+        /* Cuaderno y Hojas */
+        #notebook { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 22px 12px 70px; width: 95%; max-width: 1500px; }
+        .page-container { position: relative; width: 100%; aspect-ratio: 1 / 1.414; background: white; box-shadow: 0 10px 25px rgba(0,0,0,0.4); border-radius: 4px; overflow: hidden; touch-action: auto; contain: layout paint; will-change: transform; }
+        .bg-layer, .draw-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .bg-layer { z-index: 1; pointer-events: none; }
+        .draw-layer { z-index: 2; cursor: crosshair; touch-action: none; }
+        .line-preview-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 12; display: none; }
 
-        .pasted-image {
-            display: block;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
+        /* Elementos Pegados */
+        .pasted-element { position: absolute; z-index: 3; border: 2px dashed transparent; cursor: move; user-select: none; touch-action: none; will-change: left, top; }
+        .pasted-element:hover { border-color: rgba(0, 120, 215, 0.5); }
+        .pasted-element.active-element { box-shadow: 0 0 0 1px rgba(0,120,215,.15); border-color: #0078d7; }
+        .pasted-image { display: block; width: 100%; height: 100%; pointer-events: none; }
+        .resize-handle { position: absolute; bottom: -6px; right: -6px; width: 14px; height: 14px; background-color: #0078d7; border: 2px solid white; border-radius: 50%; cursor: nwse-resize; display: none; }
+        .pasted-element.active-element .resize-handle { display: block; }
+        .pasted-element .object-tools { position: absolute; top: 5px; right: 5px; display: none; gap: 4px; z-index: 8; pointer-events: auto; }
+        .pasted-element.active-element .object-tools { display: flex; }
+        .object-tools button { border: 0; background: rgba(15,23,42,.86); color: #fff; border-radius: 7px; width: 25px; height: 25px; padding: 0; font-size: 12px; cursor: pointer; }
+        .pasted-element.pdf-background { z-index: 1 !important; }
+        .pasted-element.pdf-locked { cursor: default !important; }
+        .pasted-element.pdf-background .resize-handle, .pasted-element.pdf-locked .resize-handle, .pasted-element.pdf-background .object-tools, .pasted-element.pdf-locked .object-tools { display: none !important; }
 
-        .resize-handle {
-            position: absolute;
-            bottom: -6px;
-            right: -6px;
-            width: 14px;
-            height: 14px;
-            background-color: #0078d7;
-            border: 2px solid white;
-            border-radius: 50%;
-            cursor: nwse-resize;
-            display: none;
-        }
+        /* Panel Avanzado */
+        .enhanced-panel { position: fixed; right: 14px; top: 65px; z-index: 500; width: min(330px, calc(100vw - 28px)); overflow: auto; padding: 12px; border: 1px solid var(--ui-border); border-radius: 14px; background: var(--ui-bg); box-shadow: 0 15px 45px rgba(0,0,0,.45); display: none; box-sizing: border-box; }
+        .enhanced-panel.open { display: block; }
+        .enhanced-panel h3 { margin: 2px 0 10px; font-size: 15px; }
+        .ep-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+        .ep-grid button { padding: 8px 7px; border: 1px solid #444; background: #292929; border-radius: 8px; }
+        #pageIndicator { position: fixed; left: 14px; bottom: 14px; z-index: 450; background: rgba(20,20,20,.82); padding: 7px 10px; border-radius: 999px; font-size: 12px; border: 1px solid rgba(255,255,255,.1); pointer-events: none; }
+        #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0; z-index: 1000; background: #171717; color: #fff; border: 1px solid #444; border-radius: 10px; padding: 10px 14px; font-size: 13px; pointer-events: none; transition: .22s ease; box-shadow: 0 8px 25px rgba(0,0,0,.35); }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        .pasted-element.active-element .resize-handle {
-            display: block;
-        }
+        /* Gestor de Cuadernos */
+        #nb-launcher { position: fixed; left: 16px; top: 118px; z-index: 5000; background: #111827; color: #fff; border: 1px solid #374151; border-radius: 14px; padding: 8px 11px; font-weight: 700; box-shadow: 0 8px 24px #0006; cursor: pointer; }
+        #nb-drawer { position: fixed; inset: 58px auto 0 0; width: min(360px, 92vw); background: #111827; z-index: 4999; transform: translateX(-105%); transition: .25s ease; box-shadow: 12px 0 35px #0008; display: flex; flex-direction: column; }
+        #nb-drawer.open { transform: translateX(0); }
+        .nb-head, .nb-actions { padding: 12px; border-bottom: 1px solid #374151; }
+        .nb-head h2 { margin: 0; font-size: 19px; }
+        #nb-list { padding: 12px; overflow: auto; display: flex; flex-direction: column; gap: 8px; }
+        .nb-item { display: grid; grid-template-columns: 1fr auto; gap: 6px; background: #172033; border-radius: 12px; padding: 8px; border: 1px solid #374151; }
+        .nb-item.active { border-color: #60a5fa; box-shadow: 0 0 0 1px #60a5fa33; }
+        .nb-open { border: 0 !important; background: transparent !important; text-align: left; padding: 8px !important; }
+        .nb-name { font-weight: 800; }
+        #nb-overlay { display: none; position: fixed; inset: 58px 0 0 0; background: #0007; z-index: 4998; }
+        #nb-overlay.open { display: block; }
 
-        /* Controles sutiles para recortes/PDF */
-        .pasted-element .object-tools{position:absolute;top:5px;right:5px;display:none;gap:4px;z-index:8;pointer-events:auto}
-        .pasted-element.active-element .object-tools{display:flex}
-        .object-tools button{border:0;background:rgba(15,23,42,.86);color:#fff;border-radius:7px;width:25px;height:25px;padding:0;font-size:12px;cursor:pointer;box-shadow:0 2px 8px #0005}
-        .object-tools button:hover{background:#2563eb}
-        .pasted-element.pdf-background{z-index:1!important}
-        .pasted-element.pdf-background .pasted-image{pointer-events:none}
-        .pasted-element.pdf-locked .pasted-image{pointer-events:none}
-        .pasted-element.pdf-locked{cursor:default!important}
-        .pasted-element.pdf-background .resize-handle,.pasted-element.pdf-locked .resize-handle{display:none!important}
-        .pasted-element.pdf-background .object-tools,.pasted-element.pdf-locked .object-tools{display:none!important}
-        #pdfStudio.pdf-split{left:12px!important;right:auto!important;top:70px!important;bottom:auto!important;width:min(52vw,820px)!important;height:calc(100vh - 90px)!important;transform:none!important;border-radius:16px}
-        #pdfStudio.pdf-split .pdf-bar,#pdfStudio.pdf-split #pdfLibrary,#pdfStudio.pdf-split #pdfResults{display:none}
-        #pdfStudio.pdf-split .pdf-head{height:48px;flex-basis:48px}
-        #pdfStudio.pdf-split .pdf-view{padding:18px}
-        #pdfStudio.pdf-split .pdf-split-btn{display:inline-flex}
-        .pdf-split-btn{display:none;background:#7c3aed!important;color:#fff!important;border-color:#8b5cf6!important;font-weight:700}
-        #pdfCropHistory{display:none;gap:5px;flex-wrap:wrap;padding:7px 9px;background:#0f172a;border-bottom:1px solid #334155;max-height:62px;overflow:auto}
-        #pdfStudio.pdf-focus #pdfCropHistory,#pdfStudio.pdf-split #pdfCropHistory{display:none}
-        .pdf-history-chip{border:1px solid #334155;background:#172033;color:#fff;border-radius:12px;padding:4px 8px;font-size:10px;cursor:pointer}
-        .pdf-history-chip:hover{background:#24324a}
-        @media(max-width:900px){#pdfStudio.pdf-split{width:92vw!important;left:4vw!important;top:64px!important;height:82vh!important}}
+        /* PDF Studio */
+        #pdfStudio { position: fixed; z-index: 4800; top: 82px; right: 18px; width: min(760px, calc(100vw - 28px)); height: min(72vh, 680px); background: #111827; border: 1px solid #334155; border-radius: 15px; box-shadow: 0 18px 55px #0008; display: none; flex-direction: column; resize: both; overflow: hidden; }
+        #pdfStudio.open { display: flex; }
+        .pdf-head { height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #0b1220; border-bottom: 1px solid #334155; cursor: move; user-select: none; }
+        .pdf-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 8px; background: #172033; border-bottom: 1px solid #334155; }
+        #pdfLibrary { display: flex; gap: 5px; flex-wrap: wrap; padding: 7px 9px; background: #0f172a; border-bottom: 1px solid #334155; max-height: 58px; overflow: auto; }
+        .pdf-chip { border: 1px solid #334155; background: #172033; border-radius: 14px; padding: 5px 9px; font-size: 11px; cursor: pointer; }
+        .pdf-chip.active { border-color: #60a5fa; background: #1d4ed833; }
+        .pdf-view { position: relative; flex: 1; overflow: auto; background: #334155; padding: 16px; }
+        .pdf-page-wrap { position: relative; margin: 0 auto 16px; background: #fff; box-shadow: 0 8px 28px #0006; display: block; }
+        .pdf-crop-box { position: absolute; border: 2px dashed #22c55e; background: #22c55e18; display: none; pointer-events: none; z-index: 4; }
+        #pdfCropHistory { display: none; gap: 5px; flex-wrap: wrap; padding: 7px 9px; background: #0f172a; border-bottom: 1px solid #334155; max-height: 62px; overflow: auto; }
+        .pdf-history-chip { border: 1px solid #334155; background: #172033; border-radius: 12px; padding: 4px 8px; font-size: 10px; cursor: pointer; }
 
-/* ================= DOLA + ESCRITURA FLUIDA ================= */
-#dolaWindow{position:fixed;z-index:6100;left:50%;top:50%;transform:translate(-50%,-50%);width:min(920px,92vw);height:min(700px,84vh);display:none;background:#0b1020;border:1px solid rgba(255,255,255,.16);border-radius:18px;box-shadow:0 28px 100px rgba(0,0,0,.65);overflow:hidden}
-#dolaWindow.dola-minimized{height:48px!important;min-height:48px!important;width:min(360px,calc(100vw - 20px))!important;resize:none!important}
-#dolaWindow.dola-minimized .dola-frame,#dolaWindow.dola-minimized .dola-foot,#dolaWindow.dola-minimized .dola-resizer{display:none!important}
-#dolaWindow{min-width:320px;min-height:240px;resize:none}
-.dola-resizer{position:absolute;right:3px;bottom:3px;width:18px;height:18px;cursor:nwse-resize;z-index:20}
-.dola-resizer:after{content:"";position:absolute;right:2px;bottom:2px;width:10px;height:10px;border-right:2px solid #93c5fd;border-bottom:2px solid #93c5fd;opacity:.9}
-.dola-head button.dola-tool{font-size:12px;padding:7px 9px}
-#dolaWindow.open{display:flex;flex-direction:column}
-.dola-head{height:48px;display:flex;align-items:center;gap:10px;padding:0 12px;background:linear-gradient(135deg,#111827,#172554);color:#fff;cursor:move;user-select:none}
-.dola-head strong{flex:1;font-size:14px}.dola-head button{border:0;background:#25314f;color:#fff;border-radius:9px;padding:7px 10px;cursor:pointer}.dola-head button:hover{background:#33467a}
-.dola-frame{flex:1;border:0;width:100%;background:#fff}.dola-foot{display:flex;gap:8px;align-items:center;padding:7px 10px;background:#0f172a;color:#94a3b8;font-size:11px}.dola-foot a{color:#93c5fd;text-decoration:none;font-weight:700}.dola-foot span{flex:1}
-@media(max-width:700px){#dolaWindow{width:96vw;height:82vh;border-radius:14px}.dola-head{height:44px}}
-/* escritura con lápiz: el navegador no debe desplazar/seleccionar mientras se escribe */
-.draw-layer{touch-action:none;cursor:crosshair}.page-container{touch-action:auto}
-
-/* ================= CALCULADORA + TRAZO PRO ================= */
-.line-preview-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:12;display:none}
-#scientificCalc{position:fixed;z-index:5200;top:82px;right:18px;width:min(360px,calc(100vw - 28px));background:rgba(20,22,28,.97);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:18px;box-shadow:0 22px 70px rgba(0,0,0,.5);padding:14px;display:none;backdrop-filter:blur(16px)}
-#scientificCalc.open{display:block}
-.calc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.calc-head strong{font-size:15px}.calc-close{border:0;background:#2a2e38;color:#fff;border-radius:9px;width:30px;height:30px;cursor:pointer}
-.calc-display{width:100%;box-sizing:border-box;background:#0d0f13;color:#fff;border:1px solid #343945;border-radius:12px;padding:12px 13px;font-size:23px;text-align:right;outline:none;margin-bottom:5px}.calc-display:focus{border-color:#6ee7b7}
-.calc-display{caret-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}.calc-display:focus{outline:none}.calc-result{min-height:22px;text-align:right;color:#8ee28e;font-size:13px;margin-bottom:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.calc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.calc-grid button{min-height:42px;border:1px solid #363b47;border-radius:10px;background:#252933;color:#fff;font-size:14px;cursor:pointer;transition:transform .08s,background .12s}.calc-grid button:active{transform:scale(.96)}.calc-grid button.fn{background:#303644}.calc-grid button.op{background:#343945}.calc-grid button.eq{background:#167a58;font-weight:700}.calc-grid button.danger{background:#682d38}.calc-memory{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:7px 0}.calc-memory button{border:1px solid #303641;background:#1b1e25;color:#ddd;border-radius:8px;padding:7px;font-size:11px;cursor:pointer}.calc-angle{text-align:center;font-size:11px;color:#aab1bd;margin-top:8px}.calc-history{max-height:90px;overflow:auto;margin-top:8px;border-top:1px solid #2e333d;padding-top:6px}.calc-history div{font-size:11px;color:#aeb5c2;padding:2px 0;text-align:right;cursor:pointer}.calc-history div:hover{color:#fff}
-@media(max-width:700px){#scientificCalc{top:62px;right:8px;width:calc(100vw - 16px)}}
-
-/* ================= ENHANCEMENT PACK ================= */
-:root{
-  --ui-bg:rgba(18,18,18,.94);
-  --ui-border:rgba(255,255,255,.12);
-  --ui-accent:#4caf50;
-  --selection:#0078d7;
-}
-#toolbar{
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  padding:8px 12px;
-  gap:7px;
-  justify-content:flex-start;
-  overflow-x:auto;
-  scrollbar-width:thin;
-}
-#toolbar .tool-group{gap:6px;padding-right:8px}
-#toolbar button,#toolbar select{padding:7px 10px;font-size:13px}
-#toolbar button{white-space:nowrap}
-#notebook{padding:22px 12px 70px;max-width:1500px}
-.page-container{contain:layout paint;will-change:transform}
-.draw-layer{touch-action:none}
-.enhanced-panel{
-  position:fixed;right:14px;top:78px;z-index:500;
-  width:min(330px,calc(100vw - 28px));max-height:calc(100vh - 96px);
-  overflow:auto;padding:12px;border:1px solid var(--ui-border);
-  border-radius:14px;background:var(--ui-bg);box-shadow:0 15px 45px rgba(0,0,0,.45);
-  display:none;box-sizing:border-box
-}
-.enhanced-panel.open{display:block}
-.enhanced-panel h3{margin:2px 0 10px;font-size:15px}
-.ep-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
-.ep-grid button,.ep-row button{padding:8px 7px;border:1px solid #444;background:#292929;color:#fff;border-radius:8px;cursor:pointer}
-.ep-grid button:hover,.ep-row button:hover{border-color:var(--ui-accent);background:#333}
-.ep-row{display:flex;gap:7px;align-items:center;margin:7px 0}
-.ep-row input,.ep-row select{flex:1;min-width:0;background:#222;color:#fff;border:1px solid #444;border-radius:8px;padding:8px}
-#pageIndicator{
-  position:fixed;left:14px;bottom:14px;z-index:450;
-  background:rgba(20,20,20,.82);padding:7px 10px;border-radius:999px;
-  font-size:12px;color:#ddd;border:1px solid rgba(255,255,255,.1);
-  pointer-events:none
-}
-.page-container.page-focus{outline:3px solid rgba(76,175,80,.65);outline-offset:2px}
-.pasted-element{touch-action:none;will-change:left,top}
-.pasted-element.active-element{box-shadow:0 0 0 1px rgba(0,120,215,.15)}
-#toast{
- position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
- opacity:0;z-index:1000;background:#171717;color:#fff;border:1px solid #444;
- border-radius:10px;padding:10px 14px;font-size:13px;pointer-events:none;
- transition:.22s ease;box-shadow:0 8px 25px rgba(0,0,0,.35)
-}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(max-width:800px){
- #toolbar{justify-content:flex-start}
- .tool-group{flex-shrink:0}
- .enhanced-panel{top:65px;right:8px}
-}
-@media print{
- #toolbar,#pageIndicator,.enhanced-panel,#toast{display:none!important}
- body{background:#fff}
- #notebook{width:100%;max-width:none;padding:0}
- .page-container{box-shadow:none;break-after:page}
-}
-
-/* ================= MODO LECTURA / DESCANSO VISUAL ================= */
-#readingModeBar{display:none;position:fixed;z-index:7000;left:50%;bottom:18px;transform:translateX(-50%);align-items:center;gap:8px;padding:7px 10px;background:rgba(24,27,34,.90);border:1px solid rgba(255,255,255,.12);border-radius:999px;box-shadow:0 12px 36px rgba(0,0,0,.35);backdrop-filter:blur(14px);color:#fff}
-#readingModeBar button{border:0!important;background:#303744!important;color:#fff!important;border-radius:999px!important;padding:8px 12px!important;font-size:12px!important;cursor:pointer}
-#readingModeBar .reading-label{font-size:11px;opacity:.8;padding:0 4px}
-body.reading-mode{background:#26282d!important;overflow-x:hidden!important;color:#111!important} body.reading-mode *{border-color:#777!important;accent-color:#555!important} body.reading-mode button,body.reading-mode input,body.reading-mode select,body.reading-mode textarea{color:#111!important;background:#f4f4f4!important;border-color:#777!important;box-shadow:none!important} body.reading-mode svg{filter:grayscale(1)!important}
-
-/* Mantener activa y visible la herramienta seleccionada en modo lectura (incluso color picker) */
-body.reading-mode #toolbar button.active {background:#4caf50!important; color:#000!important; border-color:#4caf50!important;}
-body.reading-mode #colorPicker {filter:none!important;}
-
-body.reading-mode .page-container{box-shadow:0 18px 55px rgba(0,0,0,.46);filter:grayscale(1) brightness(.985);transition:filter .25s ease,box-shadow .25s ease}
-body.reading-mode #toolbar,body.reading-mode #scientificCalc,body.reading-mode .enhanced-panel,body.reading-mode .pageIndicator,body.reading-mode .toast,body.reading-mode .notebook,body.reading-mode .nb-launcher,body.reading-mode #nb-overlay,body.reading-mode #nb-drawer,body.reading-mode #pdfStudio,body.reading-mode #pdfStudyModal,body.reading-mode #readingModeBar{filter:grayscale(1) contrast(1.02)} body.reading-mode .notebook,body.reading-mode .notebook *{color-scheme:light}
-body.reading-mode.reading-warm .page-container{filter:grayscale(1) brightness(.96)}
-body.reading-mode #readingModeBar{display:flex}
-body.reading-mode.reading-warm{background:#3a342c!important}
-body.reading-mode.reading-warm .page-container{filter:none}
-
-body.reading-mode.reading-classic{background:#171717!important;color:#111!important}
-body.reading-mode.reading-classic #readingModeBar{background:#111!important;border-color:#666!important;color:#fff!important}
-body.reading-mode.reading-classic #readingModeBar button{background:#f5f5f5!important;color:#111!important;border-color:#777!important}
-body.reading-mode.reading-classic #readingModeBar button.active{background:#222!important;color:#fff!important}
-body.reading-mode.reading-sepia{background:#3b3125!important;color:#2d241b!important}
-body.reading-mode.reading-sepia #readingModeBar{background:#3b2f22!important;border-color:#8b765b!important;color:#f3e7d2!important}
-body.reading-mode.reading-sepia #readingModeBar button{background:#eadcc4!important;color:#3a2c1e!important;border-color:#9b8668!important}
-body.reading-mode.reading-sepia #readingModeBar button.active{background:#6d5740!important;color:#fff4df!important}
-body.reading-mode.reading-sepia button,body.reading-mode.reading-sepia input,body.reading-mode.reading-sepia select,body.reading-mode.reading-sepia textarea{background:#eee1ca!important;color:#35291e!important;border-color:#9b8668!important}
-body.reading-mode.reading-sepia .enhanced-panel,body.reading-mode.reading-sepia .notebook,body.reading-mode.reading-sepia .nb-launcher,body.reading-mode.reading-sepia #pdfStudio,body.reading-mode.reading-sepia #scientificCalc{background:#e9dcc5!important;color:#35291e!important;border-color:#9b8668!important}
-body.reading-mode.reading-sepia .pageIndicator{background:#e9dcc5!important;color:#35291e!important}
-body.reading-mode.reading-sepia svg{filter:sepia(.45) grayscale(.25)!important}
-body.reading-mode.reading-sepia .page-container{filter:none}
-body.reading-mode.reading-warm .page-container{filter:none}
-body.reading-mode #pdfStudio:not(.pdf-focus):not(.pdf-split){display:none!important}
-body.reading-mode #scientificCalc{display:none!important}
-body.reading-mode #nb-overlay,body.reading-mode #nb-drawer{display:none!important}
-body.reading-mode #readingModeBar button.active{background:#4b5563!important}
-@media(max-width:700px){#readingModeBar{bottom:10px;max-width:calc(100vw - 20px);overflow:auto}.reading-label{display:none!important}}
-
-</style>
-<style id="turbo-performance">html,body{overscroll-behavior:none}#canvas-container,#canvas-container canvas{contain:layout paint}#canvas-container canvas{will-change:contents;touch-action:none;-webkit-tap-highlight-color:transparent}button,input,select{touch-action:manipulation}.draw-canvas{touch-action:none;}
-
-/* ===== UNIVERSAL MATH SOLVER ===== */
-#universalSolver{position:fixed;inset:0;z-index:1200;display:none;background:rgba(5,10,18,.62);backdrop-filter:blur(7px);padding:clamp(10px,2vw,28px);overflow:auto}
-#universalSolver.open{display:flex;align-items:center;justify-content:center}
-.solver-card{width:min(1180px,96vw);max-height:92vh;overflow:auto;background:#fff;color:#17202a;border:1px solid #dce3ea;border-radius:20px;box-shadow:0 25px 80px rgba(0,0,0,.3)}
-.solver-head{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid #e8edf2}
-.solver-head strong{font-size:17px}.solver-spacer{flex:1}.solver-close{border:0;background:#f0f3f6;border-radius:9px;padding:7px 10px;cursor:pointer}
-.solver-body{padding:18px}.solver-grid{display:grid;grid-template-columns:minmax(280px,.85fr) minmax(360px,1.15fr);gap:16px}
-.solver-panel{border:1px solid #e2e8ee;border-radius:15px;padding:14px;background:#fbfcfd}.solver-label{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
-#solverInput{width:100%;min-height:170px;margin-top:8px;resize:vertical;border:1px solid #d7dee7;border-radius:12px;padding:13px;font:15px/1.55 system-ui,sans-serif;box-sizing:border-box;outline:none}
-#solverInput:focus{border-color:#4285f4;box-shadow:0 0 0 3px rgba(66,133,244,.12)}
-.solver-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.solver-actions button{border:1px solid #d7dee7;background:#fff;border-radius:9px;padding:8px 11px;cursor:pointer}.solver-actions .primary{background:#1769e0;color:#fff;border-color:#1769e0}
-.solver-modes{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.solver-modes button{border:1px solid #d7dee7;background:#fff;border-radius:999px;padding:6px 9px;font-size:12px;cursor:pointer}.solver-modes button.active{background:#e8f0fe;border-color:#8ab4f8;color:#174ea6}
-.solver-status{margin-top:10px;font-size:12px;color:#64748b}.solver-result{min-height:280px}.solver-result h3{margin:0 0 8px}.solver-kind{display:inline-flex;align-items:center;gap:6px;font-size:12px;background:#eef4ff;color:#174ea6;padding:5px 8px;border-radius:999px;margin-bottom:12px}
-.solver-step{border-left:3px solid #4285f4;background:#f8fafc;margin:9px 0;padding:10px 12px;border-radius:0 10px 10px 0}.solver-step b{display:block;margin-bottom:4px}.solver-final{font-size:18px;font-weight:800;padding:13px;border-radius:12px;background:#edf7ed;border:1px solid #cde8ce;margin-top:12px}.solver-note{font-size:12px;color:#64748b;margin-top:10px}.solver-kbd{font:11px ui-monospace,monospace;background:#f1f5f9;border:1px solid #e2e8f0;padding:2px 5px;border-radius:4px}
-@media(max-width:820px){.solver-grid{grid-template-columns:1fr}.solver-card{max-height:95vh}.solver-body{padding:12px}}
-
-
-/* Pantalla completa: máxima superficie de escritura */
-:fullscreen #toolbar{position:fixed;top:8px;left:50%;transform:translateX(-50%);width:auto;max-width:96vw;opacity:.08;transition:opacity .2s;z-index:9000;border-radius:14px}
-:fullscreen #toolbar:hover{opacity:1}
-:fullscreen #notebook{width:98%;max-width:none;padding-top:12px}
-</style>
+        /* Fullscreen modifications */
+        :fullscreen #toolbar { position: fixed; top: 8px; left: 50%; transform: translateX(-50%); width: auto; max-width: 96vw; opacity: .08; transition: opacity .2s; z-index: 9000; border-radius: 14px; }
+        :fullscreen #toolbar:hover { opacity: 1; }
+        :fullscreen #notebook { width: 98%; max-width: none; padding-top: 12px; }
+    </style>
 </head>
 <body>
 
+    <!-- BARRA DE HERRAMIENTAS PRINCIPAL -->
     <div id="toolbar">
         <div class="tool-group" style="border-right:none;">
-            <button id="btnMoreTools" onclick="toggleEnhancedPanel()">🧰 Más herramientas</button>
-            <button id="btnCalc" onclick="toggleScientificCalc()">🧮 Calculadora</button>
-            <button id="btnDola" onclick="toggleDola()">✨ Dola IA</button>
-            <button id="btnPdf" onclick="togglePdfStudio()">📄 PDFs</button>
-            <button id="btnReadingMode" onclick="toggleReadingMode()">📖 Modo lectura</button>
+            <button onclick="toggleEnhancedPanel()">🧰 Más herramientas</button>
+            <button onclick="togglePdfStudio()">📄 PDFs</button>
         </div>
-
         <div class="tool-group">
             <button id="btnPen" class="active" onclick="setTool('pen')">✒️ Lapicera</button>
             <button id="btnPencil" onclick="setTool('pencil')">✏️ Lápiz</button>
             <button id="btnLine" onclick="setTool('line')">📏 Línea</button>
             <button id="btnEraser" onclick="setTool('eraser')">🧼 Goma</button>
         </div>
-        
         <div class="tool-group">
-            <label for="colorPicker">Color:</label>
-            <input type="color" id="colorPicker" value="#000000" onchange="updateColor()">
+            <input type="color" id="colorPicker" value="#000000" onchange="updateColor()" title="Color">
+            <input type="range" id="strokeSize" min="1" max="20" value="2" onchange="updateSize()" title="Grosor">
         </div>
-
-        <div class="tool-group">
-            <label for="strokeSize">Grosor:</label>
-            <input type="range" id="strokeSize" min="1" max="20" value="2" onchange="updateSize()">
-        </div>
-
         <div class="tool-group">
             <select id="bgType" onchange="changeBackgroundAll()">
                 <option value="rayada">Hoja Rayada</option>
@@ -385,78 +111,33 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
                 <option value="blanca">Hoja Blanca</option>
             </select>
         </div>
-
         <div class="tool-group">
             <button onclick="addPage()">➕ Nueva Hoja</button>
             <button onclick="clearCurrentPage()">🗑️ Limpiar Hoja</button>
-            <!-- BOTON PARA SUBIR CUALQUIER ARCHIVO -->
             <button onclick="document.getElementById('anyFileInput').click()">📎 Insertar</button>
             <input type="file" id="anyFileInput" style="display:none" multiple onchange="handleAnyFile(event)">
         </div>
-
         <div class="tool-group" style="border-right: none;">
-            <button onclick="toggleFullScreen()">⛶ Pantalla</button>
-            <button onclick="saveLocal()">💾 Guardar Local</button>
-            <!-- CRONOMETRO -->
-            <button id="studyTimer" onclick="resetTimer()" title="Clic para reiniciar" style="background:#0f172a; border-color:#334155; color:#38bdf8; font-weight:bold; font-family:monospace; font-size:15px; letter-spacing:1px; margin-left:10px;">⏱️ 00:00:00</button>
+            <button onclick="toggleFullScreen()">⛶ Pantalla Completa</button>
+            <button onclick="saveLocalSilent()">💾 Guardar Rápido</button>
         </div>
     </div>
 
-
-    
-
-    <div id="scientificCalc" aria-label="Calculadora científica">
-      <div class="calc-head"><strong>🧮 Calculadora científica PRO</strong><button class="calc-close" onclick="toggleScientificCalc()">✕</button></div>
-      <input id="calcDisplay" class="calc-display" inputmode="none" readonly autocomplete="off" placeholder="0" aria-label="Expresión">
-      <div id="calcResult" class="calc-result">Listo</div>
-      <div class="calc-memory"><button onclick="calcMemory('MC')">MC</button><button onclick="calcMemory('MR')">MR</button><button onclick="calcMemory('M+')">M+</button><button onclick="calcMemory('M-')">M−</button><button onclick="calcMemory('MS')">MS</button></div>
-      <div class="calc-grid">
-        <button class="danger" onclick="calcClear()">AC</button><button onclick="calcBackspace()">⌫</button><button onclick="calcInsert('(')">(</button><button onclick="calcInsert(')')">)</button><button class="op" onclick="calcInsert('÷')">÷</button>
-        <button class="fn" onclick="calcInsert('sin(')">sin</button><button class="fn" onclick="calcInsert('cos(')">cos</button><button class="fn" onclick="calcInsert('tan(')">tan</button><button class="fn" onclick="calcInsert('√(')">√</button><button class="op" onclick="calcInsert('×')">×</button>
-        <button class="fn" onclick="calcInsert('asin(')">asin</button><button class="fn" onclick="calcInsert('acos(')">acos</button><button class="fn" onclick="calcInsert('atan(')">atan</button><button class="fn" onclick="calcInsert('abs(')">abs</button><button class="op" onclick="calcInsert('−')">−</button>
-        <button class="fn" onclick="calcInsert('log(')">log</button><button class="fn" onclick="calcInsert('ln(')">ln</button><button class="fn" onclick="calcInsert('exp(')">eˣ</button><button class="fn" onclick="calcInsert('10^(')">10ˣ</button><button class="op" onclick="calcInsert('+')">+</button>
-        <button onclick="calcInsert('7')">7</button><button onclick="calcInsert('8')">8</button><button onclick="calcInsert('9')">9</button><button class="fn" onclick="calcInsert('%')">%</button><button class="eq" onclick="calcEvaluate()">=</button>
-        <button onclick="calcInsert('4')">4</button><button onclick="calcInsert('5')">5</button><button onclick="calcInsert('6')">6</button><button class="fn" onclick="calcInsert('!')">n!</button><button class="fn" onclick="calcInsert('^')">xʸ</button>
-        <button onclick="calcInsert('1')">1</button><button onclick="calcInsert('2')">2</button><button onclick="calcInsert('3')">3</button><button onclick="calcInsert('.')">.</button><button class="fn" onclick="calcInsert('π')">π</button>
-        <button onclick="calcInsert('0')" style="grid-column:span 2">0</button><button onclick="calcInsert('00')">00</button><button class="fn" onclick="calcInsert('Ans')">Ans</button><button class="fn" onclick="calcInsert('e')">e</button>
-      </div>
-      <div class="calc-angle"><select id="calcAngle" onchange="calcSetAngle(this.value)" style="padding:3px 6px;font-size:11px"><option value="DEG">DEG</option><option value="RAD">RAD</option><option value="GRAD">GRAD</option></select> · trigonometría · Enter = calcular</div>
-      <div id="calcHistory" class="calc-history"></div>
-    </div>
-
-    <div id="dolaWindow" aria-label="Dola IA">
-      <div class="dola-head" id="dolaDragHead"><strong>✨ Dola IA — asistente</strong><button class="dola-tool" onclick="captureDolaWindow()" title="Capturar ventana">📸</button><button class="dola-tool" onclick="minimizeDola()" title="Minimizar">—</button><button class="dola-tool" onclick="window.open('https://www.dola.com/chat/','_blank','noopener,noreferrer')">↗ Abrir</button><button class="dola-tool" onclick="toggleDola()">✕</button></div>
-      <iframe class="dola-frame" src="https://www.dola.com/chat/" title="Dola IA" allow="microphone;camera;clipboard-read;clipboard-write"></iframe>
-      <div class="dola-foot"><span>Ventana flotante · redimensionable · minimizable</span><a href="https://www.dola.com/chat/" target="_blank" rel="noopener noreferrer">dola.com/chat</a></div>
-      <div class="dola-resizer" title="Redimensionar"></div>
-    </div>
-
-    <div id="enhancedPanel" class="enhanced-panel" aria-label="Herramientas avanzadas">
-      <h3>🚀 Herramientas avanzadas</h3>
+    <!-- PANEL AVANZADO / RESPALDOS -->
+    <div id="enhancedPanel" class="enhanced-panel">
+      <h3>🚀 Utilidades y Respaldos</h3>
       <div class="ep-grid">
         <button onclick="undoAction()">↶ Deshacer</button>
         <button onclick="redoAction()">↷ Rehacer</button>
         <button onclick="duplicatePage()">📑 Duplicar hoja</button>
         <button onclick="deleteCurrentPage()">🗑️ Borrar hoja</button>
-        <button onclick="fitAllPages()">📐 Ajustar hojas</button>
-        <button onclick="focusCurrentPage()">🎯 Centrar hoja</button>
         <button onclick="addTextBox()">🔤 Texto</button>
-        <button onclick="toggleGridOverlay()">▦ Guía</button>
-        <button onclick="exportPNG()">🖼️ PNG</button>
-        <button onclick="saveLocalSilent()">💾 Guardar rápido</button>
-        <button onclick="descargarRespaldo()" style="background:#0f766e; border-color:#0d9488;">📥 Descargar Backup</button>
-        <button onclick="cargarRespaldo()" style="background:#b45309; border-color:#d97706;">📤 Restaurar Backup</button>
-      </div>
-      <div class="ep-row">
-        <select id="textSize"><option value="14">Texto 14</option><option value="18" selected>Texto 18</option><option value="24">Texto 24</option><option value="32">Texto 32</option></select>
-        <button onclick="applyTextColor()">🎨</button>
-      </div>
-      <div class="ep-row">
-        <button onclick="zoomNotebook(-1)">− Zoom</button>
-        <button onclick="zoomNotebook(0)">100%</button>
-        <button onclick="zoomNotebook(1)">+ Zoom</button>
+        <button onclick="toggleGridOverlay()">▦ Guía Visual</button>
+        <button onclick="descargarRespaldo()" style="background:#0f766e; border-color:#0d9488;">📥 Descargar Backup (JSON)</button>
+        <button onclick="cargarRespaldo()" style="background:#b45309; border-color:#d97706;">📤 Restaurar Backup (JSON)</button>
       </div>
     </div>
+
     <div id="pageIndicator">Hoja 0 / 0</div>
     <div id="toast"></div>
 
@@ -464,8 +145,37 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
         <!-- Las hojas se generan aquí dinámicamente -->
     </div>
 
+    <!-- GESTOR DE MATERIAS -->
+    <button id="nb-launcher" onclick="toggleNotebookManager()">📚 Mis cuadernos</button>
+    <div id="nb-overlay" onclick="toggleNotebookManager()"></div>
+    <aside id="nb-drawer">
+      <div class="nb-head"><div><h2>📚 Mis cuadernos</h2></div><button onclick="toggleNotebookManager()">✕</button></div>
+      <div class="nb-actions"><button onclick="createNotebook()">➕ Nueva materia</button><button onclick="renameCurrentNotebook()">✏️ Renombrar</button></div>
+      <div id="nb-list"></div>
+    </aside>
+
+    <!-- PDF STUDIO LIGERO -->
+    <div id="pdfStudio">
+      <div class="pdf-head" id="pdfDragHandle">
+          <strong id="pdfTitle">📄 Lector y Recortes PDF</strong>
+          <span style="flex:1"></span>
+          <button onclick="pdfZoom(-1)">−</button><span id="pdfZoomLabel" style="font-size:12px; margin:0 5px;">100%</span><button onclick="pdfZoom(1)">+</button>
+          <button onclick="togglePdfStudio()" style="margin-left:10px;">✕</button>
+      </div>
+      <div class="pdf-bar">
+        <input id="pdfFileInput" type="file" accept="application/pdf" style="width:180px;">
+        <button onclick="pdfPrevPage()">◀</button><span id="pdfPageLabel" style="font-size:11px; margin:0 5px;">Sin PDF</span><button onclick="pdfNextPage()">▶</button>
+        <button id="pdfCropBtn" onclick="togglePdfCrop()" style="margin-left:auto;">✂️ Recortar</button>
+        <button id="pdfPasteBtn" onclick="pastePdfCropToNotebook()">📋 Pegar en cuaderno</button>
+      </div>
+      <div id="pdfLibrary"><div style="padding:10px; font-size:12px; color:#94a3b8;">Cargá un PDF para visualizarlo aquí.</div></div>
+      <div id="pdfCropHistory"></div>
+      <div id="pdfView" class="pdf-view"><div style="padding:10px; font-size:12px; color:#94a3b8;">Abrí un PDF o cargá uno nuevo.</div></div>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL -->
     <script>
-        // ESTADO GLOBAL
+        // ESTADO GLOBAL CORE
         let currentTool = 'pen'; 
         let strokeColor = '#000000';
         let strokeSize = 2;
@@ -475,104 +185,68 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
         let activePageContainer = null; 
         let activePastedElement = null;
 
-        // Canvas temporal global para la herramienta de línea (acelerado por GPU)
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-
         const notebookEl = document.getElementById('notebook');
 
-        // INICIALIZACIÓN
-        window.onload = () => {
-            loadLocal();
-            if (pagesData.length === 0) {
-                addPage();
-            }
-            startStudyTimer();
-        };
-
-        // --- PANTALLA COMPLETA ---
+        // Utils
+        function toast(msg){
+            const el = document.getElementById('toast'); if(!el) return;
+            el.textContent = msg; el.classList.add('show');
+            clearTimeout(window.__toastTimer);
+            window.__toastTimer = setTimeout(() => el.classList.remove('show'), 1700);
+        }
+        function toggleEnhancedPanel(){ document.getElementById('enhancedPanel')?.classList.toggle('open'); }
         function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log(`Error al intentar iniciar pantalla completa: ${err.message}`);
-                });
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
-            }
+            if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(()=>{}); } 
+            else { if (document.exitFullscreen) document.exitFullscreen(); }
         }
 
-        // --- GESTIÓN DE HERRAMIENTAS ---
+        // INIT
+        window.onload = () => {
+            if (pagesData.length === 0) addPage();
+        };
+
+        // HERRAMIENTAS
         function setTool(tool) {
             currentTool = tool;
-            document.getElementById('btnPen').classList.remove('active');
-            document.getElementById('btnPencil').classList.remove('active');
-            document.getElementById('btnLine').classList.remove('active');
-            document.getElementById('btnEraser').classList.remove('active');
-            
+            ['btnPen','btnPencil','btnLine','btnEraser'].forEach(id => document.getElementById(id).classList.remove('active'));
             if(tool === 'pen') document.getElementById('btnPen').classList.add('active');
             if(tool === 'pencil') document.getElementById('btnPencil').classList.add('active');
             if(tool === 'line') document.getElementById('btnLine').classList.add('active');
             if(tool === 'eraser') document.getElementById('btnEraser').classList.add('active');
         }
+        function updateSize() { strokeSize = document.getElementById('strokeSize').value; }
+        function updateColor() { strokeColor = document.getElementById('colorPicker').value; }
 
-        function updateSize() {
-            strokeSize = document.getElementById('strokeSize').value;
-        }
-
-        function updateColor() {
-            strokeColor = document.getElementById('colorPicker').value;
-        }
-
-        // --- GESTIÓN DE HOJAS ---
+        // GESTIÓN DE HOJAS
         function addPage(savedImgData = null, savedBg = null, savedElements = []) {
+            snapshotState();
             const pageId = Date.now() + Math.random();
             const container = document.createElement('div');
             container.className = 'page-container';
             container.id = 'page-' + pageId;
 
-            const bgCanvas = document.createElement('canvas');
-            bgCanvas.className = 'bg-layer';
-            
-            const drawCanvas = document.createElement('canvas');
-            drawCanvas.className = 'draw-layer';
+            const bgCanvas = document.createElement('canvas'); bgCanvas.className = 'bg-layer';
+            const drawCanvas = document.createElement('canvas'); drawCanvas.className = 'draw-layer';
 
-            container.appendChild(bgCanvas);
-            container.appendChild(drawCanvas);
+            container.appendChild(bgCanvas); container.appendChild(drawCanvas);
             notebookEl.appendChild(container);
 
-            container.addEventListener('mousedown', () => { activePageContainer = container; });
-            container.addEventListener('touchstart', () => { activePageContainer = container; });
-
+            container.addEventListener('pointerdown', () => { activePageContainer = container; updatePageIndicator(); });
+            
             const pageObj = {
-                id: pageId,
-                container: container,
-                bgCanvas: bgCanvas,
-                drawCanvas: drawCanvas,
-                bgCtx: bgCanvas.getContext('2d'),
-                drawCtx: drawCanvas.getContext('2d'),
-                _savedImgData: savedImgData || null,
-                _dirtySave: !savedImgData, linePreview:null, linePreviewCtx:null
-            }
-
-            pagesData.push(pageObj);
-            activePageContainer = container; 
+                id: pageId, container, bgCanvas, drawCanvas, bgCtx: bgCanvas.getContext('2d'), drawCtx: drawCanvas.getContext('2d'),
+                _savedImgData: savedImgData || null, _dirtySave: !savedImgData, linePreview:null, linePreviewCtx:null
+            };
+            pagesData.push(pageObj); activePageContainer = container; 
 
             resizePageCanvases(pageObj);
-            
-            if (savedBg) {
-                document.getElementById('bgType').value = savedBg;
-            }
+            if (savedBg) document.getElementById('bgType').value = savedBg;
             drawBackground(pageObj);
 
             if (savedImgData) {
                 const img = new Image();
                 img.onload = () => {
-                    // FIX: Asegura que la imagen guardada se dibuje exactamente en los bordes físicos correctos
-                    // sin verse afectada por el scale del contexto que agrandaba las letras.
-                    pageObj.drawCtx.save();
-                    pageObj.drawCtx.setTransform(1, 0, 0, 1, 0, 0);
+                    pageObj.drawCtx.save(); pageObj.drawCtx.setTransform(1, 0, 0, 1, 0, 0);
                     pageObj.drawCtx.drawImage(img, 0, 0, pageObj.drawCanvas.width, pageObj.drawCanvas.height);
                     pageObj.drawCtx.restore();
                 };
@@ -581,152 +255,110 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
 
             if (savedElements && savedElements.length > 0) {
                 savedElements.forEach(elData => {
-                    createPastedImage(elData.src, container, elData.x, elData.y, elData.w, elData.h, elData.locked, elData.background);
+                    if(elData.type === 'text') addTextRestored(pageObj, elData);
+                    else createPastedImage(elData.src, container, elData.x, elData.y, elData.w, elData.h, elData.locked, elData.background);
                 });
             }
-
-            setupDrawingEvents(pageObj);
+            setupDrawingEvents(pageObj); updatePageIndicator();
         }
 
         function resizePageCanvases(page) {
-            const rect = page.container.getBoundingClientRect();
-            const scale = 2; 
-            
-            page.bgCanvas.width = Math.max(1, Math.round(rect.width * scale));
-            page.bgCanvas.height = Math.max(1, Math.round(rect.height * scale));
-            page.drawCanvas.width = Math.max(1, Math.round(rect.width * scale));
-            page.drawCanvas.height = Math.max(1, Math.round(rect.height * scale));
-            // Resetear la transformación antes de aplicar la escala evita acumulación
-            // de scale() tras cada resize/fullscreen y mantiene el trazo estable.
-            page.bgCtx.setTransform(scale, 0, 0, scale, 0, 0);
-            page.drawCtx.setTransform(scale, 0, 0, scale, 0, 0);
+            const rect = page.container.getBoundingClientRect(); const scale = 2; 
+            page.bgCanvas.width = Math.max(1, Math.round(rect.width * scale)); page.bgCanvas.height = Math.max(1, Math.round(rect.height * scale));
+            page.drawCanvas.width = Math.max(1, Math.round(rect.width * scale)); page.drawCanvas.height = Math.max(1, Math.round(rect.height * scale));
+            page.bgCtx.setTransform(scale, 0, 0, scale, 0, 0); page.drawCtx.setTransform(scale, 0, 0, scale, 0, 0);
         }
 
-        // --- DIBUJO DEL FONDO ---
-        function changeBackgroundAll() {
-            pagesData.forEach(page => drawBackground(page));
-        }
-
+        function changeBackgroundAll() { pagesData.forEach(page => drawBackground(page)); scheduleAutosave(); }
         function drawBackground(page) {
-            const ctx = page.bgCtx;
-            const w = page.bgCanvas.width / 2; 
-            const h = page.bgCanvas.height / 2;
+            const ctx = page.bgCtx; const w = page.bgCanvas.width / 2; const h = page.bgCanvas.height / 2;
             const type = document.getElementById('bgType').value;
-
-            ctx.clearRect(0, 0, w, h);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, w, h);
-
+            ctx.clearRect(0, 0, w, h); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
             if (type === 'rayada') {
-                ctx.strokeStyle = '#8bc34a';
-                ctx.lineWidth = 1;
-                for (let y = 50; y < h; y += 30) {
-                    ctx.beginPath();
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(w, y);
-                    ctx.stroke();
-                }
-                ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-                ctx.beginPath();
-                ctx.moveTo(60, 0);
-                ctx.lineTo(60, h);
-                ctx.stroke();
-            } 
-            else if (type === 'cuadriculada') {
-                ctx.strokeStyle = 'rgba(0, 150, 255, 0.3)'; 
-                ctx.lineWidth = 1.5; 
-                const step = 20;
-                
-                for (let x = 0; x < w; x += step) {
-                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-                }
-                for (let y = 0; y < h; y += step) {
-                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-                }
-                
-                ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)';
-                ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.moveTo(step*3, 0); ctx.lineTo(step*3, h); ctx.stroke();
+                ctx.strokeStyle = '#8bc34a'; ctx.lineWidth = 1;
+                for (let y = 50; y < h; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)'; ctx.beginPath(); ctx.moveTo(60, 0); ctx.lineTo(60, h); ctx.stroke();
+            } else if (type === 'cuadriculada') {
+                ctx.strokeStyle = 'rgba(0, 150, 255, 0.3)'; ctx.lineWidth = 1.5; const step = 20;
+                for (let x = 0; x < w; x += step) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+                for (let y = 0; y < h; y += step) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(step*3, 0); ctx.lineTo(step*3, h); ctx.stroke();
             }
         }
 
-        // --- LOGICA DE DIBUJO ---
+        function clearCurrentPage() {
+            snapshotState();
+            if(!activePageContainer) return;
+            const page = pagesData.find(p => p.container === activePageContainer);
+            if(page) {
+                page.drawCtx.clearRect(0, 0, page.drawCanvas.width, page.drawCanvas.height);
+                activePageContainer.querySelectorAll('.pasted-element').forEach(el => el.remove());
+                page._dirtySave = true; scheduleAutosave(); toast('Hoja limpiada');
+            }
+        }
+        function duplicatePage(){
+            const p=pagesData.find(x=>x.container===activePageContainer)||pagesData[pagesData.length-1]; if(!p)return;
+            const els=[...p.container.querySelectorAll('.pasted-element')].map(el=>({ src:el.querySelector('img')?.src, text:!el.querySelector('img')?el.innerHTML:'', x:el.style.left, y:el.style.top, w:el.style.width, h:el.style.height, locked:el.classList.contains('pdf-locked'), background:el.classList.contains('pdf-background') }));
+            addPage(p.drawCanvas.toDataURL(), document.getElementById('bgType').value, els); toast('Hoja duplicada');
+        }
+        function deleteCurrentPage(){
+            if(pagesData.length>1){
+                snapshotState();
+                const idx = pagesData.findIndex(p => p.container === activePageContainer);
+                if(idx > -1) { pagesData[idx].container.remove(); pagesData.splice(idx, 1); activePageContainer = pagesData[Math.max(0, idx-1)].container; updatePageIndicator(); scheduleAutosave(); toast('Hoja eliminada'); }
+            } else if (confirm('¿Eliminar esta hoja y empezar de nuevo en blanco?')) {
+                clearCurrentPage();
+            }
+        }
+        function updatePageIndicator(){
+            const ind=document.getElementById('pageIndicator'); if(!ind)return;
+            const idx=Math.max(0,pagesData.findIndex(p=>p.container===activePageContainer))+1;
+            ind.textContent=`Hoja ${pagesData.length?idx:0} / ${pagesData.length}`;
+        }
+
+        // DIBUJO
+        let drawRectCache = null;
         function setupDrawingEvents(page) {
             const canvas = page.drawCanvas;
-            canvas.addEventListener('pointerdown', (e) => {
-                try{canvas.setPointerCapture(e.pointerId)}catch(_){}
-                startDrawing(e, page);
-            }, {passive:false});
+            canvas.addEventListener('pointerdown', (e) => { try{canvas.setPointerCapture(e.pointerId)}catch(_){} startDrawing(e, page); }, {passive:false});
             canvas.addEventListener('pointermove', (e) => draw(e, page), {passive:false});
             window.addEventListener('pointerup', stopDrawing, {passive:true});
             window.addEventListener('pointercancel', stopDrawing, {passive:true});
         }
-
-        function getMousePos(canvas, e) {
-            const rect = drawRectCache || canvas.getBoundingClientRect();
-            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-        }
-
-        let drawRectCache = null;
-
+        function getMousePos(canvas, e) { const rect = drawRectCache || canvas.getBoundingClientRect(); return { x: e.clientX - rect.left, y: e.clientY - rect.top }; }
+        
         function ensureLinePreview(page){
             if(page.linePreview) return page.linePreview;
-            const c=document.createElement('canvas');
-            c.className='line-preview-layer';
-            c.width=page.drawCanvas.width; c.height=page.drawCanvas.height;
-            page.container.appendChild(c);
-            page.linePreview=c;
-            page.linePreviewCtx=c.getContext('2d');
-            return c;
+            const c=document.createElement('canvas'); c.className='line-preview-layer'; c.width=page.drawCanvas.width; c.height=page.drawCanvas.height;
+            page.container.appendChild(c); page.linePreview=c; page.linePreviewCtx=c.getContext('2d'); return c;
         }
-
-        function clearLinePreview(page){
-            if(page?.linePreviewCtx) page.linePreviewCtx.clearRect(0,0,page.linePreview.width,page.linePreview.height);
-            if(page?.linePreview) page.linePreview.style.display='none';
-        }
+        function clearLinePreview(page){ if(page?.linePreviewCtx) page.linePreviewCtx.clearRect(0,0,page.linePreview.width,page.linePreview.height); if(page?.linePreview) page.linePreview.style.display='none'; }
 
         function startDrawing(e, page) {
             if(e.target.tagName.toLowerCase() === 'canvas') deselectPastedElements();
-            activePageContainer=page.container;
-            isDrawing = true;
+            activePageContainer=page.container; isDrawing = true;
             drawRectCache = page.drawCanvas.getBoundingClientRect();
-            const pos = getMousePos(page.drawCanvas, e);
-            lastX = pos.x; lastY = pos.y;
-            const ctx = page.drawCtx;
-            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            const pos = getMousePos(page.drawCanvas, e); lastX = pos.x; lastY = pos.y;
+            const ctx = page.drawCtx; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
             if (currentTool === 'line') {
                 page.startX = pos.x; page.startY = pos.y;
-                const preview=ensureLinePreview(page);
-                preview.width=page.drawCanvas.width; preview.height=page.drawCanvas.height;
-                preview.style.display='block';
-                preview.style.left=page.drawCanvas.offsetLeft+'px'; preview.style.top=page.drawCanvas.offsetTop+'px';
-                preview.style.width=page.drawCanvas.clientWidth+'px'; preview.style.height=page.drawCanvas.clientHeight+'px';
-                page.linePreviewCtx.setTransform(2,0,0,2,0,0);
-                page.linePreviewCtx.clearRect(0,0,page.drawCanvas.clientWidth,page.drawCanvas.clientHeight);
+                const preview=ensureLinePreview(page); preview.width=page.drawCanvas.width; preview.height=page.drawCanvas.height; preview.style.display='block';
+                preview.style.left=page.drawCanvas.offsetLeft+'px'; preview.style.top=page.drawCanvas.offsetTop+'px'; preview.style.width=page.drawCanvas.clientWidth+'px'; preview.style.height=page.drawCanvas.clientHeight+'px';
+                page.linePreviewCtx.setTransform(2,0,0,2,0,0); page.linePreviewCtx.clearRect(0,0,page.drawCanvas.clientWidth,page.drawCanvas.clientHeight);
             } else draw(e, page);
         }
 
         function draw(e, page) {
             if (!isDrawing) return;
-            e.preventDefault();
-            const ctx = page.drawCtx;
-            const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-            const rect = drawRectCache;
+            e.preventDefault(); const ctx = page.drawCtx; const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; const rect = drawRectCache;
             if (currentTool === 'line') {
-                const ev = events[events.length - 1];
-                const pos = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
-                const pctx=page.linePreviewCtx;
-                pctx.setTransform(2,0,0,2,0,0);
-                pctx.clearRect(0,0,page.drawCanvas.clientWidth,page.drawCanvas.clientHeight);
-                pctx.globalCompositeOperation='source-over'; pctx.globalAlpha=1;
-                pctx.strokeStyle=strokeColor; pctx.lineWidth=Math.max(1,Number(strokeSize)||2);
-                pctx.lineCap='round'; pctx.lineJoin='round';
-                pctx.beginPath(); pctx.moveTo(page.startX,page.startY); pctx.lineTo(pos.x,pos.y); pctx.stroke();
-                return;
+                const ev = events[events.length - 1]; const pos = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+                const pctx=page.linePreviewCtx; pctx.setTransform(2,0,0,2,0,0); pctx.clearRect(0,0,page.drawCanvas.clientWidth,page.drawCanvas.clientHeight);
+                pctx.globalCompositeOperation='source-over'; pctx.globalAlpha=1; pctx.strokeStyle=strokeColor; pctx.lineWidth=Math.max(1,Number(strokeSize)||2); pctx.lineCap='round'; pctx.lineJoin='round';
+                pctx.beginPath(); pctx.moveTo(page.startX,page.startY); pctx.lineTo(pos.x,pos.y); pctx.stroke(); return;
             }
             for (let i=0;i<events.length;i++) {
-                const ev=events[i], pos={x:ev.clientX-rect.left,y:ev.clientY-rect.top};
-                let pressure=ev.pressure||1; if(currentTool==='eraser') pressure=1;
+                const ev=events[i], pos={x:ev.clientX-rect.left,y:ev.clientY-rect.top}; let pressure=ev.pressure||1; if(currentTool==='eraser') pressure=1;
                 ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(pos.x,pos.y);
                 if(currentTool==='eraser') {ctx.globalCompositeOperation='destination-out';ctx.lineWidth=strokeSize*5;ctx.strokeStyle='rgba(0,0,0,1)';ctx.globalAlpha=1;}
                 else {ctx.globalCompositeOperation='source-over';ctx.strokeStyle=strokeColor;ctx.globalAlpha=currentTool==='pencil'?0.4:1;ctx.lineWidth=strokeSize*pressure;}
@@ -740,8 +372,7 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
             if(page && currentTool==='line' && drawRectCache){
                 const ev=e||window.event;
                 if(ev && typeof ev.clientX==='number'){
-                    const pos={x:ev.clientX-drawRectCache.left,y:ev.clientY-drawRectCache.top};
-                    const ctx=page.drawCtx;
+                    const pos={x:ev.clientX-drawRectCache.left,y:ev.clientY-drawRectCache.top}; const ctx=page.drawCtx;
                     ctx.save(); ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;ctx.strokeStyle=strokeColor;ctx.lineWidth=Math.max(1,Number(strokeSize)||2);ctx.lineCap='round';ctx.lineJoin='round';
                     ctx.beginPath();ctx.moveTo(page.startX,page.startY);ctx.lineTo(pos.x,pos.y);ctx.stroke();ctx.restore();
                 }
@@ -749,1348 +380,283 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
             }
             isDrawing=false; drawRectCache=null;
             if(page) page._dirtySave=true;
-            if(typeof scheduleAutosave==='function') scheduleAutosave();
+            scheduleAutosave();
         }
 
-        function clearCurrentPage() {
-            if(!activePageContainer) return;
-            const page = pagesData.find(p => p.container === activePageContainer);
-            if(page) {
-                const w = page.drawCanvas.width;
-                const h = page.drawCanvas.height;
-                page.drawCtx.clearRect(0, 0, w, h);
-                const elements = activePageContainer.querySelectorAll('.pasted-element');
-                elements.forEach(el => el.remove());
-            }
-        }
-
-        // --- SISTEMA DE CORTAR Y PEGAR IMÁGENES ---
+        // PEGAR, RECORTAR Y MOVER IMÁGENES/ARCHIVOS
         window.addEventListener('paste', (e) => {
             const items = e.clipboardData.items;
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf('image') !== -1) {
-                    const blob = items[i].getAsFile();
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        let targetContainer = activePageContainer || pagesData[pagesData.length-1].container;
-                        createPastedImage(event.target.result, targetContainer, 50, 50, 250, null);
-                    };
+                    const blob = items[i].getAsFile(); const reader = new FileReader();
+                    reader.onload = (event) => { let target = activePageContainer || pagesData[pagesData.length-1].container; createPastedImage(event.target.result, target, 50, 50, 250, null); };
                     reader.readAsDataURL(blob);
                 }
             }
         });
 
         function markPastedElementChanged(wrapper){
-            const page=pagesData.find(p=>p.container===wrapper.parentElement);
-            if(page) page._dirtySave=true;
-            if(typeof scheduleAutosave==='function') scheduleAutosave();
+            const page=pagesData.find(p=>p.container===wrapper.parentElement); if(page) page._dirtySave=true; scheduleAutosave();
         }
 
         function createPastedImage(src, container, x, y, w, h, locked=false, background=false) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'pasted-element';
-            if(locked) wrapper.classList.add('pdf-locked');
-            if(background) wrapper.classList.add('pdf-background');
-            wrapper.style.left = typeof x === 'number' ? x + 'px' : x;
-            wrapper.style.top = typeof y === 'number' ? y + 'px' : y;
-            wrapper.style.width = typeof w === 'number' ? w + 'px' : w;
-            if(h) wrapper.style.height = typeof h === 'number' ? h + 'px' : h;
+            const wrapper = document.createElement('div'); wrapper.className = 'pasted-element';
+            if(locked) wrapper.classList.add('pdf-locked'); if(background) wrapper.classList.add('pdf-background');
+            wrapper.style.left = typeof x === 'number' ? x + 'px' : x; wrapper.style.top = typeof y === 'number' ? y + 'px' : y;
+            wrapper.style.width = typeof w === 'number' ? w + 'px' : w; if(h) wrapper.style.height = typeof h === 'number' ? h + 'px' : h;
 
-            const img = document.createElement('img');
-            img.src = src;
-            img.className = 'pasted-image';
-            img.onload = () => {
-                if(!h) {
-                    const ratio = img.naturalHeight / img.naturalWidth;
-                    wrapper.style.height = (parseInt(wrapper.style.width) * ratio) + 'px';
-                }
-            };
+            const img = document.createElement('img'); img.src = src; img.className = 'pasted-image';
+            img.onload = () => { if(!h) wrapper.style.height = (parseInt(wrapper.style.width) * (img.naturalHeight / img.naturalWidth)) + 'px'; };
 
-            const resizeHandle = document.createElement('div');
-            resizeHandle.className = 'resize-handle';
+            const resizeHandle = document.createElement('div'); resizeHandle.className = 'resize-handle';
             const tools=document.createElement('div'); tools.className='object-tools';
-            const lockBtn=document.createElement('button'); lockBtn.type='button'; lockBtn.textContent='🔒'; lockBtn.title='Bloquear / desbloquear';
-            const bgBtn=document.createElement('button'); bgBtn.type='button'; bgBtn.textContent='📌'; bgBtn.title='Usar como fondo';
-            const pdfLinkBtn=document.createElement('button'); pdfLinkBtn.type='button'; pdfLinkBtn.className='pdf-link-btn'; pdfLinkBtn.textContent='🔗'; pdfLinkBtn.title='Volver al PDF de origen'; tools.append(lockBtn,bgBtn,pdfLinkBtn);
+            const lockBtn=document.createElement('button'); lockBtn.textContent='🔒'; 
+            const bgBtn=document.createElement('button'); bgBtn.textContent='📌'; 
+            tools.append(lockBtn,bgBtn);
 
-            wrapper.appendChild(img);
-            wrapper.appendChild(resizeHandle);
-            wrapper.appendChild(tools);
-            container.appendChild(wrapper);
+            wrapper.appendChild(img); wrapper.appendChild(resizeHandle); wrapper.appendChild(tools); container.appendChild(wrapper);
 
-            deselectPastedElements();
-            wrapper.classList.add('active-element');
-            activePastedElement = wrapper;
+            deselectPastedElements(); wrapper.classList.add('active-element'); activePastedElement = wrapper;
 
-            lockBtn.addEventListener('pointerdown',e=>e.stopPropagation());
-            bgBtn.addEventListener('pointerdown',e=>e.stopPropagation());
-            lockBtn.addEventListener('click',e=>{e.stopPropagation();wrapper.classList.toggle('pdf-locked');lockBtn.textContent=wrapper.classList.contains('pdf-locked')?'🔓':'🔒';markPastedElementChanged(wrapper);toast(wrapper.classList.contains('pdf-locked')?'🔒 PDF bloqueado':'🔓 PDF desbloqueado')});
-            bgBtn.addEventListener('click',e=>{e.stopPropagation();wrapper.classList.toggle('pdf-background');wrapper.classList.add('pdf-locked');lockBtn.textContent='🔓';markPastedElementChanged(wrapper);toast(wrapper.classList.contains('pdf-background')?'📌 PDF convertido en fondo':'📄 PDF vuelto a objeto')});
-            pdfLinkBtn.addEventListener('click',e=>{e.stopPropagation(); if(wrapper.dataset.pdfId){window.openPdfSource?.(wrapper.dataset.pdfId, Number(wrapper.dataset.pdfPage||1));} else toast('🔗 Este objeto no tiene una página PDF de origen');});
-
-            let isDragging = false;
-            let dragPointerId = null;
-            let grabOffsetX = 0, grabOffsetY = 0;
-            let pendingLeft = 0, pendingTop = 0;
-            let dragRaf = 0;
-
-            // Arrastre basado en coordenadas reales de pantalla.
-            // Así el objeto conserva exactamente el punto donde el usuario lo agarró
-            // y no depende de offsetLeft/offsetTop ni de transformaciones previas.
-            const applyDrag = () => {
-                dragRaf = 0;
-                if(!isDragging) return;
-                wrapper.style.left = pendingLeft + 'px';
-                wrapper.style.top = pendingTop + 'px';
-            };
-
-            const finishDrag = (e) => {
-                if(!isDragging || (dragPointerId !== null && e && e.pointerId !== dragPointerId)) return;
-                isDragging = false;
-                const pointerId = dragPointerId;
-                dragPointerId = null;
-                if(dragRaf){ cancelAnimationFrame(dragRaf); dragRaf = 0; }
-                // El movimiento ya quedó aplicado directamente en left/top.
-                wrapper.style.transform = 'none';
-                wrapper.style.left = pendingLeft + 'px';
-                wrapper.style.top = pendingTop + 'px';
-                markPastedElementChanged(wrapper);
-                if(pointerId !== null) wrapper.releasePointerCapture?.(pointerId);
-            };
-
-            wrapper.addEventListener('dblclick', (e) => {
-                if(wrapper.classList.contains('pdf-locked')){
-                    e.preventDefault(); e.stopPropagation();
-                    wrapper.classList.remove('pdf-locked');
-                    if(wrapper.classList.contains('pdf-background')) wrapper.classList.remove('pdf-background');
-                    lockBtn.textContent='🔒';
-                    markPastedElementChanged(wrapper);
-                    toast('🔓 PDF desbloqueado');
-                }
-            });
-
+            lockBtn.onclick = e => { e.stopPropagation(); wrapper.classList.toggle('pdf-locked'); lockBtn.textContent=wrapper.classList.contains('pdf-locked')?'🔓':'🔒'; markPastedElementChanged(wrapper); };
+            bgBtn.onclick = e => { e.stopPropagation(); wrapper.classList.toggle('pdf-background'); wrapper.classList.add('pdf-locked'); lockBtn.textContent='🔓'; markPastedElementChanged(wrapper); };
+            
+            // Drag logic
+            let isDragging = false, dragPointerId = null, grabOffsetX = 0, grabOffsetY = 0, pendingLeft = 0, pendingTop = 0, dragRaf = 0;
+            const applyDrag = () => { if(isDragging) { wrapper.style.left = pendingLeft + 'px'; wrapper.style.top = pendingTop + 'px'; } dragRaf=0; };
+            const finishDrag = (e) => { if(!isDragging || (dragPointerId !== null && e && e.pointerId !== dragPointerId)) return; isDragging = false; dragPointerId = null; if(dragRaf) cancelAnimationFrame(dragRaf); wrapper.style.transform = 'none'; wrapper.style.left = pendingLeft + 'px'; wrapper.style.top = pendingTop + 'px'; markPastedElementChanged(wrapper); };
+            
             wrapper.addEventListener('pointerdown', (e) => {
-                if(e.target === resizeHandle) return;
-                if(wrapper.classList.contains('pdf-locked')) return;
-                e.preventDefault();
-                e.stopPropagation();
-
-                deselectPastedElements();
-                wrapper.classList.add('active-element');
-                activePastedElement = wrapper;
-
-                const parentRect = container.getBoundingClientRect();
-                const rect = wrapper.getBoundingClientRect();
-
-                if(typeof snapshotState==='function') snapshotState();
-                isDragging = true;
-                dragPointerId = e.pointerId;
-                // Distancia exacta entre el puntero y la esquina del elemento.
-                const zoom = notebookZoom || 1;
-                grabOffsetX = (e.clientX - rect.left) / zoom;
-                grabOffsetY = (e.clientY - rect.top) / zoom;
-
-                // Posición local real dentro de la hoja.
-                const zoom0 = notebookZoom || 1;
-                pendingLeft = (rect.left - parentRect.left) / zoom0;
-                pendingTop = (rect.top - parentRect.top) / zoom0;
-
-                // Eliminamos cualquier transform residual antes de comenzar.
-                wrapper.style.transform = 'none';
-                wrapper.setPointerCapture?.(e.pointerId);
+                if(e.target === resizeHandle || wrapper.classList.contains('pdf-locked')) return; e.preventDefault(); e.stopPropagation();
+                deselectPastedElements(); wrapper.classList.add('active-element'); activePastedElement = wrapper;
+                snapshotState();
+                isDragging = true; dragPointerId = e.pointerId;
+                const parentRect = container.getBoundingClientRect(), rect = wrapper.getBoundingClientRect();
+                grabOffsetX = e.clientX - rect.left; grabOffsetY = e.clientY - rect.top;
+                pendingLeft = rect.left - parentRect.left; pendingTop = rect.top - parentRect.top;
+                wrapper.style.transform = 'none'; wrapper.setPointerCapture?.(e.pointerId);
             });
-
             wrapper.addEventListener('pointermove', (e) => {
-                if(!isDragging || e.pointerId !== dragPointerId) return;
-                e.preventDefault();
-
+                if(!isDragging || e.pointerId !== dragPointerId) return; e.preventDefault();
                 const parentRect = container.getBoundingClientRect();
-                const zoom = notebookZoom || 1;
-                pendingLeft = (e.clientX - parentRect.left) / zoom - grabOffsetX;
-                pendingTop = (e.clientY - parentRect.top) / zoom - grabOffsetY;
-                // Ajuste inteligente a bordes y centro de la hoja.
-                const snap=12, maxL=Math.max(0,container.clientWidth-wrapper.offsetWidth), maxT=Math.max(0,container.clientHeight-wrapper.offsetHeight);
-                if(Math.abs(pendingLeft)<snap) pendingLeft=0; else if(Math.abs(pendingLeft-maxL)<snap) pendingLeft=maxL;
-                if(Math.abs(pendingTop)<snap) pendingTop=0; else if(Math.abs(pendingTop-maxT)<snap) pendingTop=maxT;
-                const cx=(container.clientWidth-wrapper.offsetWidth)/2, cy=(container.clientHeight-wrapper.offsetHeight)/2;
-                if(Math.abs(pendingLeft-cx)<snap) pendingLeft=cx; if(Math.abs(pendingTop-cy)<snap) pendingTop=cy;
-                pendingLeft=Math.max(0,Math.min(maxL,pendingLeft)); pendingTop=Math.max(0,Math.min(maxT,pendingTop));
+                pendingLeft = (e.clientX - parentRect.left) - grabOffsetX; pendingTop = (e.clientY - parentRect.top) - grabOffsetY;
                 if(!dragRaf) dragRaf = requestAnimationFrame(applyDrag);
             }, {passive:false});
+            wrapper.addEventListener('pointerup', finishDrag); wrapper.addEventListener('pointercancel', finishDrag);
 
-            wrapper.addEventListener('pointerup', finishDrag);
-            wrapper.addEventListener('pointercancel', finishDrag);
-
-            let isResizing = false;
-            let startResX, startResY, startW, startH;
-
-            resizeHandle.addEventListener('pointerdown', (e) => {
-                e.stopPropagation();
-                isResizing = true;
-                startResX = e.clientX;
-                startResY = e.clientY;
-                startW = wrapper.offsetWidth;
-                startH = wrapper.offsetHeight;
-            });
-
-            window.addEventListener('pointermove', (e) => {
-                if(!isResizing) return;
-                const zoom = notebookZoom || 1;
-                const dx = (e.clientX - startResX) / zoom;
-                const dy = (e.clientY - startResY) / zoom;
-                
-                const newWidth = startW + dx;
-                const ratio = startH / startW;
-                
-                if(newWidth > 50) { 
-                    wrapper.style.width = newWidth + 'px';
-                    wrapper.style.height = (newWidth * ratio) + 'px';
-                    markPastedElementChanged(wrapper);
-                }
-            });
-
+            // Resize logic
+            let isResizing = false, startResX, startResY, startW, startH;
+            resizeHandle.addEventListener('pointerdown', (e) => { e.stopPropagation(); isResizing = true; startResX = e.clientX; startResY = e.clientY; startW = wrapper.offsetWidth; startH = wrapper.offsetHeight; });
+            window.addEventListener('pointermove', (e) => { if(!isResizing) return; const newWidth = startW + (e.clientX - startResX); if(newWidth > 50) { wrapper.style.width = newWidth + 'px'; wrapper.style.height = (newWidth * (startH / startW)) + 'px'; markPastedElementChanged(wrapper); } });
             window.addEventListener('pointerup', () => { isResizing = false; });
         }
 
-        function deselectPastedElements() {
-            document.querySelectorAll('.pasted-element').forEach(el => el.classList.remove('active-element'));
-            activePastedElement = null;
+        function deselectPastedElements() { document.querySelectorAll('.pasted-element').forEach(el => el.classList.remove('active-element')); activePastedElement = null; }
+        window.addEventListener('keydown', (e) => { if((e.key === 'Delete' || e.key === 'Backspace') && activePastedElement && !e.target?.isContentEditable && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName||'')) { activePastedElement.remove(); activePastedElement = null; scheduleAutosave(); } });
+
+        // TEXTO
+        function addTextBox(){
+            const p=pagesData.find(x=>x.container===activePageContainer)||pagesData[pagesData.length-1]; if(!p)return;
+            const el=document.createElement('div'); el.className='pasted-element'; el.contentEditable='true'; el.textContent='Escribe aquí…';
+            el.style.cssText='position:absolute;left:70px;top:70px;min-width:100px;max-width:70%;padding:4px 7px;background:rgba(255,255,255,.85);border:1px dashed #0078d7;color:#111;z-index:4;font-size:18px;line-height:1.25;cursor:text;';
+            p.container.appendChild(el); el.focus();
+            el.addEventListener('blur',()=>{el.style.borderColor='transparent';markPastedElementChanged(el);}); el.addEventListener('input',()=>markPastedElementChanged(el));
+            el.addEventListener('pointerdown',e=>{ activePastedElement=el; el.classList.add('active-element'); });
+            snapshotState(); toast('Cuadro de texto creado');
+        }
+        function addTextRestored(page, data){
+            const el=document.createElement('div'); el.className='pasted-element'; 
+            if(data.text && data.text.includes('href=')) el.innerHTML = data.text; // Adjunto
+            else { el.contentEditable='true'; el.textContent=data.text||'Escribe aquí…'; }
+            el.style.cssText=data.css||'position:absolute;left:70px;top:70px;min-width:100px;padding:4px 7px;background:rgba(255,255,255,.85);border:1px dashed transparent;color:#111;z-index:4;font-size:18px;cursor:text;';
+            if(data.x)el.style.left=data.x; if(data.y)el.style.top=data.y; if(data.w)el.style.width=data.w; if(data.h)el.style.height=data.h;
+            page.container.appendChild(el);
+            el.addEventListener('pointerdown',e=>{ if(e.target.tagName==='A')return; activePastedElement=el; el.classList.add('active-element'); });
+            el.addEventListener('blur',()=>el.style.borderColor='transparent');
         }
 
-        window.addEventListener('keydown', (e) => {
-            if((e.key === 'Delete' || e.key === 'Backspace') && activePastedElement && !(e.target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName||''))) {
-                activePastedElement.remove();
-                activePastedElement = null;
-            }
-        });
-
-        // --- CALCULADORA CIENTÍFICA ---
-        let calcMemoryValue=0, calcAns=0, calcAngleMode='DEG';
-        const calcHistory=[];
-        function toggleScientificCalc(){const el=document.getElementById('scientificCalc');if(!el)return;el.classList.toggle('open');}
-        function calcSetAngle(v){calcAngleMode=v||'DEG';}
-        function calcInsert(v){const d=document.getElementById('calcDisplay');if(!d)return;const a=d.selectionStart??d.value.length,b=d.selectionEnd??d.value.length;d.value=d.value.slice(0,a)+v+d.value.slice(b);const p=a+v.length;d.setSelectionRange(p,p);d.blur()}
-        function calcClear(){const d=document.getElementById('calcDisplay');if(d)d.value='';const r=document.getElementById('calcResult');if(r)r.textContent='Listo'}
-        function calcBackspace(){const d=document.getElementById('calcDisplay');if(!d)return;let a=d.selectionStart??d.value.length,b=d.selectionEnd??d.value.length;if(a!==b){d.value=d.value.slice(0,a)+d.value.slice(b);d.setSelectionRange(a,a)}else if(a>0){d.value=d.value.slice(0,a-1)+d.value.slice(a);d.setSelectionRange(a-1,a-1)}}
-        function calcFactorial(n){if(!Number.isFinite(n)||n<0||n>170||Math.floor(n)!==n)throw Error('Factorial: n debe ser entero entre 0 y 170');let r=1;for(let i=2;i<=n;i++)r*=i;return r}
-        class MathParser{
-          constructor(text){this.s=text.replaceAll('×','*').replaceAll('÷','/').replaceAll('−','-').replaceAll('π','pi');this.i=0;}
-          peek(){return this.s[this.i]||''} skip(){while(/\s/.test(this.peek()))this.i++}
-          eat(c){this.skip();if(this.s.startsWith(c,this.i)){this.i+=c.length;return true}return false}
-          parse(){const v=this.expr();this.skip();if(this.i<this.s.length)throw Error('Símbolo inesperado: '+this.s.slice(this.i));if(!Number.isFinite(v))throw Error('Resultado no definido');return v}
-          expr(){let v=this.term();for(;;){if(this.eat('+'))v+=this.term();else if(this.eat('-'))v-=this.term();else return v}}
-          term(){let v=this.power();for(;;){if(this.eat('*'))v*=this.power();else if(this.eat('/')){const d=this.power();if(d===0)throw Error('División por cero');v/=d}else if(this.implicit()){v*=this.power()}else return v}}
-          implicit(){this.skip();return /[0-9A-Za-z.(]/.test(this.peek())}
-          power(){let v=this.unary();if(this.eat('^'))v=Math.pow(v,this.power());return v}
-          unary(){this.skip();if(this.eat('+'))return this.unary();if(this.eat('-'))return -this.unary();return this.postfix()}
-          postfix(){let v=this.primary();while(this.eat('!'))v=calcFactorial(v);if(this.eat('%'))v/=100;return v}
-          primary(){this.skip();const c=this.peek();if(c==='('){this.i++;const v=this.expr();if(!this.eat(')'))throw Error('Falta )');return v}if(/[0-9.]/.test(c))return this.number();if(/[A-Za-z_]/.test(c))return this.name();throw Error('Expresión incompleta')}
-          number(){this.skip();const m=this.s.slice(this.i).match(/^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/);if(!m)throw Error('Número inválido');this.i+=m[0].length;const n=Number(m[0]);if(!Number.isFinite(n))throw Error('Número fuera de rango');return n}
-          name(){const m=this.s.slice(this.i).match(/^[A-Za-z_][A-Za-z_0-9]*/);if(!m)throw Error('Nombre inválido');this.i+=m[0].length;const n=m[0];if(n==='pi')return Math.PI;if(n==='e')return Math.E;if(n==='Ans')return calcAns;this.skip();if(!this.eat('('))throw Error('Se esperaba ( después de '+n);const a=this.expr();if(!this.eat(')'))throw Error('Falta )');return calcFunction(n,a)}
-        }
-        function calcToRad(x){return calcAngleMode==='DEG'?x*Math.PI/180:calcAngleMode==='GRAD'?x*Math.PI/200:x}
-        function calcFromRad(x){return calcAngleMode==='DEG'?x*180/Math.PI:calcAngleMode==='GRAD'?x*200/Math.PI:x}
-        function calcFunction(n,x){switch(n){case'sin':return Math.sin(calcToRad(x));case'cos':return Math.cos(calcToRad(x));case'tan':if(Math.abs(Math.cos(calcToRad(x)))<1e-12)throw Error('tan indefinida');return Math.tan(calcToRad(x));case'asin':if(x<-1||x>1)throw Error('asin requiere -1 ≤ x ≤ 1');return calcFromRad(Math.asin(x));case'acos':if(x<-1||x>1)throw Error('acos requiere -1 ≤ x ≤ 1');return calcFromRad(Math.acos(x));case'atan':return calcFromRad(Math.atan(x));case'sqrt':if(x<0)throw Error('√ de número negativo no es real');return Math.sqrt(x);case'abs':return Math.abs(x);case'log':if(x<=0)throw Error('log requiere x > 0');return Math.log10(x);case'ln':if(x<=0)throw Error('ln requiere x > 0');return Math.log(x);case'exp':return Math.exp(x);case'sq':return x*x;default:throw Error('Función desconocida: '+n)}}
-        function calcEvaluate(){const d=document.getElementById('calcDisplay'),out=document.getElementById('calcResult');if(!d||!d.value.trim())return;const raw=d.value.trim();try{const value=new MathParser(raw).parse();calcAns=value;const shown=Number(value.toPrecision(14));out.textContent='= '+shown;calcHistory.unshift({q:raw,a:shown});if(calcHistory.length>10)calcHistory.pop();const h=document.getElementById('calcHistory');if(h)h.innerHTML=calcHistory.map(z=>`<div title="Usar resultado" onclick="calcUseHistory(${JSON.stringify(String(z.a))})">${escapeHtmlCalc(z.q)} = ${z.a}</div>`).join('')}catch(err){out.textContent='⚠ '+(err.message||'Expresión no válida')}}
-        function escapeHtmlCalc(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-        function calcUseHistory(v){const d=document.getElementById('calcDisplay');if(d){d.value=v;d.blur()}}
-        function calcMemory(op){let v=calcAns;try{const d=document.getElementById('calcDisplay');if(d?.value.trim())v=new MathParser(d.value).parse()}catch(_){}switch(op){case'MC':calcMemoryValue=0;break;case'MR':calcInsert(String(calcMemoryValue));break;case'M+':calcMemoryValue+=v;break;case'M-':calcMemoryValue-=v;break;case'MS':calcMemoryValue=v;break}document.getElementById('calcResult').textContent='M = '+Number(calcMemoryValue.toPrecision(12))}
-        document.addEventListener('keydown',e=>{const calc=document.getElementById('scientificCalc');if(!calc?.classList.contains('open'))return;if(e.key==='Enter'){e.preventDefault();calcEvaluate()}else if(e.key==='Escape'){calc.classList.remove('open')}});
-
-        function toggleDola(){
-            const win=document.getElementById('dolaWindow');
-            if(!win)return;
-            win.classList.toggle('open');
-            if(win.classList.contains('open')){
-                win.classList.remove('dola-minimized');
-                bringDolaToFront();
-            }
-        }
-        function minimizeDola(){
-            const win=document.getElementById('dolaWindow');
-            if(!win)return;
-            win.classList.toggle('dola-minimized');
-            bringDolaToFront();
-        }
-        function bringDolaToFront(){
-            const win=document.getElementById('dolaWindow');
-            if(win) win.style.zIndex=++window.__topZ;
-        }
-        window.__topZ=6200;
-        (function(){
-            const win=document.getElementById('dolaWindow'),head=document.getElementById('dolaDragHead'),resizer=win?.querySelector('.dola-resizer');
-            if(!win||!head)return;
-            let drag=false,dx=0,dy=0,resize=false,startX=0,startY=0,startW=0,startH=0;
-            head.addEventListener('pointerdown',e=>{
-                if(e.target.closest('button'))return;
-                bringDolaToFront(); drag=true;
-                const r=win.getBoundingClientRect(); dx=e.clientX-r.left; dy=e.clientY-r.top;
-                win.style.transform='none'; win.style.left=r.left+'px'; win.style.top=r.top+'px';
-                head.setPointerCapture?.(e.pointerId);
-            });
-            head.addEventListener('pointermove',e=>{
-                if(!drag)return; e.preventDefault();
-                win.style.left=Math.max(4,Math.min(innerWidth-win.offsetWidth-4,e.clientX-dx))+'px';
-                win.style.top=Math.max(4,Math.min(innerHeight-win.offsetHeight-4,e.clientY-dy))+'px';
-            });
-            head.addEventListener('pointerup',()=>drag=false); head.addEventListener('pointercancel',()=>drag=false);
-            resizer?.addEventListener('pointerdown',e=>{
-                e.preventDefault(); e.stopPropagation(); bringDolaToFront(); resize=true;
-                const r=win.getBoundingClientRect(); startX=e.clientX; startY=e.clientY; startW=r.width; startH=r.height;
-                resizer.setPointerCapture?.(e.pointerId);
-            });
-            resizer?.addEventListener('pointermove',e=>{
-                if(!resize)return; e.preventDefault();
-                const w=Math.max(320,Math.min(innerWidth-12,startW+e.clientX-startX));
-                const h=Math.max(240,Math.min(innerHeight-12,startH+e.clientY-startY));
-                win.style.width=w+'px'; win.style.height=h+'px';
-            });
-            resizer?.addEventListener('pointerup',()=>resize=false); resizer?.addEventListener('pointercancel',()=>resize=false);
-            win.addEventListener('pointerdown',bringDolaToFront);
-        })();
-
-        async function captureDolaWindow(){
-            const win=document.getElementById('dolaWindow');
-            if(!win?.classList.contains('open'))return;
-            try{
-                // html2canvas no puede leer el contenido interno de un iframe de otro dominio
-                // por la política de seguridad del navegador. Capturamos la ventana y su UI.
-                if(typeof html2canvas!=='undefined'){
-                    const canvas=await html2canvas(win,{backgroundColor:'#0b1020',scale:2,useCORS:true,ignoreElements:el=>el===document.querySelector('.dola-resizer')});
-                    const a=document.createElement('a'); a.download='dola-ventana.png'; a.href=canvas.toDataURL('image/png'); a.click();
-                    toast('📸 Captura guardada');
-                }else toast('📸 Activa conexión para usar captura');
-            }catch(err){ toast('No se pudo capturar la ventana'); }
-        }
-
-        // --- GUARDADO LOCAL ---
-        function saveLocal() {
-            deselectPastedElements(); 
-            const bgType = document.getElementById('bgType').value;
-            const data = pagesData.map(page => {
-                const pastedElements = [];
-                const els = page.container.querySelectorAll('.pasted-element');
-                els.forEach(el => {
-                    pastedElements.push({
-                        src: el.querySelector('img') ? el.querySelector('img').src : null,
-                        html: !el.querySelector('img') ? el.innerHTML : null, // Guardar adjuntos
-                        x: el.style.left,
-                        y: el.style.top,
-                        w: el.style.width,
-                        h: el.style.height
-                    });
-                });
-
-                return {
-                    imgData: page.drawCanvas.toDataURL(),
-                    elements: pastedElements
-                };
-            });
-            
-            localStorage.setItem('cuadernoAvanzado_v1', JSON.stringify({
-                bg: bgType,
-                pages: data
-            }));
-            
-            alert('¡Cuaderno guardado localmente!');
-        }
-
-        function loadLocal() {
-            const saved = localStorage.getItem('cuadernoAvanzado_v1');
-            if (saved) {
-                const data = JSON.parse(saved);
-                data.pages.forEach(p => {
-                    addPage(p.imgData, data.bg, p.elements);
-                });
-            }
-        }
-
-        // Redimensionar hojas al cambiar ventana o pantalla completa (FIX LEATRAS GIGANTES)
-        window.addEventListener('resize', () => {
-            const temp = pagesData.map(p => {
-                return { src: p.drawCanvas.toDataURL(), w: p.drawCanvas.width, h: p.drawCanvas.height };
-            });
-            
-            pagesData.forEach((page, i) => {
-                resizePageCanvases(page);
-                drawBackground(page);
-                
-                const img = new Image();
-                img.onload = () => {
-                    page.drawCtx.save();
-                    page.drawCtx.setTransform(1, 0, 0, 1, 0, 0); // Resetea escala interna
-                    page.drawCtx.drawImage(img, 0, 0, page.drawCanvas.width, page.drawCanvas.height); // Mapeo exacto
-                    page.drawCtx.restore();
-                };
-                img.src = temp[i].src;
-            });
-        });
-
-/* ================= ENHANCEMENT ENGINE ================= */
-let undoStack = [], redoStack = [], historyBusy = false;
-let notebookZoom = 1, gridOverlayOn = false;
-const originalAddPage = addPage;
-const originalClearCurrentPage = clearCurrentPage;
-
-function toast(msg){
-  const el=document.getElementById('toast'); if(!el)return;
-  el.textContent=msg; el.classList.add('show');
-  clearTimeout(window.__toastTimer);
-  window.__toastTimer=setTimeout(()=>el.classList.remove('show'),1700);
-}
-function toggleEnhancedPanel(){
-  document.getElementById('enhancedPanel')?.classList.toggle('open');
-}
-function snapshotState(){
-  if(historyBusy) return;
-  try{
-    const state=pagesData.map(p=>({
-      img:p.drawCanvas.toDataURL(),
-      elements:[...p.container.querySelectorAll('.pasted-element')].map(el=>({
-        src:el.querySelector('img')?.src,
-        text:!el.querySelector('img')?el.innerHTML:'',
-        x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
-      }))
-    }));
-    undoStack.push(JSON.stringify(state));
-    if(undoStack.length>30) undoStack.shift();
-    redoStack=[];
-  }catch(e){}
-}
-function restoreState(serialized){
-  if(!serialized)return;
-  historyBusy=true;
-  try{
-    const state=JSON.parse(serialized);
-    notebookEl.innerHTML='';
-    pagesData=[];
-    state.forEach(s=>originalAddPage(s.img,null,s.elements||[]));
-    updatePageIndicator();
-  }finally{historyBusy=false}
-}
-function undoAction(){
-  if(!undoStack.length){toast('No hay acciones para deshacer');return}
-  const current=JSON.stringify(pagesData.map(p=>({
-    img:p.drawCanvas.toDataURL(),
-    elements:[...p.container.querySelectorAll('.pasted-element')].map(el=>({
-      src:el.querySelector('img')?.src,text:!el.querySelector('img')?el.innerHTML:'',x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
-    }))
-  })));
-  redoStack.push(current);
-  restoreState(undoStack.pop());
-  toast('Deshecho');
-}
-function redoAction(){
-  if(!redoStack.length){toast('No hay acciones para rehacer');return}
-  const current=JSON.stringify(pagesData.map(p=>({
-    img:p.drawCanvas.toDataURL(),
-    elements:[...p.container.querySelectorAll('.pasted-element')].map(el=>({
-      src:el.querySelector('img')?.src,text:!el.querySelector('img')?el.innerHTML:'',x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
-    }))
-  })));
-  undoStack.push(current);
-  restoreState(redoStack.pop());
-  toast('Rehecho');
-}
-function updatePageIndicator(){
-  const ind=document.getElementById('pageIndicator'); if(!ind)return;
-  const idx=Math.max(0,pagesData.findIndex(p=>p.container===activePageContainer))+1;
-  ind.textContent=`Hoja ${pagesData.length?idx:0} / ${pagesData.length}`;
-}
-function focusCurrentPage(){
-  if(!activePageContainer)return;
-  document.querySelectorAll('.page-focus').forEach(x=>x.classList.remove('page-focus'));
-  activePageContainer.classList.add('page-focus');
-  activePageContainer.scrollIntoView({behavior:'smooth',block:'center'});
-  setTimeout(()=>activePageContainer?.classList.remove('page-focus'),900);
-}
-function fitAllPages(){
-  notebookZoom=1;
-  notebookEl.style.transform='';
-  notebookEl.style.transformOrigin='top center';
-  toast('Vista ajustada');
-}
-function zoomNotebook(dir){
-  if(dir===0) notebookZoom=1;
-  else notebookZoom=Math.min(1.35,Math.max(.65,notebookZoom+(dir*.1)));
-  notebookEl.style.transform=`scale(${notebookZoom})`;
-  notebookEl.style.transformOrigin='top center';
-  toast(`Zoom ${Math.round(notebookZoom*100)}%`);
-}
-function duplicatePage(){
-  const p=pagesData.find(x=>x.container===activePageContainer)||pagesData[pagesData.length-1];
-  if(!p)return;
-  const els=[...p.container.querySelectorAll('.pasted-element')].map(el=>({
-    src:el.querySelector('img')?.src,text:!el.querySelector('img')?el.innerHTML:'',x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
-  }));
-  originalAddPage(p.drawCanvas.toDataURL(),document.getElementById('bgType').value,els);
-  updatePageIndicator(); toast('Hoja duplicada');
-}
-function deleteCurrentPage(){
-  if(pagesData.length<=1){toast('Debe quedar al menos una hoja');return}
-  const idx=pagesData.findIndex(p=>p.container===activePageContainer);
-  if(idx<0)return;
-  pagesData[idx].container.remove();
-  pagesData.splice(idx,1);
-  activePageContainer=pagesData[Math.max(0,idx-1)].container;
-  updatePageIndicator(); snapshotState(); toast('Hoja eliminada');
-}
-function addTextBox(){
-  const p=pagesData.find(x=>x.container===activePageContainer)||pagesData[pagesData.length-1];
-  if(!p)return;
-  const el=document.createElement('div');
-  el.className='pasted-element';
-  el.contentEditable='true';
-  el.textContent='Escribe aquí…';
-  el.style.cssText='position:absolute;left:70px;top:70px;min-width:100px;max-width:70%;padding:4px 7px;background:rgba(255,255,255,.85);border:1px dashed #0078d7;color:#111;z-index:4;font-size:18px;line-height:1.25;cursor:text;';
-  p.container.appendChild(el); el.focus();
-  el.addEventListener('blur',()=>{el.style.borderColor='transparent';markPastedElementChanged(el);});
-  el.addEventListener('input',()=>markPastedElementChanged(el));
-  el.addEventListener('pointerdown',e=>{ activePastedElement=el; el.classList.add('active-element'); });
-  snapshotState(); toast('Cuadro de texto creado');
-}
-function applyTextColor(){
-  const size=document.getElementById('textSize')?.value;
-  const activeText=document.querySelector('.pasted-element[contenteditable="true"].active-element');
-  if(activeText && size) activeText.style.fontSize=size+'px';
-
-  const el=document.querySelector('.pasted-element[contenteditable="true"]:focus')||activePastedElement;
-  if(el) el.style.color=document.getElementById('colorPicker').value;
-}
-function toggleGridOverlay(){
-  gridOverlayOn=!gridOverlayOn;
-  pagesData.forEach(p=>{
-    p.container.style.backgroundImage=gridOverlayOn
-      ? 'linear-gradient(rgba(0,120,215,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(0,120,215,.10) 1px,transparent 1px)'
-      : '';
-    p.container.style.backgroundSize=gridOverlayOn?'20px 20px':'';
-  });
-  toast(gridOverlayOn?'Guía activada':'Guía desactivada');
-}
-function saveLocalSilent(){
-  try{
-    deselectPastedElements();
-    const bgType=document.getElementById('bgType').value;
-    const data=pagesData.map(page=>({
-      imgData:page.drawCanvas.toDataURL(),
-      elements:[...page.container.querySelectorAll('.pasted-element')].map(el=>({
-        src:el.querySelector('img')?el.querySelector('img').src:null,text:!el.querySelector('img')?el.innerHTML:'',x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
-      }))
-    }));
-    localStorage.setItem('cuadernoAvanzado_v2',JSON.stringify({bg:bgType,pages:data}));
-    localStorage.setItem('cuadernoAvanzado_v1',JSON.stringify({bg:bgType,pages:data}));
-    toast('Guardado ✓');
-  }catch(e){toast('No se pudo guardar')}
-}
-async function exportPNG(){
-  if(!activePageContainer||typeof html2canvas==='undefined'){toast('No hay hoja disponible');return}
-  deselectPastedElements();
-  try{
-    const canvas=await html2canvas(activePageContainer,{scale:2,useCORS:true,backgroundColor:'#fff'});
-    const a=document.createElement('a');
-    a.download='cuaderno-hoja.png'; a.href=canvas.toDataURL('image/png'); a.click();
-    toast('PNG preparado');
-  }catch(e){toast('Error al exportar PNG')}
-}
-
-/* Keyboard productivity */
-window.addEventListener('keydown',e=>{
-  const tag=(e.target?.tagName||'').toLowerCase();
-  const editing=tag==='input'||tag==='textarea'||e.target?.isContentEditable;
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!editing){e.preventDefault();undoAction()}
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'&&!editing){e.preventDefault();redoAction()}
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();saveLocalSilent()}
-  if(e.key==='Escape') document.getElementById('enhancedPanel')?.classList.remove('open');
-});
-
-/* Make existing page actions history-aware without replacing their logic. */
-const _addPage=addPage;
-addPage=function(...args){snapshotState();const r=_addPage.apply(this,args);updatePageIndicator();return r};
-
-const _clearPage=clearCurrentPage;
-clearCurrentPage=function(...args){snapshotState();const r=_clearPage.apply(this,args);toast('Hoja limpiada');return r};
-
-/* Better pointer behavior and active-page tracking. */
-document.addEventListener('pointerdown',e=>{
-  const page=e.target.closest?.('.page-container');
-  if(page){
-    const obj=pagesData.find(p=>p.container===page);
-    if(obj){activePageContainer=page;updatePageIndicator()}
-  }
-},{passive:true});
-
-window.addEventListener('load',()=>{
-  setTimeout(()=>{
-    updatePageIndicator();
-    toast('Cuaderno listo ✓');
-  },250);
-});
-
-/* Autosave ULTRA: nunca se ejecuta durante la escritura. */
-let autosaveTimer;
-let autosaveIdle=0;
-function scheduleAutosave(){
-  clearTimeout(autosaveTimer);
-  if(autosaveIdle){ try{cancelIdleCallback(autosaveIdle)}catch(e){} autosaveIdle=0; }
-  autosaveTimer=setTimeout(()=>{
-    const run=()=>{ autosaveIdle=0; try{saveLocalSilent()}catch(e){} };
-    if('requestIdleCallback' in window) autosaveIdle=requestIdleCallback(run,{timeout:1800});
-    else run();
-  },1400);
-}
-window.addEventListener('beforeunload',()=>{try{saveLocalSilent()}catch(e){}});
-
-/* Improve background persistence for new pages: retain selected style. */
-const _changeBackgroundAll=changeBackgroundAll;
-changeBackgroundAll=function(){_changeBackgroundAll();scheduleAutosave();};
-
-
-
-    </script>
-<!-- GESTOR INTUITIVO DE CUADERNOS / MATERIAS -->
-<style>
-#nb-launcher{position:fixed;left:16px;top:118px;z-index:5000;background:#111827;color:#fff;border:1px solid #374151;border-radius:14px;padding:8px 11px;font-weight:700;font-size:13px;box-shadow:0 8px 24px #0006;cursor:pointer}
-#nb-launcher:hover{background:#1f2937}
-#nb-drawer{position:fixed;inset:58px auto 0 0;width:min(360px,92vw);background:#111827;color:#fff;z-index:4999;transform:translateX(-105%);transition:.25s ease;box-shadow:12px 0 35px #0008;display:flex;flex-direction:column}
-#nb-drawer.open{transform:translateX(0)}
-.nb-head{padding:18px;border-bottom:1px solid #374151;display:flex;justify-content:space-between;align-items:center;gap:10px}
-.nb-head h2{margin:0;font-size:19px}.nb-head small{color:#9ca3af}
-.nb-actions{padding:12px;border-bottom:1px solid #374151;display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.nb-actions button,.nb-item button{border:1px solid #374151;background:#1f2937;color:#fff;border-radius:10px;padding:9px;cursor:pointer}.nb-actions button:hover,.nb-item button:hover{background:#374151}
-#nb-list{padding:12px;overflow:auto;display:flex;flex-direction:column;gap:8px}
-.nb-item{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;border:1px solid #374151;background:#172033;border-radius:12px;padding:8px}
-.nb-item.active{border-color:#60a5fa;box-shadow:0 0 0 1px #60a5fa33}
-.nb-open{border:0!important;background:transparent!important;text-align:left;padding:8px!important;min-width:0}
-.nb-name{display:block;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nb-meta{display:block;color:#9ca3af;font-size:12px;margin-top:3px}
-.nb-delete{width:36px;padding:8px!important;color:#fca5a5!important}
-#nb-overlay{display:none;position:fixed;inset:58px 0 0 0;background:#0007;z-index:4998}#nb-overlay.open{display:block}
-.nb-empty{padding:24px;text-align:center;color:#9ca3af;border:1px dashed #374151;border-radius:12px}
-.nb-hint{padding:10px 14px;color:#9ca3af;font-size:12px;border-top:1px solid #374151}
-@media(max-width:800px){#nb-launcher{top:92px;left:8px}.nb-actions{grid-template-columns:1fr}}
-</style>
-<button id="nb-launcher" onclick="toggleNotebookManager()">📚 Mis cuadernos</button>
-<div id="nb-overlay" onclick="toggleNotebookManager()"></div>
-<aside id="nb-drawer" aria-label="Mis cuadernos">
-  <div class="nb-head"><div><h2>📚 Mis cuadernos</h2><small>Cada materia es un cuaderno independiente</small></div><button onclick="toggleNotebookManager()">✕</button></div>
-  <div class="nb-actions"><button onclick="createNotebook()">➕ Nueva materia</button><button onclick="renameCurrentNotebook()">✏️ Renombrar</button></div>
-  <div id="nb-list"></div>
-  <div class="nb-hint">💡 Cambiar de materia es como cambiar de cuaderno. Todo queda separado y guardado automáticamente.</div>
-</aside>
-<script>
-(function(){
-  const KEY='cuadernosMaterias_v1';
-  let currentId=null;
-  let booting=true;
-
-  function uid(){return 'nb_'+Date.now()+'_'+Math.random().toString(36).slice(2,8)}
-  function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
-  function readStore(){try{return JSON.parse(localStorage.getItem(KEY))||{current:null,items:[]}}catch(e){return {current:null,items:[]}}}
-  function writeStore(x){localStorage.setItem(KEY,JSON.stringify(x))}
-
-  // Guardado inteligente: conserva en memoria la imagen de cada hoja y solo
-  // vuelve a codificar las hojas que realmente cambiaron. Así podemos tener
-  // muchas hojas sin que el autosave congele la escritura.
-  function encodePage(page){
-    try{
-      // WebP conserva transparencia y suele ser mucho más liviano que PNG.
-      const data=page.drawCanvas.toDataURL('image/webp',0.90);
-      if(data && data.startsWith('data:image/webp')) return data;
-    }catch(e){}
-    try{return page.drawCanvas.toDataURL('image/png')}catch(e){return page._savedImgData||null}
-  }
-  function pageElements(page){
-    return [...page.container.querySelectorAll('.pasted-element')].map(el=>({
-      type:el.querySelector('img')?'image':'text',src:el.querySelector('img')?.src,text:el.querySelector('img')?'':el.innerHTML||'',
-      x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background'),css:el.style.cssText,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
-    }));
-  }
-  function snapshotNotebook(){
-    const bg=document.getElementById('bgType')?.value||'rayada';
-    return {bg,pages:pagesData.map(p=>{
-      if(p._dirtySave || !p._savedImgData){ p._savedImgData=encodePage(p); p._dirtySave=false; }
-      return {imgData:p._savedImgData,elements:pageElements(p)};
-    })};
-  }
-  let saveTimer=0;
-  function flushNotebookNow(){
-    if(!currentId)return false;
-    try{
-      const st=readStore(), it=st.items.find(x=>x.id===currentId); if(!it)return false;
-      const snap=snapshotNotebook();
-      Object.assign(it,snap); it.updated=Date.now(); st.current=currentId;
-      writeStore(st);
-      if(document.getElementById('nb-drawer')?.classList.contains('open')) renderList();
-      return true;
-    }catch(err){
-      console.warn('Guardado del cuaderno pospuesto:',err);
-      return false;
-    }
-  }
-  function saveNotebook(){
-    if(!currentId)return;
-    clearTimeout(saveTimer);
-    saveTimer=setTimeout(()=>{
-      const run=()=>flushNotebookNow();
-      if('requestIdleCallback' in window) requestIdleCallback(run,{timeout:2200}); else run();
-    },1200);
-  }
-  function addTextRestored(page,data){
-    const el=document.createElement('div'); el.className='pasted-element'; 
-    if(data.text && data.text.includes('href=')){
-        el.innerHTML = data.text; // Es un adjunto
-    } else {
-        el.contentEditable='true'; el.textContent=data.text||'Escribe aquí…';
-    }
-    el.style.cssText=data.css||'position:absolute;left:70px;top:70px;min-width:100px;padding:4px 7px;background:rgba(255,255,255,.85);border:1px dashed transparent;color:#111;z-index:4;font-size:18px;line-height:1.25;cursor:text;';
-    if(data.x)el.style.left=data.x;if(data.y)el.style.top=data.y;if(data.w)el.style.width=data.w;if(data.h)el.style.height=data.h;
-    page.container.appendChild(el);
-    el.addEventListener('pointerdown',e=>{ if(e.target.tagName==='A')return; activePastedElement=el; el.classList.add('active-element'); });
-    el.addEventListener('blur',()=>el.style.borderColor='transparent');
-  }
-  function loadNotebook(item){
-    const st=readStore(); st.current=item.id; writeStore(st); currentId=item.id;
-    notebookEl.innerHTML=''; pagesData=[]; activePageContainer=null;
-    document.getElementById('bgType').value=item.bg||'rayada';
-    const pages=item.pages?.length?item.pages:[{imgData:null,elements:[]}];
-    pages.forEach(pg=>{
-      const imgs=(pg.elements||[]).filter(e=>e.type==='image'||e.src).map(e=>({src:e.src,x:e.x,y:e.y,w:e.w,h:e.h}));
-      originalAddPage(pg.imgData||null,item.bg||'rayada',imgs);
-      const page=pagesData[pagesData.length-1];
-      (pg.elements||[]).filter(e=>e.type==='text').forEach(e=>addTextRestored(page,e));
-    });
-    updatePageIndicator(); renderList();
-    toast('📖 '+item.name);
-    setTimeout(()=>{flushNotebookNow()},80);
-  }
-  function ensureInitial(){
-    const st=readStore();
-    if(!st.items.length){
-      const first={id:uid(),name:'General',icon:'📘',bg:document.getElementById('bgType')?.value||'rayada',pages:[],created:Date.now(),updated:Date.now()};
-      first.pages=snapshotNotebook().pages; st.items=[first]; st.current=first.id; writeStore(st); currentId=first.id; return;
-    }
-    currentId=st.current||st.items[0].id;
-    const item=st.items.find(x=>x.id===currentId)||st.items[0];
-    loadNotebook(item);
-  }
-  window.toggleNotebookManager=function(){document.getElementById('nb-drawer').classList.toggle('open');document.getElementById('nb-overlay').classList.toggle('open');renderList()}
-  function renderList(){
-    const out=document.getElementById('nb-list'); if(!out)return; const st=readStore();
-    if(!st.items.length){out.innerHTML='<div class="nb-empty">No hay cuadernos todavía.</div>';return}
-    out.innerHTML=st.items.map(it=>`<div class="nb-item ${it.id===currentId?'active':''}"><button class="nb-open" onclick="switchNotebook('${it.id}')"><span class="nb-name">${esc(it.icon||'📘')} ${esc(it.name)}</span><span class="nb-meta">${it.pages?.length||0} hoja(s)</span></button><button class="nb-delete" title="Eliminar cuaderno" onclick="deleteNotebook('${it.id}')">🗑️</button></div>`).join('');
-  }
-  window.switchNotebook=function(id){
-    if(id===currentId){toggleNotebookManager();return}
-    clearTimeout(saveTimer); flushNotebookNow(); const st=readStore(), item=st.items.find(x=>x.id===id); if(!item)return; loadNotebook(item); toggleNotebookManager();
-  }
-  window.createNotebook=function(){
-    clearTimeout(saveTimer); flushNotebookNow();
-    const name=prompt('Nombre de la materia / cuaderno:','Matemática'); if(!name?.trim())return;
-    const st=readStore(), item={id:uid(),name:name.trim(),icon:'📚',bg:'rayada',pages:[],created:Date.now(),updated:Date.now()};
-    st.items.push(item); st.current=item.id; writeStore(st); currentId=item.id; loadNotebook(item); toggleNotebookManager();
-    setTimeout(()=>{clearCurrentPage();toast('✨ Nuevo cuaderno listo para empezar desde cero')},120);
-  }
-  window.renameCurrentNotebook=function(){
-    const st=readStore(),it=st.items.find(x=>x.id===currentId);if(!it)return;
-    const n=prompt('Nuevo nombre:',it.name);if(!n?.trim())return;it.name=n.trim();it.updated=Date.now();writeStore(st);renderList();toast('Nombre actualizado');
-  }
-  window.deleteNotebook=function(id){
-    const st=readStore(),it=st.items.find(x=>x.id===id);if(!it)return;
-    if(!confirm(`¿Eliminar el cuaderno “${it.name}” completo?\n\nEsta acción borra sus hojas guardadas en este navegador.`))return;
-    st.items=st.items.filter(x=>x.id!==id);
-    if(!st.items.length){const fresh={id:uid(),name:'General',icon:'📘',bg:'rayada',pages:[],created:Date.now(),updated:Date.now()};st.items=[fresh];st.current=fresh.id}
-    else if(st.current===id)st.current=st.items[0].id;
-    writeStore(st); currentId=st.current; loadNotebook(st.items.find(x=>x.id===currentId)); toast('Cuaderno eliminado');
-  }
-
-  // Reemplaza la acción de “borrar hoja” para que también funcione cuando queda una sola.
-  const oldDeletePage=window.deleteCurrentPage;
-  window.deleteCurrentPage=function(){
-    if(pagesData.length>1){oldDeletePage();saveNotebook();return}
-    if(!pagesData.length)return;
-    if(!confirm('¿Eliminar esta hoja y empezar de nuevo con una hoja en blanco?'))return;
-    const p=pagesData[0]; p._dirtySave=true; p.drawCtx.clearRect(0,0,p.drawCanvas.width,p.drawCanvas.height); p.container.querySelectorAll('.pasted-element').forEach(e=>e.remove());
-    drawBackground(p); snapshotState(); saveNotebook(); toast('🧹 Hoja reiniciada');
-  };
-
-  // El guardado queda delegado al autosave diferido para no interferir con el lápiz.
-  window.addEventListener('beforeunload',()=>{try{clearTimeout(saveTimer);flushNotebookNow()}catch(e){}});
-  // API de guardado rápido: no llama al antiguo guardado pesado.
-  window.saveLocalSilent=function(){ return flushNotebookNow(); };
-  window.flushNotebookNow=flushNotebookNow;
-
-  window.addEventListener('load',()=>setTimeout(()=>{booting=false;ensureInitial();renderList()},450));
-})();
-</script>
-
-
-<style id="pdf-studio-style">
-#pdfStudio{position:fixed;z-index:4800;top:82px;right:18px;width:min(760px,calc(100vw - 28px));height:min(72vh,680px);background:#111827;color:#fff;border:1px solid #334155;border-radius:15px;box-shadow:0 18px 55px #0008;display:none;overflow:hidden;resize:both;min-width:340px;min-height:300px}
-#pdfStudio.open{display:flex;flex-direction:column}
-.pdf-head{height:44px;flex:0 0 44px;display:flex;align-items:center;gap:8px;padding:0 10px;background:#0b1220;border-bottom:1px solid #334155;cursor:move;user-select:none}
-.pdf-head strong{font-size:13px;white-space:nowrap}.pdf-head .pdf-spacer{flex:1}.pdf-head button{padding:5px 8px}
-.pdf-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px;background:#172033;border-bottom:1px solid #334155}
-.pdf-bar input[type=file]{width:145px;font-size:11px}.pdf-bar button{padding:7px 9px}.pdf-status{font-size:11px;color:#94a3b8;min-width:90px}
-.pdf-google{display:flex;gap:6px;align-items:center;flex:1;min-width:210px;background:#0b1220;border:1px solid #475569;border-radius:20px;padding:3px 5px 3px 11px}
-.pdf-web-search{display:flex;gap:4px;align-items:center;flex:1.2;min-width:240px;background:#fff;border:1px solid #475569;border-radius:20px;padding:3px 4px 3px 10px;color:#334155}
-.pdf-web-search input{flex:1;min-width:90px;border:0;outline:0;background:transparent;color:#111827;padding:6px;font-size:12px}
-.pdf-web-search button{border:0!important;background:#2563eb!important;color:#fff!important;border-radius:16px;padding:6px 10px!important;font-size:11px}
-
-.pdf-google span{font-size:15px;color:#94a3b8}.pdf-google input{flex:1;min-width:80px;background:transparent;color:#fff;border:0;outline:0;padding:6px;font-size:12px}.pdf-google button{border:0;background:transparent;padding:5px 8px}
-#pdfLibrary{display:flex;gap:5px;flex-wrap:wrap;padding:7px 9px;background:#0f172a;border-bottom:1px solid #334155;max-height:58px;overflow:auto}
-.pdf-chip{border:1px solid #334155;background:#172033;color:#fff;border-radius:14px;padding:5px 9px;font-size:11px;cursor:pointer;white-space:nowrap}.pdf-chip.active{border-color:#60a5fa;background:#1d4ed833}.pdf-empty{color:#94a3b8;font-size:12px;padding:10px}.pdf-results{position:absolute;top:92px;left:190px;right:12px;z-index:20;max-height:190px;overflow:auto;background:#0b1220f5;border:1px solid #475569;border-radius:10px;padding:5px;display:none;box-shadow:0 10px 30px #0008}.pdf-result{display:block;width:100%;text-align:left;background:#172033;color:#fff;border:1px solid #334155;border-radius:7px;padding:7px;margin:3px 0;font-size:11px;cursor:pointer}.pdf-result:hover{background:#24324a}
-.pdf-view{position:relative;flex:1;overflow:auto;background:#334155;padding:16px}.pdf-page-wrap{position:relative;margin:0 auto 16px;background:#fff;box-shadow:0 8px 28px #0006;display:block;user-select:none}.pdf-page-wrap canvas{display:block;width:100%;height:auto}.pdf-crop-box{position:absolute;border:2px dashed #22c55e;background:#22c55e18;display:none;pointer-events:none;z-index:4}
-/* Modo lectura: deja únicamente el PDF flotando sobre el cuaderno. */
-#pdfStudio.pdf-focus{top:50% !important;left:50% !important;right:auto !important;bottom:auto !important;width:min(1080px,92vw);height:min(88vh,900px);transform:translate(-50%,-50%) !important;border-radius:18px;box-shadow:0 28px 100px rgba(0,0,0,.72);}
-#pdfStudio.pdf-focus .pdf-bar,#pdfStudio.pdf-focus #pdfLibrary,#pdfStudio.pdf-focus #pdfResults{display:none}
-#pdfStudio.pdf-focus .pdf-head{height:50px;flex-basis:50px;background:linear-gradient(180deg,#101a2d,#0b1220);cursor:grab;user-select:none}
-        #pdfStudio.pdf-focus .pdf-head:active{cursor:grabbing}
-        #pdfStudio.pdf-focus .pdf-head strong{cursor:grab}
-        #pdfStudio.pdf-focus.pdf-dragging .pdf-head{cursor:grabbing}
-#pdfStudio.pdf-focus .pdf-head strong{font-size:14px}
-#pdfStudio.pdf-focus .pdf-view{padding:22px;background:#1e293b}
-#pdfStudio.pdf-focus .pdf-page-wrap{margin-bottom:24px;box-shadow:0 12px 36px rgba(0,0,0,.55)}
-.pdf-focus-btn{background:#2563eb!important;color:#fff!important;border-color:#3b82f6!important;font-weight:700}
-.pdf-return-btn{display:none}
-#pdfStudio.pdf-focus .pdf-return-btn{display:inline-flex}
-#pdfStudio.pdf-focus .pdf-focus-btn,#pdfStudio.pdf-split .pdf-focus-btn{display:none}
-@media(max-width:700px){#pdfStudio.pdf-focus{width:96vw;height:90vh;top:50%;left:50%;right:auto;transform:translate(-50%,-50%)}.pdf-focus-btn{display:inline-flex}}
-@media(max-width:700px){#pdfStudio{top:58px;right:8px;width:calc(100vw - 16px);height:78vh}.pdf-bar input[type=file]{width:105px}.pdf-results{left:10px;right:10px;top:135px}}
-
-/* ===== PDF GOD MODE / WORKSPACE ===== */
-#pdfStudio.pdf-reference{width:min(520px,48vw)!important;height:min(62vh,620px)!important;top:78px!important;right:18px!important;left:auto!important;bottom:auto!important;transform:none!important}
-#pdfStudio.pdf-reference .pdf-bar,#pdfStudio.pdf-reference #pdfLibrary,#pdfStudio.pdf-reference #pdfResults{display:none}
-#pdfStudio.pdf-reference .pdf-head{height:46px;flex-basis:46px}
-.pdf-smartbar{display:none;gap:5px;align-items:center;flex-wrap:wrap;padding:7px 9px;background:#0b1220;border-bottom:1px solid #334155}
-#pdfStudio.pdf-focus .pdf-smartbar,#pdfStudio.pdf-split .pdf-smartbar,#pdfStudio.pdf-reference .pdf-smartbar{display:flex}
-.pdf-smartbar button{border:1px solid #334155;background:#172033;color:#fff;border-radius:8px;padding:5px 8px;font-size:11px;cursor:pointer}.pdf-smartbar button:hover{background:#263752}
-.pdf-mode-badge{margin-left:auto;font-size:10px;color:#94a3b8}
-.study-action-row{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.study-action-row button{border:1px solid #334155;background:#172033;color:#fff;border-radius:9px;padding:7px 10px;cursor:pointer}.study-action-row button:hover{background:#263752}.study-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.study-stat div{background:#111c2f;border:1px solid #26364f;border-radius:10px;padding:9px}.study-stat b{display:block;font-size:16px}.study-stat span{font-size:10px;color:#94a3b8}.exam-card{background:#111c2f;border:1px solid #334155;border-radius:12px;padding:12px;margin:8px 0}.exam-card input{width:100%;box-sizing:border-box;background:#0b1220;color:#fff;border:1px solid #334155;border-radius:8px;padding:8px;margin-top:7px}.flashcard{min-height:170px;display:flex;align-items:center;justify-content:center;text-align:center;background:linear-gradient(135deg,#172033,#0f172a);border:1px solid #334155;border-radius:16px;padding:22px;font-size:18px}.focus-overlay{position:fixed;inset:0;z-index:6900;background:#020617;display:none;align-items:center;justify-content:center}.focus-overlay.open{display:flex}.focus-overlay .focus-inner{width:min(900px,92vw);max-height:88vh;overflow:auto;color:#e5e7eb}.focus-overlay h2{font-size:28px}.focus-overlay .focus-close{float:right;background:#172033;color:#fff;border:1px solid #334155;border-radius:9px;padding:7px 10px}.pdf-focus .pdf-head{box-shadow:0 1px 0 #334155}
-#pdfStudyModal{position:fixed;z-index:7000;inset:0;background:rgba(2,6,23,.62);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:18px}
-#pdfStudyModal.open{display:flex}.pdf-study-card{width:min(820px,94vw);max-height:86vh;overflow:auto;background:#0f172a;color:#e5e7eb;border:1px solid #334155;border-radius:18px;box-shadow:0 25px 100px #0009;padding:18px}
-.pdf-study-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}.pdf-study-head strong{font-size:17px}.pdf-study-head button{margin-left:auto;border:0;background:#243047;color:#fff;border-radius:9px;width:32px;height:32px}
-.pdf-study-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.pdf-study-tabs button{border:1px solid #334155;background:#172033;color:#fff;border-radius:9px;padding:7px 10px;cursor:pointer}.pdf-study-tabs button.active{background:#2563eb;border-color:#3b82f6}
-#pdfStudyContent{line-height:1.55;font-size:13px;white-space:pre-wrap;color:#dbe4f0}.study-chip{display:inline-block;border:1px solid #334155;background:#162238;border-radius:999px;padding:4px 8px;margin:3px;font-size:11px}
-.pdf-lens{position:absolute;z-index:20;width:180px;height:120px;border:2px solid #60a5fa;border-radius:12px;box-shadow:0 10px 30px #0008;background:#0006;pointer-events:none;display:none}
-.pasted-element.pdf-source{outline:1px solid rgba(59,130,246,.22)}.pasted-element.pdf-source .pdf-link-btn{display:inline-flex}.object-tools .pdf-link-btn{display:none}
-@media(max-width:700px){#pdfStudio.pdf-reference{width:94vw!important;height:70vh!important;right:3vw!important;top:62px!important}.pdf-smartbar{overflow:auto;flex-wrap:nowrap}.pdf-smartbar button{white-space:nowrap}}
-</style>
-<div id="pdfStudio" aria-label="PDF del cuaderno">
-  <div class="pdf-head" id="pdfDragHandle"><strong id="pdfTitle">📄 PDFs del cuaderno</strong><span class="pdf-spacer"></span><button class="pdf-focus-btn" onclick="enterPdfFocus()" title="Dejar solo el PDF sobre el cuaderno">⛶ Solo PDF</button><button class="pdf-split-btn" onclick="togglePdfSplit()" title="PDF y apuntes al mismo tiempo">📐 PDF + apuntes</button><button class="pdf-return-btn" onclick="exitPdfFocus()" title="Volver al buscador">🔎 Volver al buscador</button><button onclick="pdfZoom(-1)">−</button><span id="pdfZoomLabel">100%</span><button onclick="pdfZoom(1)">+</button><button onclick="togglePdfStudio()">✕</button></div>
-  <div class="pdf-smartbar"><button onclick="togglePdfReference()">🎯 Referencia</button><button onclick="openPdfStudy('summary')">🧠 Analizar</button><button onclick="openPdfStudy('concepts')">💡 Conceptos</button><button onclick="openPdfStudy('exercises')">📝 Ejercicios</button><button onclick="openPdfStudy('flashcards')">🃏 Tarjetas</button><button onclick="openPdfStudy('exam')">🎓 Examen</button><button onclick="togglePdfLens()">🔍 Lupa</button><button onclick="togglePdfCompare()">⚖️ Comparar</button><span class="pdf-mode-badge" id="pdfModeBadge">PDF inteligente</span></div>
-  <div class="pdf-bar">
-    <input id="pdfFileInput" type="file" accept="application/pdf" multiple title="Cargar PDF al cuaderno">
-    <button onclick="document.getElementById('pdfFileInput').click()">➕ Cargar PDF</button>
-    <div class="pdf-web-search"><span>🌐</span><input id="pdfWebSearch" type="search" placeholder="Buscar PDFs en Internet…"><button onclick="searchInternetPDF()">Buscar</button></div>
-    <button onclick="pdfPrevPage()">◀</button><span id="pdfPageLabel" class="pdf-status">Sin PDF</span><button onclick="pdfNextPage()">▶</button>
-    <div class="pdf-google"><span>🔎</span><input id="pdfGoogleSearch" type="search" placeholder="Buscar en mis PDFs…"><button onclick="searchNotebookPDFs()">↵</button></div>
-    <button id="pdfCropBtn" onclick="togglePdfCrop()">✂️ Recortar</button><button id="pdfPasteBtn" onclick="pastePdfCropToNotebook()">📋 Pegar en cuaderno</button>
-  </div>
-  <div id="pdfLibrary"><div class="pdf-empty">Cargá un PDF para guardarlo en este cuaderno.</div></div><div id="pdfCropHistory"></div>
-  <div id="pdfResults" class="pdf-results"></div>
-  <div id="pdfView" class="pdf-view"><div class="pdf-empty">Abrí un PDF del cuaderno o cargá uno nuevo.</div></div>
-</div>
-<div id="pdfStudyModal" role="dialog" aria-modal="true"><div class="pdf-study-card"><div class="pdf-study-head"><strong id="pdfStudyTitle">🧠 Estudio del PDF</strong><button onclick="closePdfStudy()">✕</button></div><div class="pdf-study-tabs"><button onclick="openPdfStudy('summary')">Resumen</button><button onclick="openPdfStudy('concepts')">Conceptos</button><button onclick="openPdfStudy('exercises')">Ejercicios</button><button onclick="openPdfStudy('flashcards')">Tarjetas</button><button onclick="openPdfStudy('exam')">Examen</button><button onclick="openPdfStudy('text')">Texto extraído</button></div><div id="pdfStudyContent">Preparando…</div></div></div>
-<script type="module">
-(function(){
-  import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs').then(mod=>{
-    window.__pdfjs=mod;mod.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
-  }).catch(e=>console.warn('PDF.js no disponible',e));
-})();
-</script>
-<script id="pdf-studio-script">
-(function(){
-  const DB='cuadernoPDFs_v2', STORE='pdfs';
-  let pdfDoc=null,pdfPage=1,pdfScale=1,pdfCrop=false,pdfCropRect=null,currentPdfId=null,renderToken=0;
-  const cropHistory=[];
-  const $=id=>document.getElementById(id);
-  function nbState(){try{return JSON.parse(localStorage.getItem('cuadernosMaterias_v1'))||{items:[],current:null}}catch(e){return {items:[],current:null}}}
-  function currentNotebook(){const st=nbState();return st.items.find(x=>x.id===st.current)}
-  function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(STORE)){const os=db.createObjectStore(STORE,{keyPath:'id'});os.createIndex('notebook','notebook',{unique:false})}};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
-  async function dbPut(v){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(v);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
-  async function dbGet(id){const db=await openDB();return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).get(id);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
-  async function dbList(nb){const db=await openDB();return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).index('notebook').getAll(nb);r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
-  function toastMsg(t){if(typeof toast==='function')toast(t);else console.log(t)}
-  function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
-
-  window.togglePdfStudio=async function(){const el=$('pdfStudio');if(el?.classList.contains('pdf-focus'))exitPdfFocus();el?.classList.toggle('open');if(el?.classList.contains('open'))await refreshPdfLibrary()}
-  window.pdfZoom=function(d){pdfScale=Math.max(.65,Math.min(2.5,pdfScale+d*.15));$('pdfZoomLabel').textContent=Math.round(pdfScale*100)+'%';if(pdfDoc)renderPdfPage(pdfPage)};
-  function status(t){if($('pdfPageLabel'))$('pdfPageLabel').textContent=t}
-
-  async function ensurePdfJs(){
-    if(window.__pdfjs)return window.__pdfjs;
-    for(let i=0;i<50;i++){if(window.__pdfjs)return window.__pdfjs;await new Promise(r=>setTimeout(r,100))}
-    throw new Error('PDF.js todavía no está listo');
-  }
-
-  async function renderPdfPage(n){
-    if(!pdfDoc)return;
-    const token=++renderToken;
-    pdfPage=Math.max(1,Math.min(pdfDoc.numPages,n));
-    const page=await pdfDoc.getPage(pdfPage); if(token!==renderToken)return;
-    const vp=page.getViewport({scale:pdfScale});
-    const view=$('pdfView'); view.innerHTML='';
-    const wrap=document.createElement('div'); wrap.className='pdf-page-wrap';
-    wrap.style.width=vp.width+'px'; wrap.style.height=vp.height+'px'; wrap.style.touchAction='none';
-    const canvas=document.createElement('canvas');
-    canvas.width=Math.ceil(vp.width); canvas.height=Math.ceil(vp.height);
-    canvas.style.width=vp.width+'px'; canvas.style.height=vp.height+'px';
-    wrap.appendChild(canvas);
-    const crop=document.createElement('div'); crop.className='pdf-crop-box'; wrap.appendChild(crop); view.appendChild(wrap);
-    await page.render({canvasContext:canvas.getContext('2d',{alpha:false,willReadFrequently:false}),viewport:vp}).promise;
-    if(token!==renderToken)return;
-    pdfCropRect=null;
-    crop.style.display='none';
-    status('Página '+pdfPage+' / '+pdfDoc.numPages);
-
-    let start=null;
-    wrap.onpointerdown=e=>{
-      if(!pdfCrop)return;
-      e.preventDefault(); e.stopPropagation();
-      const r=wrap.getBoundingClientRect();
-      start={x:Math.max(0,Math.min(r.width,e.clientX-r.left)),y:Math.max(0,Math.min(r.height,e.clientY-r.top))};
-      wrap.setPointerCapture?.(e.pointerId);
-      pdfCropRect={x:start.x,y:start.y,w:0,h:0};
-      crop.style.display='block'; crop.style.left=start.x+'px'; crop.style.top=start.y+'px'; crop.style.width='0px'; crop.style.height='0px';
-    };
-    wrap.onpointermove=e=>{
-      if(!pdfCrop||!start)return;
-      const r=wrap.getBoundingClientRect();
-      const ex=Math.max(0,Math.min(r.width,e.clientX-r.left)), ey=Math.max(0,Math.min(r.height,e.clientY-r.top));
-      const x=Math.min(start.x,ex),y=Math.min(start.y,ey),w=Math.abs(ex-start.x),h=Math.abs(ey-start.y);
-      pdfCropRect={x,y,w,h}; crop.style.left=x+'px';crop.style.top=y+'px';crop.style.width=w+'px';crop.style.height=h+'px';
-    };
-    const finish=e=>{if(!start)return;wrap.releasePointerCapture?.(e.pointerId);start=null;if(pdfCropRect&&pdfCropRect.w>8&&pdfCropRect.h>8)status('Recorte listo · pulsá “Pegar en cuaderno”');else{pdfCropRect=null;crop.style.display='none';status('Recorte demasiado pequeño')}};
-    wrap.onpointerup=finish; wrap.onpointercancel=finish;
-  }
-
-  async function openPdfRecord(rec){
-    try{const mod=await ensurePdfJs();const bytes=rec.bytes instanceof ArrayBuffer?rec.bytes:new Uint8Array(rec.bytes);pdfDoc=await mod.getDocument({data:bytes}).promise;currentPdfId=rec.id;pdfPage=1;pdfScale=1;$('pdfZoomLabel').textContent='100%';await renderPdfPage(1);status(rec.name+' · 1 / '+pdfDoc.numPages);renderLibraryActive();}
-    catch(e){console.error(e);status('No se pudo abrir el PDF');toastMsg('⚠️ No se pudo abrir el PDF')}
-  }
-
-  async function refreshPdfLibrary(){
-    const nb=currentNotebook(); if(!nb){$('pdfLibrary').innerHTML='<div class="pdf-empty">No hay cuaderno activo.</div>';return}
-    const list=await dbList(nb.id); const q=($('pdfGoogleSearch')?.value||'').trim().toLowerCase();
-    const shown=q?list.filter(x=>x.name.toLowerCase().includes(q)):list;
-    $('pdfLibrary').innerHTML=shown.length?shown.map(x=>`<button class="pdf-chip ${x.id===currentPdfId?'active':''}" data-id="${x.id}">📄 ${escapeHtml(x.name)}</button>`).join(''):'<div class="pdf-empty">No hay PDFs que coincidan.</div>';
-    [...$('pdfLibrary').querySelectorAll('.pdf-chip')].forEach(b=>b.onclick=async()=>{const rec=await dbGet(b.dataset.id);if(rec)await openPdfRecord(rec)});
-  }
-  function renderLibraryActive(){refreshPdfLibrary()}
-  async function loadFile(f){const nb=currentNotebook();if(!nb)return;const bytes=await f.arrayBuffer();const rec={id:'pdf_'+Date.now()+'_'+Math.random().toString(36).slice(2),notebook:nb.id,name:f.name,bytes,added:Date.now()};await dbPut(rec);await refreshPdfLibrary();await openPdfRecord(rec);toastMsg('📄 PDF agregado al cuaderno')}
-  $('pdfFileInput')?.addEventListener('change',async e=>{for(const f of [...(e.target.files||[])]){if(f.type==='application/pdf')await loadFile(f)}e.target.value='' });
-
-  window.searchNotebookPDFs=async function(){
-    const q=($('pdfGoogleSearch').value||'').trim().toLowerCase(),res=$('pdfResults');
-    if(!q){res.style.display='none';await refreshPdfLibrary();return}
-    const nb=currentNotebook(),list=await dbList(nb?.id);const matches=list.filter(x=>x.name.toLowerCase().includes(q));
-    res.innerHTML=matches.length?matches.map(x=>`<button class="pdf-result" data-id="${x.id}">📄 ${escapeHtml(x.name)}</button>`).join(''):'<div class="pdf-empty">No encontré ese PDF en este cuaderno.</div>';
-    res.style.display='block';
-    [...res.querySelectorAll('.pdf-result')].forEach(b=>b.onclick=async()=>{const rec=await dbGet(b.dataset.id);if(rec){res.style.display='none';await openPdfRecord(rec)}});
-    await refreshPdfLibrary();
-  };
-  $('pdfGoogleSearch')?.addEventListener('input',()=>{clearTimeout(window.__pdfSearchT);window.__pdfSearchT=setTimeout(searchNotebookPDFs,140)});
-  $('pdfGoogleSearch')?.addEventListener('keydown',e=>{if(e.key==='Escape'){$('pdfResults').style.display='none';e.target.blur()}if(e.key==='Enter')searchNotebookPDFs()});
-  window.pdfPrevPage=()=>pdfDoc&&renderPdfPage(pdfPage-1); window.pdfNextPage=()=>pdfDoc&&renderPdfPage(pdfPage+1);
-
-  window.togglePdfCrop=function(){
-    if(!pdfDoc){toastMsg('Primero cargá o abrí un PDF');return}
-    pdfCrop=!pdfCrop; pdfCropRect=null;
-    const b=$('pdfCropBtn'); if(b)b.textContent=pdfCrop?'✖️ Cancelar recorte':'✂️ Recortar';
-    status(pdfCrop?'Arrastrá sobre el PDF para seleccionar':'Página '+pdfPage+' / '+pdfDoc.numPages);
-    if(!pdfCrop){const c=$('pdfView').querySelector('.pdf-crop-box');if(c)c.style.display='none'}
-  };
-
-  function renderCropHistory(){
-    const box=$('pdfCropHistory'); if(!box)return;
-    if(!cropHistory.length){box.innerHTML='';return}
-    box.innerHTML=cropHistory.map((c,i)=>`<button class="pdf-history-chip" data-i="${i}">✂️ Recorte ${cropHistory.length-i}</button>`).join('');
-    [...box.querySelectorAll('.pdf-history-chip')].forEach(b=>b.onclick=()=>{const c=cropHistory[+b.dataset.i];if(c)pasteCropData(c)})
-  }
-  function pasteCropData(c){
-    const target=activePageContainer||pagesData[pagesData.length-1]?.container; if(!target)return;
-    const maxW=Math.max(180,Math.min(700,target.clientWidth-40)); const ratio=c.h/c.w; const w=Math.min(maxW,c.w); const h=Math.max(40,w*ratio);
-    const left=Math.max(20,(target.clientWidth-w)/2), top=Math.max(20,Math.min(100,target.clientHeight-h-20));
-    createPastedImage(c.src,target,left,top,w,h); if(activePastedElement){activePastedElement.classList.add('pdf-source');activePastedElement.dataset.pdfId=c.pdfId||currentPdfId||'';activePastedElement.dataset.pdfPage=String(c.page||pdfPage);}
-    toastMsg('📋 Recorte reutilizado');
-  }
-
-  window.pastePdfCropToNotebook=function(){
-    if(!pdfDoc||!pdfCropRect||pdfCropRect.w<8||pdfCropRect.h<8){toastMsg('✂️ Seleccioná primero una zona del PDF');return}
-    const wrap=$('pdfView').querySelector('.pdf-page-wrap'),canvas=wrap?.querySelector('canvas'); if(!wrap||!canvas)return;
-    const r=pdfCropRect,wr=wrap.getBoundingClientRect();
-    const sx=canvas.width/wr.width,sy=canvas.height/wr.height;
-    const sx0=Math.max(0,Math.floor(r.x*sx)),sy0=Math.max(0,Math.floor(r.y*sy));
-    const sw=Math.min(canvas.width-sx0,Math.max(1,Math.ceil(r.w*sx))),sh=Math.min(canvas.height-sy0,Math.max(1,Math.ceil(r.h*sy)));
-    const out=document.createElement('canvas');out.width=sw;out.height=sh;
-    const o=out.getContext('2d');o.imageSmoothingEnabled=true;o.drawImage(canvas,sx0,sy0,sw,sh,0,0,sw,sh);
-    const src=out.toDataURL('image/png');
-    cropHistory.unshift({src,w:sw,h:sh,page:pdfPage,pdfId:currentPdfId}); if(cropHistory.length>8)cropHistory.pop(); renderCropHistory();
-    const target=activePageContainer||pagesData[pagesData.length-1]?.container;
-    if(!target){toastMsg('No hay una hoja disponible');return}
-    const maxW=Math.max(180,Math.min(700,target.clientWidth-40)); const ratio=sh/sw; const w=Math.min(maxW,sw); const h=Math.max(40,w*ratio);
-    const left=Math.max(20,(target.clientWidth-w)/2), top=Math.max(20,Math.min(100,target.clientHeight-h-20));
-    createPastedImage(src,target,left,top,w,h); if(activePastedElement){activePastedElement.classList.add('pdf-source');activePastedElement.dataset.pdfId=currentPdfId||'';activePastedElement.dataset.pdfPage=String(pdfPage);}
-    const p=pagesData.find(x=>x.container===target);if(p)p._dirtySave=true;
-    if(typeof saveNotebook==='function')setTimeout(saveNotebook,30);
-    renderCropHistory();
-    pdfCrop=false;pdfCropRect=null;const cb=$('pdfCropBtn');if(cb)cb.textContent='✂️ Recortar';
-    const box=$('pdfView').querySelector('.pdf-crop-box');if(box)box.style.display='none';
-    status('✓ Recorte pegado en el cuaderno');toastMsg('📋 Recorte pegado · podés moverlo, bloquearlo o usarlo como fondo');
-  };
-
-  window.enterPdfFocus=function(){
-    const studio=$('pdfStudio'); if(!studio||!pdfDoc){toastMsg('📄 Primero abrí un PDF');return}
-    studio.classList.remove('pdf-split');
-    studio.style.removeProperty('left');studio.style.removeProperty('top');studio.style.removeProperty('right');studio.style.removeProperty('bottom');studio.style.removeProperty('transform');
-    studio.classList.add('pdf-focus'); $('pdfTitle').textContent='📖 Lectura del PDF'; document.body.classList.add('pdf-reading-mode');
-    const view=$('pdfView'); if(view)view.scrollTop=0;
-    requestAnimationFrame(()=>{if(!pdfDoc)return;renderPdfPage(pdfPage);restorePdfStudioPosition();requestAnimationFrame(()=>{if(view)view.scrollTop=0})});
-  };
-  window.exitPdfFocus=function(){
-    const studio=$('pdfStudio');if(!studio)return; studio.classList.remove('pdf-focus'); studio.classList.remove('pdf-split');
-    studio.style.removeProperty('transform');studio.style.removeProperty('left');studio.style.removeProperty('top');studio.style.removeProperty('right');studio.style.removeProperty('bottom');
-    $('pdfTitle').textContent='📄 PDFs del cuaderno';document.body.classList.remove('pdf-reading-mode');
-    requestAnimationFrame(()=>{if(pdfDoc)renderPdfPage(pdfPage);refreshPdfLibrary()});
-  };
-  window.togglePdfSplit=function(){
-    const studio=$('pdfStudio');if(!studio||!pdfDoc){toastMsg('📄 Primero abrí un PDF');return}
-    studio.classList.remove('pdf-focus'); studio.classList.toggle('pdf-split');
-    studio.style.removeProperty('transform');studio.style.removeProperty('right');studio.style.removeProperty('bottom');
-    studio.style.removeProperty('left');studio.style.removeProperty('top');
-    if(studio.classList.contains('pdf-split')){ $('pdfTitle').textContent='📐 PDF + apuntes'; document.body.classList.add('pdf-reading-mode'); }
-    else { $('pdfTitle').textContent='📄 PDFs del cuaderno'; document.body.classList.remove('pdf-reading-mode'); }
-    requestAnimationFrame(()=>{if(pdfDoc)renderPdfPage(pdfPage)});
-  };
-
-  // ===== Smart PDF workspace =====
-  let pdfReference=false, pdfLensOn=false, pdfCompareOn=false;
-  const pdfTextCache=new Map();
-  function pdfPosKey(){return 'pdfStudioPos:'+((currentPdfId||'none'))}
-  function savePdfStudioPosition(){const el=$('pdfStudio');if(!el||!el.classList.contains('pdf-focus'))return;localStorage.setItem(pdfPosKey(),JSON.stringify({left:el.offsetLeft,top:el.offsetTop,width:el.offsetWidth,height:el.offsetHeight}))}
-  function restorePdfStudioPosition(){const el=$('pdfStudio');if(!el||!el.classList.contains('pdf-focus'))return;try{const p=JSON.parse(localStorage.getItem(pdfPosKey())||'null');if(p){el.style.transform='none';el.style.left=Math.max(8,Math.min(window.innerWidth-el.offsetWidth-8,p.left))+'px';el.style.top=Math.max(8,Math.min(window.innerHeight-el.offsetHeight-8,p.top))+'px';el.style.right='auto';el.style.bottom='auto'}}catch(e){}}
-  window.togglePdfReference=function(){const el=$('pdfStudio');if(!el||!pdfDoc){toastMsg('📄 Primero abrí un PDF');return}if(pdfReference){el.classList.remove('pdf-reference');pdfReference=false;el.classList.add('pdf-focus');$('pdfModeBadge').textContent='PDF inteligente'}else{el.classList.remove('pdf-focus','pdf-split');el.classList.add('pdf-reference');pdfReference=true;$('pdfModeBadge').textContent='🎯 Referencia'}requestAnimationFrame(()=>pdfDoc&&renderPdfPage(pdfPage))}
-  async function extractPdfPageText(pageNo=pdfPage){if(!pdfDoc)return '';const key=(currentPdfId||'x')+':'+pageNo;if(pdfTextCache.has(key))return pdfTextCache.get(key);try{const pg=await pdfDoc.getPage(pageNo),tc=await pg.getTextContent();const text=tc.items.map(x=>x.str).join(' ').replace(/\s+/g,' ').trim();pdfTextCache.set(key,text);return text}catch(e){return ''}}
-  async function extractPdfAllText(limit=8){if(!pdfDoc)return '';let out=[];const end=Math.min(pdfDoc.numPages,limit);for(let i=1;i<=end;i++){const t=await extractPdfPageText(i);if(t)out.push('Página '+i+': '+t)}return out.join('\n\n')}
-  function studyWords(text){const stop=new Set('para con una por las los del que una como este esta esto desde entre sobre más menos también donde cuando puede sus son fue han hay cada muy sin pero porque hacia mediante según como ello ellas ellos esta ese esa estos estas tiene tener hacer parte cada otros otro'.split(' '));const m=(text.toLowerCase().match(/[a-záéíóúüñ]{5,}/gi)||[]).filter(w=>!stop.has(w));const c={};m.forEach(w=>c[w]=(c[w]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,14)}
-  window.openPdfStudy=async function(mode='summary'){
-    if(!pdfDoc){toastMsg('📄 Primero abrí un PDF');return}
-    const modal=$('pdfStudyModal'),content=$('pdfStudyContent'),title=$('pdfStudyTitle');
-    modal.classList.add('open');content.textContent='Analizando el contenido…';
-    const text=await extractPdfAllText(12);
-    if(!text){content.textContent='Este PDF no contiene texto extraíble en las páginas consultadas. Podés usar Recortar para trabajar visualmente con él.';return}
-    const pages=Math.min(pdfDoc.numPages,12), words=studyWords(text);
-    if(mode==='text'){
-      title.textContent='📄 Texto extraído';
-      content.innerHTML='<div class="study-action-row"><button onclick="copyPdfStudyText()">📋 Copiar texto</button><button onclick="downloadPdfStudyText()">💾 Guardar TXT</button></div><div id="pdfStudyRawText"></div>';
-      $('pdfStudyRawText').textContent=text.slice(0,18000); window.__studyText=text; return;
-    }
-    if(mode==='concepts'){
-      title.textContent='💡 Conceptos detectados';
-      content.innerHTML='<div class="study-stat"><div><b>'+pages+'</b><span>páginas analizadas</span></div><div><b>'+words.length+'</b><span>conceptos destacados</span></div><div><b>'+text.split(/\s+/).length+'</b><span>palabras aprox.</span></div></div>'+words.map(([w,n])=>`<span class="study-chip">${escapeHtml(w)} · ${n}</span>`).join(''); return;
-    }
-    if(mode==='exercises'){
-      title.textContent='📝 Zona de práctica';
-      const qs=['¿Cuál es la idea principal del material?','¿Qué definición o fórmula aparece?','Explicá con tus palabras un concepto importante.','¿Qué datos necesitarías para resolver un problema relacionado?','Inventá un ejemplo y comprobá el resultado.'];
-      content.innerHTML=qs.map((q,i)=>`<div class="exam-card"><b>${i+1}. ${q}</b><input placeholder="Escribí tu respuesta…"></div>`).join('')+'<div class="study-action-row"><button onclick="copyPractice()">📋 Copiar respuestas</button></div>';
-      window.__practiceQuestions=qs; return;
-    }
-    if(mode==='flashcards'){
-      title.textContent='🃏 Tarjetas de estudio';
-      const cards=words.slice(0,10).map(([w])=>({front:w,back:'Buscá en el PDF la definición, fórmula, ejemplo o relación de «'+w+'».'}));
-      window.__flashcards=cards;window.__flashIndex=0;window.__flashSide=false;renderFlashcard();return;
-    }
-    if(mode==='exam'){
-      title.textContent='🎓 Modo examen';
-      const cards=words.slice(0,5); content.innerHTML='<div class="study-stat"><div><b>'+cards.length+'</b><span>preguntas</span></div><div><b>∞</b><span>sin límite de tiempo</span></div><div><b>🔒</b><span>modo práctica</span></div></div>'+cards.map(([w],i)=>`<div class="exam-card"><b>${i+1}. Explicá o aplicá el concepto «${escapeHtml(w)}» sin copiar el PDF.</b><input placeholder="Tu respuesta…"></div>`).join('')+'<div class="study-action-row"><button onclick="copyPractice()">📋 Copiar examen</button><button onclick="closePdfStudy()">✓ Terminar</button></div>';return;
-    }
-    title.textContent='🧠 Lectura inteligente';
-    content.innerHTML='<div class="study-stat"><div><b>'+pages+'</b><span>páginas analizadas</span></div><div><b>'+text.split(/\s+/).length+'</b><span>palabras aprox.</span></div><div><b>'+words.length+'</b><span>conceptos destacados</span></div></div><div class="study-action-row"><button onclick="openPdfStudy(\'concepts\')">💡 Ver conceptos</button><button onclick="openPdfStudy(\'flashcards\')">🃏 Crear tarjetas</button><button onclick="openPdfStudy(\'exam\')">🎓 Modo examen</button></div><div id="pdfStudySummary"></div>';
-    $('pdfStudySummary').textContent='Resumen de trabajo\n\n'+text.slice(0,7000)+(text.length>7000?'…':'');
-  }
-  function renderFlashcard(){const c=window.__flashcards||[],i=window.__flashIndex||0,side=window.__flashSide;const content=$('pdfStudyContent');if(!c.length){content.textContent='No hay suficiente texto para crear tarjetas.';return}const card=c[i%c.length];content.innerHTML=`<div class="flashcard">${escapeHtml(side?card.back:card.front)}</div><div class="study-action-row"><button onclick="window.__flashSide=!window.__flashSide;renderFlashcard()">🔄 Dar vuelta</button><button onclick="window.__flashIndex=(window.__flashIndex+1)%window.__flashcards.length;window.__flashSide=false;renderFlashcard()">➡️ Siguiente</button><span class="pdf-mode-badge">${i+1}/${c.length}</span></div>`}
-  window.copyPdfStudyText=function(){navigator.clipboard?.writeText(window.__studyText||'');toastMsg('📋 Texto copiado')}
-  window.downloadPdfStudyText=function(){const b=new Blob([window.__studyText||''],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pdf_extraido.txt';a.click();URL.revokeObjectURL(a.href)}
-  window.copyPractice=function(){const vals=[...$('pdfStudyContent').querySelectorAll('input')].map((x,i)=>(i+1)+'. '+x.value).join('\n');navigator.clipboard?.writeText(vals);toastMsg('📋 Respuestas copiadas')}
-  window.closePdfStudy=function(){$('pdfStudyModal')?.classList.remove('open')}
-  window.togglePdfLens=function(){pdfLensOn=!pdfLensOn;const view=$('pdfView');if(!view)return;let lens=view.querySelector('.pdf-lens');if(pdfLensOn){if(!lens){lens=document.createElement('div');lens.className='pdf-lens';view.appendChild(lens)}lens.style.display='block';view.onpointermove=e=>{if(!pdfLensOn)return;const r=view.getBoundingClientRect();lens.style.left=Math.max(0,Math.min(view.clientWidth-180,e.clientX-r.left-90))+'px';lens.style.top=Math.max(0,Math.min(view.clientHeight-120,e.clientY-r.top-60))+'px'};toastMsg('🔍 Lupa activada')}else{if(lens)lens.style.display='none';view.onpointermove=null;toastMsg('🔍 Lupa desactivada')}}
-  window.togglePdfCompare=function(){pdfCompareOn=!pdfCompareOn;toastMsg(pdfCompareOn?'⚖️ Comparación preparada: navegá con ◀/▶ para contrastar páginas':'⚖️ Comparación desactivada')}
-  window.openPdfSource=async function(id,page){if(id&&id!==currentPdfId){const rec=await dbGet(id);if(rec&&typeof openPdfRecord==='function')await openPdfRecord(rec)}if(pdfDoc){pdfPage=Math.max(1,Math.min(pdfDoc.numPages,page||1));await renderPdfPage(pdfPage);$('pdfStudio')?.classList.add('open');$('pdfStudio')?.classList.remove('pdf-reference');pdfReference=false;toastMsg('🔗 Volviste al origen del recorte, página '+pdfPage)}}
-
-  window.searchInternetPDF=function(){
-    const input=$('pdfWebSearch'),q=(input?.value||'').trim();if(!q){input?.focus();return}
-    const url='https://www.google.com/search?q='+encodeURIComponent(q+' filetype:pdf')+'&udm=14';
-    window.open(url,'_blank','noopener,noreferrer');
-  };
-  $('pdfWebSearch')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchInternetPDF()}if(e.key==='Escape')e.target.value=''});
-  document.addEventListener('pointerdown',e=>{if($('pdfResults')?.style.display==='block'&&!e.target.closest('#pdfGoogleSearch')&&!e.target.closest('#pdfResults'))$('pdfResults').style.display='none'});
-
-  const studio=$('pdfStudio'),handle=$('pdfDragHandle');let drag=null;
-  handle?.addEventListener('pointerdown',e=>{
-    if(e.target.closest('button'))return;
-    const r=studio.getBoundingClientRect();
-    // En modo Solo PDF también se puede mover: convertimos el centrado por transform a coordenadas reales sin salto visual.
-    if(studio.classList.contains('pdf-focus')){
-      studio.style.left=r.left+'px';
-      studio.style.top=r.top+'px';
-      studio.style.right='auto';
-      studio.style.bottom='auto';
-      studio.style.transform='none';
-      studio.classList.add('pdf-dragging');
-    }
-    drag={x:e.clientX-r.left,y:e.clientY-r.top};
-    handle.setPointerCapture?.(e.pointerId);
-    e.preventDefault();
-  });
-  handle?.addEventListener('pointermove',e=>{
-    if(!drag)return;
-    const w=studio.offsetWidth,h=studio.offsetHeight;
-    const margin=8;
-    const maxX=Math.max(margin,window.innerWidth-w-margin);
-    const maxY=Math.max(margin,window.innerHeight-h-margin);
-    const x=Math.max(margin,Math.min(maxX,e.clientX-drag.x));
-    const y=Math.max(margin,Math.min(maxY,e.clientY-drag.y));
-    studio.style.transform='none';
-    studio.style.left=x+'px';
-    studio.style.top=y+'px';
-    studio.style.right='auto';
-    studio.style.bottom='auto';
-  });
-  const stopPdfDrag=()=>{drag=null;studio.classList.remove('pdf-dragging');savePdfStudioPosition()};
-  handle?.addEventListener('pointerup',stopPdfDrag);
-  handle?.addEventListener('pointercancel',stopPdfDrag);
-  handle?.addEventListener('dblclick',e=>{
-    if(e.target.closest('button')||!studio.classList.contains('pdf-focus'))return;
-    studio.style.removeProperty('left');studio.style.removeProperty('top');studio.style.removeProperty('right');studio.style.removeProperty('bottom');studio.style.removeProperty('transform');
-    studio.classList.remove('pdf-dragging');
-  });
-})();
-</script>
-
-<div id="readingModeBar" aria-label="Controles del modo lectura">
-  <span class="reading-label">👁️ Descanso visual</span>
-  <button id="readingWarmBtn" onclick="cycleReadingStyle()">◐ Estilo: B/N</button>
-  <button onclick="toggleFullScreen()">⛶ Pantalla</button>
-  <button onclick="toggleReadingMode()">✕ Salir</button>
-</div>
-
-<script>
-/* Modo lectura: capa visual independiente; no toca el motor de escritura ni el guardado. */
-(function(){
-  window.toggleReadingMode=function(force){
-    const body=document.body;
-    const on=typeof force==='boolean'?force:!body.classList.contains('reading-mode');
-    body.classList.toggle('reading-mode',on);
-    if(on) restoreReadingStyle();
-    const b=document.getElementById('btnReadingMode');
-    if(b) b.textContent=on?'📖 Lectura activa':'📖 Modo lectura';
-    try{localStorage.setItem('cuadernoReadingMode',on?'1':'0')}catch(e){}
-  };
-  window.toggleReadingWarm=function(){ cycleReadingStyle(); };
-  const readingStyles=[
-    {cls:'reading-classic',label:'◐ Estilo: B/N'},
-    {cls:'reading-warm',label:'📜 Estilo: Antiguo'},
-    {cls:'reading-sepia',label:'🟤 Estilo: Sepia'}
-  ];
-  window.cycleReadingStyle=function(){
-    const body=document.body, b=document.getElementById('readingWarmBtn');
-    let i=readingStyles.findIndex(x=>body.classList.contains(x.cls));
-    i=(i+1)%readingStyles.length;
-    readingStyles.forEach(x=>body.classList.remove(x.cls));
-    body.classList.add(readingStyles[i].cls);
-    if(b){b.textContent=readingStyles[i].label;b.classList.add('active');}
-    try{localStorage.setItem('cuadernoReadingStyle',readingStyles[i].cls)}catch(e){}
-  };
-  function restoreReadingStyle(){
-    let saved='reading-classic';
-    try{saved=localStorage.getItem('cuadernoReadingStyle')||saved}catch(e){}
-    const found=readingStyles.find(x=>x.cls===saved)||readingStyles[0];
-    readingStyles.forEach(x=>document.body.classList.remove(x.cls));
-    document.body.classList.add(found.cls);
-    const b=document.getElementById('readingWarmBtn');
-    if(b){b.textContent=found.label;b.classList.add('active');}
-  }
-  const saved=(()=>{try{return localStorage.getItem('cuadernoReadingMode')==='1'}catch(e){return false}})();
-  restoreReadingStyle();
-  if(saved) requestAnimationFrame(()=>toggleReadingMode(true));
-  document.addEventListener('keydown',e=>{
-    if((e.key==='r'||e.key==='R')&&!e.ctrlKey&&!e.altKey&&!e.metaKey&&document.activeElement?.tagName!=='INPUT'&&document.activeElement?.tagName!=='TEXTAREA') toggleReadingMode();
-    if(e.key==='Escape'&&document.body.classList.contains('reading-mode')) toggleReadingMode(false);
-  });
-})();
-</script>
-
-<!-- BACKUP SYSTEM -->
-<script>
-function descargarRespaldo() {
-    const datosRespaldo = {
-        materias: localStorage.getItem('cuadernosMaterias_v1'),
-        avanzado_v1: localStorage.getItem('cuadernoAvanzado_v1'),
-        avanzado_v2: localStorage.getItem('cuadernoAvanzado_v2')
-    };
-
-    const blob = new Blob([JSON.stringify(datosRespaldo)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement("a");
-    a.href = url;
-    
-    const fecha = new Date().toISOString().split('T')[0];
-    a.download = "Mis_Cuadernos_Backup_" + fecha + ".json";
-    
-    a.click();
-    URL.revokeObjectURL(url);
-    if (typeof toast === 'function') toast('📥 Copia de seguridad descargada con éxito');
-}
-
-function cargarRespaldo() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    
-    input.onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(evento) {
-            try {
-                const datos = JSON.parse(evento.target.result);
-                
-                if (datos.materias) localStorage.setItem('cuadernosMaterias_v1', datos.materias);
-                if (datos.avanzado_v1) localStorage.setItem('cuadernoAvanzado_v1', datos.avanzado_v1);
-                if (datos.avanzado_v2) localStorage.setItem('cuadernoAvanzado_v2', datos.avanzado_v2);
-                
-                alert("¡Respaldo restaurado con éxito! La página se actualizará para mostrar tus cuadernos.");
-                location.reload();
-            } catch (err) {
-                alert("Error: El archivo seleccionado no es un respaldo válido.");
-            }
-        };
-        reader.readAsText(file);
-    };
-    
-    input.click();
-}
-
-// --- CRONÓMETRO DE ESTUDIO ---
-let studySeconds = 0;
-let studyTimerInterval;
-
-function updateStudyTimer() {
-    const h = String(Math.floor(studySeconds / 3600)).padStart(2, '0');
-    const m = String(Math.floor((studySeconds % 3600) / 60)).padStart(2, '0');
-    const s = String(studySeconds % 60).padStart(2, '0');
-    const btn = document.getElementById('studyTimer');
-    if (btn) btn.textContent = `⏱️ ${h}:${m}:${s}`;
-}
-
-function startStudyTimer() {
-    clearInterval(studyTimerInterval);
-    studyTimerInterval = setInterval(() => {
-        studySeconds++;
-        updateStudyTimer();
-    }, 1000);
-}
-
-function resetTimer() {
-    studySeconds = 0;
-    updateStudyTimer();
-    startStudyTimer();
-    if (typeof toast === 'function') toast('⏱️ Cronómetro reiniciado a cero');
-}
-
-// --- SUBIR CUALQUIER ARCHIVO ---
-async function handleAnyFile(e) {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    
-    for (let file of files) {
-        if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                let targetContainer = activePageContainer || pagesData[pagesData.length-1].container;
-                createPastedImage(ev.target.result, targetContainer, 50, 50, 250, null);
-            };
-            reader.readAsDataURL(file);
-        } else if (file.type === 'application/pdf') {
-            if (typeof loadFile === 'function') {
-                await loadFile(file);
-                const studio = document.getElementById('pdfStudio');
-                if (studio && !studio.classList.contains('open') && typeof togglePdfStudio === 'function') {
-                    togglePdfStudio();
+        // ARCHIVOS (Insertar adjuntos)
+        async function handleAnyFile(e) {
+            const files = e.target.files; if (!files || files.length === 0) return;
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader(); reader.onload = (ev) => { let target = activePageContainer || pagesData[pagesData.length-1].container; createPastedImage(ev.target.result, target, 50, 50, 250, null); }; reader.readAsDataURL(file);
+                } else if (file.type === 'application/pdf') {
+                    if(typeof loadFile === 'function') { await loadFile(file); if(!document.getElementById('pdfStudio').classList.contains('open')) togglePdfStudio(); }
+                } else {
+                    const reader = new FileReader(); reader.onload = (ev) => { let target = activePageContainer || pagesData[pagesData.length-1].container; createFileAttachment(ev.target.result, file.name, target, 50, 50); }; reader.readAsDataURL(file);
                 }
-            }
-        } else {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                let targetContainer = activePageContainer || pagesData[pagesData.length-1].container;
-                createFileAttachment(ev.target.result, file.name, targetContainer, 50, 50);
-            };
-            reader.readAsDataURL(file);
+            } e.target.value = '';
         }
-    }
-    e.target.value = ''; // Reset input para poder subir el mismo archivo después si querés
-}
+        function createFileAttachment(url, name, container, x, y) {
+            const wrapper = document.createElement('div'); wrapper.className = 'pasted-element active-element';
+            wrapper.style.cssText = `left:${x}px; top:${y}px; padding:12px; background:rgba(255,255,255,0.95); border:2px solid #0078d7; border-radius:10px; color:#000; box-shadow:0 6px 20px rgba(0,0,0,0.3); min-width:180px; text-align:center;`;
+            wrapper.innerHTML = `<div style="font-weight:bold; margin-bottom:8px; font-size:14px; word-break:break-all;">📎 ${name}</div><a href="${url}" download="${name}" style="background:#0078d7; color:#fff; padding:6px 14px; border-radius:6px; text-decoration:none; font-size:13px; font-weight:bold;">⬇️ Descargar archivo</a>`;
+            container.appendChild(wrapper); deselectPastedElements(); activePastedElement = wrapper;
+            // Drag logic simple
+            let isDrag = false, dx=0, dy=0;
+            wrapper.addEventListener('pointerdown', e => { if (e.target.tagName === 'A') return; e.stopPropagation(); deselectPastedElements(); wrapper.classList.add('active-element'); activePastedElement=wrapper; isDrag=true; const rect = wrapper.getBoundingClientRect(); dx = e.clientX - rect.left; dy = e.clientY - rect.top; wrapper.setPointerCapture?.(e.pointerId); });
+            wrapper.addEventListener('pointermove', e => { if(!isDrag)return; e.preventDefault(); const pRect = container.getBoundingClientRect(); wrapper.style.left = (e.clientX - pRect.left - dx) + 'px'; wrapper.style.top = (e.clientY - pRect.top - dy) + 'px'; });
+            wrapper.addEventListener('pointerup', () => { if(isDrag){ isDrag = false; markPastedElementChanged(wrapper); }});
+        }
 
-function createFileAttachment(url, name, container, x=50, y=50) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'pasted-element active-element';
-    wrapper.style.left = x + 'px';
-    wrapper.style.top = y + 'px';
-    wrapper.style.padding = '12px';
-    wrapper.style.background = 'rgba(255,255,255,0.95)';
-    wrapper.style.border = '2px solid #0078d7';
-    wrapper.style.borderRadius = '10px';
-    wrapper.style.color = '#000';
-    wrapper.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
-    wrapper.style.minWidth = '180px';
-    wrapper.style.textAlign = 'center';
-    
-    const safeName = String(name).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    
-    wrapper.innerHTML = `
-        <div style="font-weight:bold; margin-bottom:8px; font-size:14px; word-break:break-all;">📎 ${safeName}</div>
-        <a href="${url}" download="${safeName}" style="display:inline-block; background:#0078d7; color:#fff; padding:6px 14px; border-radius:6px; text-decoration:none; font-size:13px; font-weight:bold;">⬇️ Descargar archivo</a>
-    `;
-    
-    container.appendChild(wrapper);
-    if(typeof deselectPastedElements === 'function') deselectPastedElements();
-    activePastedElement = wrapper;
-    
-    let isDragging = false, dragX = 0, dragY = 0;
-    wrapper.addEventListener('pointerdown', e => {
-        if (e.target.tagName === 'A') return; // Permitir hacer clic para descargar
-        e.stopPropagation();
-        if(typeof deselectPastedElements === 'function') deselectPastedElements();
-        wrapper.classList.add('active-element');
-        activePastedElement = wrapper;
-        isDragging = true;
-        const rect = wrapper.getBoundingClientRect();
-        const zoom = typeof notebookZoom !== 'undefined' ? notebookZoom : 1;
-        dragX = (e.clientX - rect.left) / zoom;
-        dragY = (e.clientY - rect.top) / zoom;
-        if(wrapper.setPointerCapture) wrapper.setPointerCapture(e.pointerId);
-    });
-    
-    wrapper.addEventListener('pointermove', e => {
-        if (!isDragging) return;
-        e.preventDefault();
-        const parentRect = container.getBoundingClientRect();
-        const zoom = typeof notebookZoom !== 'undefined' ? notebookZoom : 1;
-        wrapper.style.left = ((e.clientX - parentRect.left) / zoom - dragX) + 'px';
-        wrapper.style.top = ((e.clientY - parentRect.top) / zoom - dragY) + 'px';
-    });
-    
-    const stopDrag = () => { 
-        if(isDragging) {
-            isDragging = false; 
-            if(typeof markPastedElementChanged === 'function') markPastedElementChanged(wrapper); 
+        // UNDO / REDO / UI
+        let undoStack = [], redoStack = [], historyBusy = false;
+        function snapshotState(){
+            if(historyBusy) return;
+            try{ const state=pagesData.map(p=>({ img:p.drawCanvas.toDataURL(), elements:[...p.container.querySelectorAll('.pasted-element')].map(el=>({ src:el.querySelector('img')?.src, text:!el.querySelector('img')?el.innerHTML:'', x:el.style.left, y:el.style.top, w:el.style.width, h:el.style.height, locked:el.classList.contains('pdf-locked'), background:el.classList.contains('pdf-background') })) }));
+                undoStack.push(JSON.stringify(state)); if(undoStack.length>30) undoStack.shift(); redoStack=[]; }catch(e){}
         }
-    };
-    
-    wrapper.addEventListener('pointerup', stopDrag);
-    wrapper.addEventListener('pointercancel', stopDrag);
-}
-</script>
+        function restoreState(serialized){
+            if(!serialized)return; historyBusy=true;
+            try{ const state=JSON.parse(serialized); notebookEl.innerHTML=''; pagesData=[]; state.forEach(s=>addPage(s.img,null,s.elements||[])); updatePageIndicator(); }finally{historyBusy=false}
+        }
+        function undoAction(){ if(!undoStack.length){toast('No hay acciones para deshacer');return} snapshotState(); restoreState(undoStack.pop()); toast('Deshecho'); }
+        function redoAction(){ if(!redoStack.length){toast('No hay acciones para rehacer');return} restoreState(redoStack.pop()); toast('Rehecho'); }
+        
+        let gridOverlayOn = false;
+        function toggleGridOverlay(){ gridOverlayOn=!gridOverlayOn; pagesData.forEach(p=>{ p.container.style.backgroundImage=gridOverlayOn ? 'linear-gradient(rgba(0,120,215,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(0,120,215,.10) 1px,transparent 1px)' : ''; p.container.style.backgroundSize=gridOverlayOn?'20px 20px':''; }); }
+
+        window.addEventListener('resize', () => {
+            const temp = pagesData.map(p => ({ src: p.drawCanvas.toDataURL() }));
+            pagesData.forEach((page, i) => {
+                resizePageCanvases(page); drawBackground(page);
+                const img = new Image(); img.onload = () => { page.drawCtx.save(); page.drawCtx.setTransform(1, 0, 0, 1, 0, 0); page.drawCtx.drawImage(img, 0, 0, page.drawCanvas.width, page.drawCanvas.height); page.drawCtx.restore(); }; img.src = temp[i].src;
+            });
+        });
+
+        // ================= GESTOR DE MATERIAS & BACKUP =================
+        const NB_KEY = 'cuadernosMaterias_ligero';
+        let currentId = null;
+        function uid(){return 'nb_'+Date.now()+'_'+Math.random().toString(36).slice(2,8)}
+        function readStore(){try{return JSON.parse(localStorage.getItem(NB_KEY))||{current:null,items:[]}}catch(e){return {current:null,items:[]}}}
+        function writeStore(x){localStorage.setItem(NB_KEY,JSON.stringify(x))}
+        
+        function snapshotNotebook(){ return {bg:document.getElementById('bgType')?.value||'rayada',pages:pagesData.map(p=>{ if(p._dirtySave || !p._savedImgData){ p._savedImgData=p.drawCanvas.toDataURL('image/webp',0.85); p._dirtySave=false; } return {imgData:p._savedImgData,elements:[...p.container.querySelectorAll('.pasted-element')].map(el=>({ type:el.querySelector('img')?'image':'text',src:el.querySelector('img')?.src,text:el.querySelector('img')?'':el.innerHTML||'', x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background'),css:el.style.cssText }))}; })}; }
+        
+        let saveTimer=0;
+        function flushNotebookNow(){
+            if(!currentId)return false;
+            try{ const st=readStore(), it=st.items.find(x=>x.id===currentId); if(!it)return false; Object.assign(it,snapshotNotebook()); st.current=currentId; writeStore(st); if(document.getElementById('nb-drawer')?.classList.contains('open')) renderList(); return true; }catch(err){return false;}
+        }
+        function scheduleAutosave(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>flushNotebookNow(), 1500); }
+        window.saveLocalSilent = () => { flushNotebookNow(); toast('Guardado ✓'); };
+
+        function loadNotebook(item){
+            const st=readStore(); st.current=item.id; writeStore(st); currentId=item.id;
+            notebookEl.innerHTML=''; pagesData=[]; activePageContainer=null; document.getElementById('bgType').value=item.bg||'rayada';
+            const pages=item.pages?.length?item.pages:[{imgData:null,elements:[]}];
+            pages.forEach(pg=>{ addPage(pg.imgData||null, item.bg||'rayada', pg.elements); });
+            updatePageIndicator(); renderList(); toast('📖 '+item.name);
+        }
+
+        window.toggleNotebookManager=function(){document.getElementById('nb-drawer').classList.toggle('open');document.getElementById('nb-overlay').classList.toggle('open');renderList()}
+        function renderList(){
+            const out=document.getElementById('nb-list'), st=readStore();
+            if(!st.items.length){out.innerHTML='<div style="padding:20px;text-align:center;color:#9ca3af;">No hay cuadernos.</div>';return}
+            out.innerHTML=st.items.map(it=>`<div class="nb-item ${it.id===currentId?'active':''}"><button class="nb-open" onclick="switchNotebook('${it.id}')"><span class="nb-name">📘 ${it.name}</span></button></div>`).join('');
+        }
+        window.switchNotebook=function(id){ if(id===currentId){toggleNotebookManager();return} flushNotebookNow(); const st=readStore(), item=st.items.find(x=>x.id===id); if(item) loadNotebook(item); toggleNotebookManager(); }
+        window.createNotebook=function(){ flushNotebookNow(); const name=prompt('Nombre de la materia / cuaderno:','Nueva Materia'); if(!name?.trim())return; const st=readStore(), item={id:uid(),name:name.trim(),bg:'rayada',pages:[]}; st.items.push(item); st.current=item.id; writeStore(st); currentId=item.id; loadNotebook(item); toggleNotebookManager(); }
+        window.renameCurrentNotebook=function(){ const st=readStore(),it=st.items.find(x=>x.id===currentId);if(!it)return; const n=prompt('Nuevo nombre:',it.name);if(!n?.trim())return;it.name=n.trim();writeStore(st);renderList();toast('Nombre actualizado'); }
+        
+        window.addEventListener('load', () => { 
+            setTimeout(() => {
+                const st=readStore();
+                if(!st.items.length){ const first={id:uid(),name:'General',bg:'rayada',pages:[]}; st.items=[first]; st.current=first.id; writeStore(st); currentId=first.id; addPage(); flushNotebookNow(); } 
+                else { currentId=st.current||st.items[0].id; loadNotebook(st.items.find(x=>x.id===currentId)||st.items[0]); }
+                renderList();
+            }, 200); 
+        });
+        window.addEventListener('beforeunload',()=>flushNotebookNow());
+
+        // BACKUPS JSON
+        function descargarRespaldo() {
+            flushNotebookNow();
+            const data = { materias: localStorage.getItem(NB_KEY) };
+            const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+            const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "Mis_Cuadernos_Ligero_" + new Date().toISOString().split('T')[0] + ".json"; a.click(); URL.revokeObjectURL(a.href); toast('📥 Copia descargada');
+        }
+        function cargarRespaldo() {
+            const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(evento) {
+                    try { const datos = JSON.parse(evento.target.result); if (datos.materias) localStorage.setItem(NB_KEY, datos.materias); alert("¡Respaldo restaurado!"); location.reload(); } 
+                    catch (err) { alert("Error: Archivo no válido."); }
+                }; reader.readAsText(file);
+            }; input.click();
+        }
+
+        // ================= PDF STUDIO CORE (LIGERO) =================
+        const PDF_DB='cuadernoPDFs_ligero', PDF_STORE='pdfs';
+        let pdfDoc=null,pdfPage=1,pdfScale=1,pdfCrop=false,pdfCropRect=null,currentPdfId=null;
+        
+        function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(PDF_DB,1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(PDF_STORE)){db.createObjectStore(PDF_STORE,{keyPath:'id'}).createIndex('notebook','notebook',{unique:false})}};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+        async function dbPut(v){const db=await openDB();return new Promise((res)=>{const tx=db.transaction(PDF_STORE,'readwrite');tx.objectStore(PDF_STORE).put(v);tx.oncomplete=res;})}
+        async function dbGet(id){const db=await openDB();return new Promise((res)=>{const r=db.transaction(PDF_STORE).objectStore(PDF_STORE).get(id);r.onsuccess=()=>res(r.result);})}
+        async function dbList(nb){const db=await openDB();return new Promise((res)=>{const r=db.transaction(PDF_STORE).objectStore(PDF_STORE).index('notebook').getAll(nb);r.onsuccess=()=>res(r.result||[]);})}
+        
+        window.togglePdfStudio = async function(){ const el=document.getElementById('pdfStudio'); el.classList.toggle('open'); if(el.classList.contains('open')) await refreshPdfLibrary(); };
+        window.pdfZoom = function(d){ pdfScale=Math.max(.65,Math.min(2.5,pdfScale+d*.15)); document.getElementById('pdfZoomLabel').textContent=Math.round(pdfScale*100)+'%'; if(pdfDoc)renderPdfPage(pdfPage); };
+        
+        async function renderPdfPage(n){
+            if(!pdfDoc)return; pdfPage=Math.max(1,Math.min(pdfDoc.numPages,n));
+            const page=await pdfDoc.getPage(pdfPage); const vp=page.getViewport({scale:pdfScale});
+            const view=document.getElementById('pdfView'); view.innerHTML='';
+            const wrap=document.createElement('div'); wrap.className='pdf-page-wrap'; wrap.style.width=vp.width+'px'; wrap.style.height=vp.height+'px'; wrap.style.touchAction='none';
+            const canvas=document.createElement('canvas'); canvas.width=Math.ceil(vp.width); canvas.height=Math.ceil(vp.height); canvas.style.width=vp.width+'px'; canvas.style.height=vp.height+'px';
+            wrap.appendChild(canvas); const crop=document.createElement('div'); crop.className='pdf-crop-box'; wrap.appendChild(crop); view.appendChild(wrap);
+            await page.render({canvasContext:canvas.getContext('2d',{alpha:false}),viewport:vp}).promise;
+            pdfCropRect=null; crop.style.display='none'; document.getElementById('pdfPageLabel').textContent='Pág '+pdfPage+' / '+pdfDoc.numPages;
+
+            let start=null;
+            wrap.onpointerdown=e=>{ if(!pdfCrop)return; e.preventDefault(); const r=wrap.getBoundingClientRect(); start={x:Math.max(0,Math.min(r.width,e.clientX-r.left)),y:Math.max(0,Math.min(r.height,e.clientY-r.top))}; wrap.setPointerCapture?.(e.pointerId); pdfCropRect={x:start.x,y:start.y,w:0,h:0}; crop.style.display='block'; crop.style.left=start.x+'px'; crop.style.top=start.y+'px'; crop.style.width='0px'; crop.style.height='0px'; };
+            wrap.onpointermove=e=>{ if(!pdfCrop||!start)return; const r=wrap.getBoundingClientRect(); const ex=Math.max(0,Math.min(r.width,e.clientX-r.left)), ey=Math.max(0,Math.min(r.height,e.clientY-r.top)); const x=Math.min(start.x,ex),y=Math.min(start.y,ey),w=Math.abs(ex-start.x),h=Math.abs(ey-start.y); pdfCropRect={x,y,w,h}; crop.style.left=x+'px';crop.style.top=y+'px';crop.style.width=w+'px';crop.style.height=h+'px'; };
+            const finish=e=>{if(!start)return;wrap.releasePointerCapture?.(e.pointerId);start=null;if(pdfCropRect&&pdfCropRect.w>8)toast('Recorte listo');else{pdfCropRect=null;crop.style.display='none';}};
+            wrap.onpointerup=finish; wrap.onpointercancel=finish;
+        }
+
+        async function openPdfRecord(rec){
+            try{ const bytes=rec.bytes instanceof ArrayBuffer?rec.bytes:new Uint8Array(rec.bytes); pdfDoc=await window.__pdfjs.getDocument({data:bytes}).promise; currentPdfId=rec.id; pdfPage=1; await renderPdfPage(1); document.getElementById('pdfPageLabel').textContent=rec.name+' - Pág 1'; refreshPdfLibrary(); } catch(e){ toast('Error al abrir PDF'); }
+        }
+        async function refreshPdfLibrary(){
+            if(!currentId) return; const list=await dbList(currentId); const lib=document.getElementById('pdfLibrary');
+            lib.innerHTML=list.length?list.map(x=>`<button class="pdf-chip ${x.id===currentPdfId?'active':''}" onclick="loadLibraryPdf('${x.id}')">📄 ${x.name}</button>`).join(''):'<div style="color:#94a3b8;font-size:12px;">Cargá un PDF.</div>';
+        }
+        window.loadLibraryPdf = async (id) => { const rec=await dbGet(id); if(rec) await openPdfRecord(rec); };
+        window.loadFile = async (f) => { if(!currentId)return; const bytes=await f.arrayBuffer(); const rec={id:'pdf_'+Date.now(),notebook:currentId,name:f.name,bytes}; await dbPut(rec); await openPdfRecord(rec); toast('📄 PDF guardado en la materia'); };
+        
+        document.getElementById('pdfFileInput').addEventListener('change', async e=>{ for(const f of e.target.files) if(f.type==='application/pdf') await window.loadFile(f); e.target.value=''; });
+        window.pdfPrevPage=()=>pdfDoc&&renderPdfPage(pdfPage-1); window.pdfNextPage=()=>pdfDoc&&renderPdfPage(pdfPage+1);
+        
+        window.togglePdfCrop=function(){
+            if(!pdfDoc){toast('Abrí un PDF primero');return} pdfCrop=!pdfCrop; pdfCropRect=null;
+            document.getElementById('pdfCropBtn').textContent=pdfCrop?'✖️ Cancelar':'✂️ Recortar';
+            if(!pdfCrop){const c=document.getElementById('pdfView').querySelector('.pdf-crop-box');if(c)c.style.display='none'}
+        };
+        window.pastePdfCropToNotebook=function(){
+            if(!pdfDoc||!pdfCropRect||pdfCropRect.w<8){toast('Seleccioná un área del PDF primero');return}
+            const wrap=document.getElementById('pdfView').querySelector('.pdf-page-wrap'),canvas=wrap?.querySelector('canvas'); if(!wrap||!canvas)return;
+            const sx=canvas.width/wrap.getBoundingClientRect().width,sy=canvas.height/wrap.getBoundingClientRect().height;
+            const sx0=Math.floor(pdfCropRect.x*sx),sy0=Math.floor(pdfCropRect.y*sy),sw=Math.ceil(pdfCropRect.w*sx),sh=Math.ceil(pdfCropRect.h*sy);
+            const out=document.createElement('canvas');out.width=sw;out.height=sh;
+            out.getContext('2d').drawImage(canvas,sx0,sy0,sw,sh,0,0,sw,sh);
+            const src=out.toDataURL('image/png');
+            let target = activePageContainer || pagesData[pagesData.length-1].container;
+            createPastedImage(src,target,50,50,Math.min(target.clientWidth-40,sw));
+            pdfCrop=false; document.getElementById('pdfCropBtn').textContent='✂️ Recortar'; wrap.querySelector('.pdf-crop-box').style.display='none'; toast('📋 Recorte pegado en hoja');
+        };
+
+        // Arrastre simple de PDF Studio
+        const studio=document.getElementById('pdfStudio'), handle=document.getElementById('pdfDragHandle'); let pdfDrag=null;
+        handle.addEventListener('pointerdown', e => { if(e.target.closest('button'))return; const r=studio.getBoundingClientRect(); pdfDrag={x:e.clientX-r.left,y:e.clientY-r.top}; handle.setPointerCapture?.(e.pointerId); });
+        handle.addEventListener('pointermove', e => { if(!pdfDrag)return; studio.style.left=Math.max(0,e.clientX-pdfDrag.x)+'px'; studio.style.top=Math.max(0,e.clientY-pdfDrag.y)+'px'; studio.style.right='auto'; });
+        handle.addEventListener('pointerup', () => pdfDrag=null);
+        
+        // Inicializar PDF.js worker
+        import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs').then(mod=>{ window.__pdfjs=mod; mod.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs'; });
+    </script>
 </body>
 </html>
