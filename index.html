@@ -197,9 +197,6 @@
         .pdf-history-chip:hover{background:#24324a}
         @media(max-width:900px){#pdfStudio.pdf-split{width:92vw!important;left:4vw!important;top:64px!important;height:82vh!important}}
 
-
-    
-
 /* ================= DOLA + ESCRITURA FLUIDA ================= */
 #dolaWindow{position:fixed;z-index:6100;left:50%;top:50%;transform:translate(-50%,-50%);width:min(920px,92vw);height:min(700px,84vh);display:none;background:#0b1020;border:1px solid rgba(255,255,255,.16);border-radius:18px;box-shadow:0 28px 100px rgba(0,0,0,.65);overflow:hidden}
 #dolaWindow.open{display:flex;flex-direction:column}
@@ -283,24 +280,23 @@
  .page-container{box-shadow:none;break-after:page}
 }
 
-    
-
 /* ================= MODO LECTURA / DESCANSO VISUAL ================= */
 #readingModeBar{display:none;position:fixed;z-index:7000;left:50%;bottom:18px;transform:translateX(-50%);align-items:center;gap:8px;padding:7px 10px;background:rgba(24,27,34,.90);border:1px solid rgba(255,255,255,.12);border-radius:999px;box-shadow:0 12px 36px rgba(0,0,0,.35);backdrop-filter:blur(14px);color:#fff}
 #readingModeBar button{border:0!important;background:#303744!important;color:#fff!important;border-radius:999px!important;padding:8px 12px!important;font-size:12px!important;cursor:pointer}
 #readingModeBar .reading-label{font-size:11px;opacity:.8;padding:0 4px}
 body.reading-mode{background:#26282d!important;overflow-x:hidden!important;color:#111!important} body.reading-mode *{border-color:#777!important;accent-color:#555!important} body.reading-mode button,body.reading-mode input,body.reading-mode select,body.reading-mode textarea{color:#111!important;background:#f4f4f4!important;border-color:#777!important;box-shadow:none!important} body.reading-mode svg{filter:grayscale(1)!important}
 
-/* Mantener activa y visible la herramienta seleccionada en modo lectura */
+/* Mantener activa y visible la herramienta seleccionada en modo lectura (incluso color picker) */
 body.reading-mode #toolbar button.active {background:#4caf50!important; color:#000!important; border-color:#4caf50!important;}
+body.reading-mode #colorPicker {filter:none!important;}
 
 body.reading-mode .page-container{box-shadow:0 18px 55px rgba(0,0,0,.46);filter:grayscale(1) brightness(.985);transition:filter .25s ease,box-shadow .25s ease}
-body.reading-mode #scientificCalc,body.reading-mode .enhanced-panel,body.reading-mode .pageIndicator,body.reading-mode .toast,body.reading-mode .notebook,body.reading-mode .nb-launcher,body.reading-mode #nb-overlay,body.reading-mode #nb-drawer,body.reading-mode #pdfStudio,body.reading-mode #pdfStudyModal,body.reading-mode #readingModeBar{filter:grayscale(1) contrast(1.02)} body.reading-mode .notebook,body.reading-mode .notebook *{color-scheme:light}
+body.reading-mode #toolbar,body.reading-mode #scientificCalc,body.reading-mode .enhanced-panel,body.reading-mode .pageIndicator,body.reading-mode .toast,body.reading-mode .notebook,body.reading-mode .nb-launcher,body.reading-mode #nb-overlay,body.reading-mode #nb-drawer,body.reading-mode #pdfStudio,body.reading-mode #pdfStudyModal,body.reading-mode #readingModeBar{filter:grayscale(1) contrast(1.02)} body.reading-mode .notebook,body.reading-mode .notebook *{color-scheme:light}
 body.reading-mode.reading-warm .page-container{filter:grayscale(1) brightness(.96)}
 body.reading-mode #readingModeBar{display:flex}
 body.reading-mode.reading-warm{background:#3a342c!important}
 body.reading-mode.reading-warm .page-container{filter:none}
-/* Estilos de lectura: la interfaz cambia, pero el lienzo conserva los colores de escritura. */
+
 body.reading-mode.reading-classic{background:#171717!important;color:#111!important}
 body.reading-mode.reading-classic #readingModeBar{background:#111!important;border-color:#666!important;color:#fff!important}
 body.reading-mode.reading-classic #readingModeBar button{background:#f5f5f5!important;color:#111!important;border-color:#777!important}
@@ -381,12 +377,16 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
         <div class="tool-group">
             <button onclick="addPage()">➕ Nueva Hoja</button>
             <button onclick="clearCurrentPage()">🗑️ Limpiar Hoja</button>
+            <!-- BOTON PARA SUBIR CUALQUIER ARCHIVO -->
+            <button onclick="document.getElementById('anyFileInput').click()">📎 Insertar</button>
+            <input type="file" id="anyFileInput" style="display:none" multiple onchange="handleAnyFile(event)">
         </div>
 
         <div class="tool-group" style="border-right: none;">
-            <button onclick="toggleFullScreen()">⛶ Pantalla Completa</button>
+            <button onclick="toggleFullScreen()">⛶ Pantalla</button>
             <button onclick="saveLocal()">💾 Guardar Local</button>
-
+            <!-- CRONOMETRO -->
+            <button id="studyTimer" onclick="resetTimer()" title="Clic para reiniciar" style="background:#0f172a; border-color:#334155; color:#38bdf8; font-weight:bold; font-family:monospace; font-size:15px; letter-spacing:1px; margin-left:10px;">⏱️ 00:00:00</button>
         </div>
     </div>
 
@@ -474,6 +474,7 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
             if (pagesData.length === 0) {
                 addPage();
             }
+            startStudyTimer();
         };
 
         // --- PANTALLA COMPLETA ---
@@ -994,7 +995,8 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
                 const els = page.container.querySelectorAll('.pasted-element');
                 els.forEach(el => {
                     pastedElements.push({
-                        src: el.querySelector('img').src,
+                        src: el.querySelector('img') ? el.querySelector('img').src : null,
+                        html: !el.querySelector('img') ? el.innerHTML : null, // Guardar adjuntos
                         x: el.style.left,
                         y: el.style.top,
                         w: el.style.width,
@@ -1069,6 +1071,7 @@ function snapshotState(){
       img:p.drawCanvas.toDataURL(),
       elements:[...p.container.querySelectorAll('.pasted-element')].map(el=>({
         src:el.querySelector('img')?.src,
+        text:!el.querySelector('img')?el.innerHTML:'',
         x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
       }))
     }));
@@ -1093,7 +1096,7 @@ function undoAction(){
   const current=JSON.stringify(pagesData.map(p=>({
     img:p.drawCanvas.toDataURL(),
     elements:[...p.container.querySelectorAll('.pasted-element')].map(el=>({
-      src:el.querySelector('img')?.src,x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
+      src:el.querySelector('img')?.src,text:!el.querySelector('img')?el.innerHTML:'',x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
     }))
   })));
   redoStack.push(current);
@@ -1105,7 +1108,7 @@ function redoAction(){
   const current=JSON.stringify(pagesData.map(p=>({
     img:p.drawCanvas.toDataURL(),
     elements:[...p.container.querySelectorAll('.pasted-element')].map(el=>({
-      src:el.querySelector('img')?.src,x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
+      src:el.querySelector('img')?.src,text:!el.querySelector('img')?el.innerHTML:'',x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
     }))
   })));
   undoStack.push(current);
@@ -1141,7 +1144,7 @@ function duplicatePage(){
   const p=pagesData.find(x=>x.container===activePageContainer)||pagesData[pagesData.length-1];
   if(!p)return;
   const els=[...p.container.querySelectorAll('.pasted-element')].map(el=>({
-    src:el.querySelector('img')?.src,x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
+    src:el.querySelector('img')?.src,text:!el.querySelector('img')?el.innerHTML:'',x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
   }));
   originalAddPage(p.drawCanvas.toDataURL(),document.getElementById('bgType').value,els);
   updatePageIndicator(); toast('Hoja duplicada');
@@ -1193,8 +1196,8 @@ function saveLocalSilent(){
     const bgType=document.getElementById('bgType').value;
     const data=pagesData.map(page=>({
       imgData:page.drawCanvas.toDataURL(),
-      elements:[...page.container.querySelectorAll('.pasted-element')].filter(el=>el.querySelector('img')).map(el=>({
-        src:el.querySelector('img').src,x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
+      elements:[...page.container.querySelectorAll('.pasted-element')].map(el=>({
+        src:el.querySelector('img')?el.querySelector('img').src:null,text:!el.querySelector('img')?el.innerHTML:'',x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
       }))
     }));
     localStorage.setItem('cuadernoAvanzado_v2',JSON.stringify({bg:bgType,pages:data}));
@@ -1320,7 +1323,7 @@ changeBackgroundAll=function(){_changeBackgroundAll();scheduleAutosave();};
   }
   function pageElements(page){
     return [...page.container.querySelectorAll('.pasted-element')].map(el=>({
-      type:el.querySelector('img')?'image':'text',src:el.querySelector('img')?.src,text:el.querySelector('img')?'':el.innerText||el.textContent||'',
+      type:el.querySelector('img')?'image':'text',src:el.querySelector('img')?.src,text:el.querySelector('img')?'':el.innerHTML||'',
       x:el.style.left,y:el.style.top,w:el.style.width,h:el.style.height,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background'),css:el.style.cssText,locked:el.classList.contains('pdf-locked'),background:el.classList.contains('pdf-background')
     }));
   }
@@ -1355,11 +1358,16 @@ changeBackgroundAll=function(){_changeBackgroundAll();scheduleAutosave();};
     },1200);
   }
   function addTextRestored(page,data){
-    const el=document.createElement('div'); el.className='pasted-element'; el.contentEditable='true'; el.textContent=data.text||'Escribe aquí…';
+    const el=document.createElement('div'); el.className='pasted-element'; 
+    if(data.text && data.text.includes('href=')){
+        el.innerHTML = data.text; // Es un adjunto
+    } else {
+        el.contentEditable='true'; el.textContent=data.text||'Escribe aquí…';
+    }
     el.style.cssText=data.css||'position:absolute;left:70px;top:70px;min-width:100px;padding:4px 7px;background:rgba(255,255,255,.85);border:1px dashed transparent;color:#111;z-index:4;font-size:18px;line-height:1.25;cursor:text;';
     if(data.x)el.style.left=data.x;if(data.y)el.style.top=data.y;if(data.w)el.style.width=data.w;if(data.h)el.style.height=data.h;
     page.container.appendChild(el);
-    el.addEventListener('pointerdown',e=>{ activePastedElement=el; el.classList.add('active-element'); });
+    el.addEventListener('pointerdown',e=>{ if(e.target.tagName==='A')return; activePastedElement=el; el.classList.add('active-element'); });
     el.addEventListener('blur',()=>el.style.borderColor='transparent');
   }
   function loadNotebook(item){
@@ -1781,17 +1789,12 @@ changeBackgroundAll=function(){_changeBackgroundAll();scheduleAutosave();};
 })();
 </script>
 
-
-
-
-
 <div id="readingModeBar" aria-label="Controles del modo lectura">
   <span class="reading-label">👁️ Descanso visual</span>
   <button id="readingWarmBtn" onclick="cycleReadingStyle()">◐ Estilo: B/N</button>
   <button onclick="toggleFullScreen()">⛶ Pantalla</button>
   <button onclick="toggleReadingMode()">✕ Salir</button>
 </div>
-
 
 <script>
 /* Modo lectura: capa visual independiente; no toca el motor de escritura ni el guardado. */
@@ -1890,6 +1893,126 @@ function cargarRespaldo() {
     };
     
     input.click();
+}
+
+// --- CRONÓMETRO DE ESTUDIO ---
+let studySeconds = 0;
+let studyTimerInterval;
+
+function updateStudyTimer() {
+    const h = String(Math.floor(studySeconds / 3600)).padStart(2, '0');
+    const m = String(Math.floor((studySeconds % 3600) / 60)).padStart(2, '0');
+    const s = String(studySeconds % 60).padStart(2, '0');
+    const btn = document.getElementById('studyTimer');
+    if (btn) btn.textContent = `⏱️ ${h}:${m}:${s}`;
+}
+
+function startStudyTimer() {
+    clearInterval(studyTimerInterval);
+    studyTimerInterval = setInterval(() => {
+        studySeconds++;
+        updateStudyTimer();
+    }, 1000);
+}
+
+function resetTimer() {
+    studySeconds = 0;
+    updateStudyTimer();
+    startStudyTimer();
+    if (typeof toast === 'function') toast('⏱️ Cronómetro reiniciado a cero');
+}
+
+// --- SUBIR CUALQUIER ARCHIVO ---
+async function handleAnyFile(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    for (let file of files) {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                let targetContainer = activePageContainer || pagesData[pagesData.length-1].container;
+                createPastedImage(ev.target.result, targetContainer, 50, 50, 250, null);
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type === 'application/pdf') {
+            if (typeof loadFile === 'function') {
+                await loadFile(file);
+                const studio = document.getElementById('pdfStudio');
+                if (studio && !studio.classList.contains('open') && typeof togglePdfStudio === 'function') {
+                    togglePdfStudio();
+                }
+            }
+        } else {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                let targetContainer = activePageContainer || pagesData[pagesData.length-1].container;
+                createFileAttachment(ev.target.result, file.name, targetContainer, 50, 50);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+    e.target.value = ''; // Reset input para poder subir el mismo archivo después si querés
+}
+
+function createFileAttachment(url, name, container, x=50, y=50) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'pasted-element active-element';
+    wrapper.style.left = x + 'px';
+    wrapper.style.top = y + 'px';
+    wrapper.style.padding = '12px';
+    wrapper.style.background = 'rgba(255,255,255,0.95)';
+    wrapper.style.border = '2px solid #0078d7';
+    wrapper.style.borderRadius = '10px';
+    wrapper.style.color = '#000';
+    wrapper.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
+    wrapper.style.minWidth = '180px';
+    wrapper.style.textAlign = 'center';
+    
+    const safeName = String(name).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    
+    wrapper.innerHTML = `
+        <div style="font-weight:bold; margin-bottom:8px; font-size:14px; word-break:break-all;">📎 ${safeName}</div>
+        <a href="${url}" download="${safeName}" style="display:inline-block; background:#0078d7; color:#fff; padding:6px 14px; border-radius:6px; text-decoration:none; font-size:13px; font-weight:bold;">⬇️ Descargar archivo</a>
+    `;
+    
+    container.appendChild(wrapper);
+    if(typeof deselectPastedElements === 'function') deselectPastedElements();
+    activePastedElement = wrapper;
+    
+    let isDragging = false, dragX = 0, dragY = 0;
+    wrapper.addEventListener('pointerdown', e => {
+        if (e.target.tagName === 'A') return; // Permitir hacer clic para descargar
+        e.stopPropagation();
+        if(typeof deselectPastedElements === 'function') deselectPastedElements();
+        wrapper.classList.add('active-element');
+        activePastedElement = wrapper;
+        isDragging = true;
+        const rect = wrapper.getBoundingClientRect();
+        const zoom = typeof notebookZoom !== 'undefined' ? notebookZoom : 1;
+        dragX = (e.clientX - rect.left) / zoom;
+        dragY = (e.clientY - rect.top) / zoom;
+        if(wrapper.setPointerCapture) wrapper.setPointerCapture(e.pointerId);
+    });
+    
+    wrapper.addEventListener('pointermove', e => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const parentRect = container.getBoundingClientRect();
+        const zoom = typeof notebookZoom !== 'undefined' ? notebookZoom : 1;
+        wrapper.style.left = ((e.clientX - parentRect.left) / zoom - dragX) + 'px';
+        wrapper.style.top = ((e.clientY - parentRect.top) / zoom - dragY) + 'px';
+    });
+    
+    const stopDrag = () => { 
+        if(isDragging) {
+            isDragging = false; 
+            if(typeof markPastedElementChanged === 'function') markPastedElementChanged(wrapper); 
+        }
+    };
+    
+    wrapper.addEventListener('pointerup', stopDrag);
+    wrapper.addEventListener('pointercancel', stopDrag);
 }
 </script>
 </body>
