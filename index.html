@@ -3,128 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MathAR & Measure Pro - Realidad Aumentada</title>
+    <title>NASA JPL - Mars Surface AR & Geometría R³</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
+    <!-- FontAwesome Pro/Free -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Three.js y WebXR ARButton -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/webxr/ARButton.js"></script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
     <style>
         * { font-family: 'Inter', sans-serif; touch-action: none; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        .font-math { font-family: 'Fira Code', monospace; }
-        body { margin: 0; overflow: hidden; background-color: #000; }
+        .font-nasa { font-family: 'Orbitron', sans-serif; }
+        .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
+        body { margin: 0; overflow: hidden; background-color: #030408; }
         
         #canvas-container { position: absolute; inset: 0; z-index: 10; }
-        #fallback-bg { background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #020617 100%); position: absolute; inset: 0; z-index: 5; transition: opacity 0.5s; }
         
-        /* Botón AR Nativo Estilizado */
-        #ARButton { bottom: 25px !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 100 !important; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; border-radius: 16px !important; font-weight: 600 !important; border: 1px solid rgba(255,255,255,0.3) !important; box-shadow: 0 10px 30px rgba(99, 102, 241, 0.6) !important; padding: 14px 28px !important; color: white !important; font-size: 1rem !important; }
+        /* Estilo Interfaz NASA UI - HUD Naranja/Rojo marciano */
+        .nasa-panel {
+            background: rgba(10, 6, 4, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(249, 115, 22, 0.4);
+            box-shadow: 0 0 25px rgba(249, 115, 22, 0.15), inset 0 0 15px rgba(249, 115, 22, 0.05);
+            border-radius: 4px;
+        }
+        
+        .nasa-button {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(194, 65, 12, 0.4));
+            border: 1px solid #f97316;
+            color: #fed7aa;
+            transition: all 0.2s ease;
+        }
+        .nasa-button:active, .nasa-button.active {
+            background: #f97316;
+            color: #030408;
+            box-shadow: 0 0 15px #f97316;
+        }
 
-        .panel-glass { background: rgba(9, 9, 11, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-        .card-glass { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; }
-        
-        .ui-hidden { opacity: 0; pointer-events: none; transform: translateY(100px); }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        /* Botón AR Nativo Estilizado Mars Mission */
+        #ARButton {
+            bottom: 25px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            z-index: 100 !important;
+            background: #180d07 !important;
+            border: 2px solid #f97316 !important;
+            border-radius: 4px !important;
+            font-family: 'Orbitron', sans-serif !important;
+            font-weight: 700 !important;
+            letter-spacing: 2px !important;
+            color: #f97316 !important;
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.5) !important;
+            padding: 14px 28px !important;
+            text-transform: uppercase;
+        }
+
+        .scanlines {
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        ::-webkit-scrollbar { width: 3px; height: 3px; }
+        ::-webkit-scrollbar-thumb { background: #f97316; border-radius: 2px; }
     </style>
 </head>
 <body class="text-zinc-100 select-none">
 
-    <div id="fallback-bg">
-        <div class="w-full h-full opacity-20" style="background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 30px 30px;"></div>
+    <!-- Capa de efectos visuales de visor espacial -->
+    <div class="absolute inset-0 scanlines z-20"></div>
+
+    <!-- Fondo de respaldo si la cámara no inicia de inmediato -->
+    <div id="fallback-bg" class="absolute inset-0 z-5 bg-gradient-to-b from-[#120703] to-[#030408] flex items-center justify-center">
+        <div class="text-center p-6 space-y-3">
+            <div class="inline-block animate-spin text-orange-500 text-3xl"><i class="fa-solid fa-circle-notch"></i></div>
+            <p class="font-nasa text-xs tracking-widest text-orange-400">INICIALIZANDO TELEMETRÍA MARCIANA...</p>
+        </div>
     </div>
     
     <div id="canvas-container"></div>
 
-    <!-- Interfaz de Control (UI) -->
+    <!-- Interfaz de Control NASA HUD -->
     <div id="ui-layer" class="absolute inset-0 z-30 pointer-events-none flex flex-col justify-between p-4">
         
-        <!-- Header -->
+        <!-- Header de Telemetría -->
         <header class="flex justify-between items-start w-full pointer-events-auto">
-            <div class="panel-glass px-4 py-3 rounded-2xl flex items-center gap-3 shadow-xl">
-                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/40">
-                    <i class="fa-solid fa-cube text-sm"></i>
+            <div class="nasa-panel px-4 py-2.5 flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-orange-600/30 border border-orange-500 flex items-center justify-center text-orange-400 font-nasa font-bold text-xs">
+                    JPL
                 </div>
                 <div>
-                    <h1 class="font-bold text-sm tracking-wide text-white">MathAR & Measure</h1>
-                    <p class="text-[10px] text-emerald-400 font-semibold uppercase tracking-widest"><i class="fa-solid fa-camera mr-1"></i>AR WebXR Engine</p>
+                    <h1 class="font-nasa text-xs font-bold tracking-widest text-orange-400">MARS SURF-LAB v4.2</h1>
+                    <p class="font-mono-tech text-[10px] text-zinc-400">LAT: -4.589° S | LON: 137.44° E</p>
                 </div>
             </div>
 
             <div class="flex gap-2">
-                <button id="btn-mode-shape" class="panel-glass bg-indigo-600/30 text-indigo-300 px-4 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-2 border-indigo-500/40 shadow-xl transition active:scale-95">
-                    <i class="fa-solid fa-shapes"></i> <span id="mode-text">Figuras R³</span>
+                <button id="btn-mode" class="nasa-panel px-3 py-2 nasa-button text-[11px] font-nasa font-bold uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-cube text-xs"></i> <span id="mode-label">GEOMETRÍA R³</span>
                 </button>
-                <button id="btn-clear" class="panel-glass hover:bg-rose-500/20 text-rose-400 w-11 h-11 rounded-2xl flex items-center justify-center transition shadow-xl" title="Limpiar escena">
-                    <i class="fa-solid fa-trash-can text-sm"></i>
+                <button id="btn-clear" class="nasa-panel w-9 h-9 flex items-center justify-center text-orange-400 hover:bg-orange-500/20 transition rounded" title="Purgar Objetos">
+                    <i class="fa-solid fa-radiation text-sm"></i>
                 </button>
             </div>
         </header>
 
-        <!-- Panel Inferior Dinámico -->
-        <div class="w-full max-w-md mx-auto pointer-events-auto transition-all duration-300 mb-16">
+        <!-- Panel Inferior de Datos Analíticos -->
+        <div class="w-full max-w-md mx-auto pointer-events-auto transition-all duration-300 mb-16 space-y-3">
             
-            <!-- Selector de Figuras Geométricas -->
-            <div id="panel-shapes" class="panel-glass rounded-3xl p-4 shadow-2xl space-y-3">
-                <div class="flex justify-between items-center text-xs font-semibold text-zinc-400 px-1">
-                    <span>SELECCIONAR FIGURA</span>
-                    <span class="text-indigo-400 text-[10px]">Toca la pantalla en AR para colocar</span>
+            <!-- Panel Selector de Figuras / Rovers -->
+            <div id="panel-shapes" class="nasa-panel p-4 space-y-3">
+                <div class="flex justify-between items-center text-[10px] font-nasa tracking-widest text-orange-400 border-b border-orange-500/30 pb-1.5">
+                    <span>SELECCIÓN DE ESTRUCTURA AR</span>
+                    <span class="text-zinc-400 animate-pulse">[RAYO LASER ACTIVO]</span>
                 </div>
                 <div class="grid grid-cols-4 gap-2">
-                    <button onclick="selectShape('cube')" class="shape-btn card-glass p-2.5 flex flex-col items-center gap-1 text-xs text-indigo-300 border-indigo-500/40 bg-indigo-500/10"><i class="fa-solid fa-cube text-base"></i>Cubo</button>
-                    <button onclick="selectShape('sphere')" class="shape-btn card-glass p-2.5 flex flex-col items-center gap-1 text-xs text-zinc-300 hover:bg-white/10"><i class="fa-solid fa-globe text-base"></i>Esfera</button>
-                    <button onclick="selectShape('cylinder')" class="shape-btn card-glass p-2.5 flex flex-col items-center gap-1 text-xs text-zinc-300 hover:bg-white/10"><i class="fa-solid fa-database text-base"></i>Cilindro</button>
-                    <button onclick="selectShape('pyramid')" class="shape-btn card-glass p-2.5 flex flex-col items-center gap-1 text-xs text-zinc-300 hover:bg-white/10"><i class="fa-solid fa-mountain text-base"></i>Pirámide</button>
+                    <button onclick="selectShape('tetrahedron')" class="shape-btn nasa-button p-2 flex flex-col items-center gap-1 text-[10px] font-nasa active"><i class="fa-solid fa-play text-xs"></i>Tetraedro</button>
+                    <button onclick="selectShape('dodecahedron')" class="shape-btn nasa-button p-2 flex flex-col items-center gap-1 text-[10px] font-nasa"><i class="fa-solid fa-gem text-xs"></i>Dodecaedro</button>
+                    <button onclick="selectShape('torus')" class="shape-btn nasa-button p-2 flex flex-col items-center gap-1 text-[10px] font-nasa"><i class="fa-solid fa-circle-dot text-xs"></i>Anillo Tórico</button>
+                    <button onclick="selectShape('rover')" class="shape-btn nasa-button p-2 flex flex-col items-center gap-1 text-[10px] font-nasa"><i class="fa-solid fa-robot text-xs"></i>Rover NASA</button>
                 </div>
-                <div id="math-info" class="card-glass p-3 text-[11px] font-math space-y-1 bg-black/40">
-                    <div class="flex justify-between text-zinc-400"><span>Volumen (V):</span> <span id="val-vol" class="text-emerald-300 font-bold">1.00 m³</span></div>
-                    <div class="flex justify-between text-zinc-400"><span>Área Sup. (A):</span> <span id="val-area" class="text-indigo-300 font-bold">6.00 m²</span></div>
+                
+                <!-- Datos Matemáticos de la Figura -->
+                <div class="bg-black/60 p-3 rounded border border-orange-500/20 font-mono-tech text-xs space-y-1">
+                    <div class="flex justify-between text-zinc-400"><span>GRAVEDAD MARCIANA (g):</span> <span class="text-orange-400 font-bold">3.72 m/s²</span></div>
+                    <div class="flex justify-between text-zinc-400"><span>VOLUMEN ANALÍTICO (V):</span> <span id="val-vol" class="text-amber-300 font-bold">0.245 m³</span></div>
+                    <div class="flex justify-between text-zinc-400"><span>ÁREA DE SUPERFICIE (A):</span> <span id="val-area" class="text-orange-300 font-bold">1.820 m²</span></div>
                 </div>
             </div>
 
-            <!-- Panel de Medición en Vivo (Oculto inicialmente) -->
-            <div id="panel-measure" class="panel-glass rounded-3xl p-4 shadow-2xl space-y-3 hidden">
-                <div class="flex justify-between items-center text-xs font-semibold text-zinc-400 px-1">
-                    <span>CINTA MÉTRICA VIRTUAL</span>
-                    <span class="text-emerald-400 text-[10px]">Mide distancias reales</span>
+            <!-- Panel de Telemetría y Distancias (Modo Medición) -->
+            <div id="panel-measure" class="nasa-panel p-4 space-y-3 hidden">
+                <div class="flex justify-between items-center text-[10px] font-nasa tracking-widest text-emerald-400 border-b border-emerald-500/30 pb-1.5">
+                    <span>TELEMETRÍA DE DISTANCIA LASER</span>
+                    <span class="text-zinc-400">[ACTIVO]</span>
                 </div>
-                <div class="card-glass p-4 text-center bg-black/40">
-                    <p class="text-xs text-zinc-400 mb-1">Distancia medida:</p>
-                    <h2 id="measure-distance" class="text-2xl font-bold font-math text-emerald-400">0.00 cm</h2>
+                <div class="bg-black/60 p-3 rounded border border-emerald-500/30 text-center">
+                    <p class="text-[10px] font-nasa text-zinc-400 mb-1">DISTANCIA ENTRE BALIZAS:</p>
+                    <h2 id="measure-distance" class="text-2xl font-bold font-mono-tech text-emerald-400">0.00 cm</h2>
                 </div>
-                <p class="text-[10px] text-zinc-400 text-center">Toca dos puntos distintos en el suelo para trazar una línea de medición exacta.</p>
+                <p class="text-[10px] font-mono-tech text-zinc-400 text-center">Toca dos puntos sobre el suelo marciano para calcular separación métrica.</p>
             </div>
 
         </div>
     </div>
 
-    <!-- Toast de Notificación -->
-    <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 panel-glass px-4 py-2 rounded-full text-xs font-medium text-white opacity-0 transition duration-300 pointer-events-none shadow-xl border-indigo-500/40">
-        <span id="toast-text">Notificación</span>
+    <!-- Toast tipo Alerta NASA -->
+    <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 nasa-panel px-4 py-2 rounded text-[11px] font-nasa font-bold tracking-wider text-orange-300 opacity-0 transition duration-300 pointer-events-none border-orange-500 shadow-2xl">
+        <span id="toast-text">SISTEMA LISTO</span>
     </div>
 
     <script>
         let scene, camera, renderer, reticle, controller;
-        let currentShape = 'cube';
+        let currentShape = 'tetrahedron';
         let currentMode = 'shapes'; // 'shapes' o 'measure'
         let placedObjects = [];
         
-        // Variables para medición
         let measurePoints = [];
         let measureLine = null;
 
         const SHAPE_CONFIGS = {
-            cube: { geo: () => new THREE.BoxGeometry(0.3, 0.3, 0.3), vol: (s=0.3) => Math.pow(s,3).toFixed(3) + ' m³', area: (s=0.3) => (6*Math.pow(s,2)).toFixed(3) + ' m²' },
-            sphere: { geo: () => new THREE.SphereGeometry(0.2, 32, 32), vol: (r=0.2) => ((4/3)*Math.PI*Math.pow(r,3)).toFixed(3) + ' m³', area: (r=0.2) => (4*Math.PI*Math.pow(r,2)).toFixed(3) + ' m²' },
-            cylinder: { geo: () => new THREE.CylinderGeometry(0.15, 0.15, 0.4, 32), vol: (r=0.15, h=0.4) => (Math.PI*Math.pow(r,2)*h).toFixed(3) + ' m³', area: (r=0.15, h=0.4) => (2*Math.PI*r*(r+h)).toFixed(3) + ' m²' },
-            pyramid: { geo: () => new THREE.ConeGeometry(0.2, 0.4, 4), vol: (r=0.2, h=0.4) => ((1/3)*Math.PI*Math.pow(r,2)*h).toFixed(3) + ' m³', area: () => 'Variable' }
+            tetrahedron: { geo: () => new THREE.TetrahedronGeometry(0.3), vol: () => '0.118 m³', area: () => '0.935 m²' },
+            dodecahedron: { geo: () => new THREE.DodecahedronGeometry(0.25), vol: () => '0.364 m³', area: () => '2.064 m²' },
+            torus: { geo: () => new THREE.TorusGeometry(0.2, 0.07, 16, 32), vol: () => '0.197 m³', area: () => '1.758 m²' },
+            rover: { geo: () => new THREE.BoxGeometry(0.4, 0.2, 0.3), vol: () => '0.024 m³', area: () => '0.520 m²' }
         };
 
         function init() {
@@ -139,51 +186,39 @@
             renderer.xr.enabled = true;
             container.appendChild(renderer.domElement);
 
-            // Botón AR con soporte para Hit-Test (detección de superficies del piso/mesa)
+            // Botón AR con WebXR Hit-Test
             document.body.appendChild(ARButton.createButton(renderer, { 
                 requiredFeatures: ['hit-test'],
                 optionalFeatures: ['dom-overlay'],
                 domOverlay: { root: document.getElementById('ui-layer') }
             }));
 
-            // Iluminación
-            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-            const light = new THREE.DirectionalLight(0xffffff, 1);
-            light.position.set(5, 10, 7);
-            scene.add(light);
+            // Iluminación con tono rojizo atmosférico de Marte
+            scene.add(new THREE.AmbientLight(0xffedd5, 0.9));
+            const marsLight = new THREE.DirectionalLight(0xf97316, 1.2);
+            marsLight.position.set(5, 12, 5);
+            scene.add(marsLight);
 
-            // Retícula de posicionamiento AR (anillo que parpadea sobre el suelo detectado)
-            reticle = new THREE.Mesh(
-                new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-                new THREE.MeshBasicMaterial({ color: 0x6366f1 })
-            );
+            // Retícula de anclaje de diseño futurista NASA (Anillo naranja parpadeante)
+            const reticleGeo = new THREE.RingGeometry(0.12, 0.16, 32).rotateX(-Math.PI / 2);
+            const reticleMat = new THREE.MeshBasicMaterial({ color: 0xf97316, wireframe: true });
+            reticle = new THREE.Mesh(reticleGeo, reticleMat);
             reticle.matrixAutoUpdate = false;
             reticle.visible = false;
             scene.add(reticle);
 
-            // Controlador táctil para colocar figuras o medir al hacer tap en la pantalla
-            controller = renderer.xr.getSession() ? renderer.xr.getController(0) : null;
-            if(!controller) {
-                // Fallback para eventos de toque en modo XR
-                const xrController = renderer.xr.getController(0);
-                xrController.addEventListener('select', onSelect);
-                scene.add(xrController);
-            }
-
-            // Evento táctil directo en celulares cuando se usa WebXR
             window.addEventListener('resize', onWindowResize);
 
-            // Ocultar fondo estético cuando inicia AR
             renderer.xr.addEventListener('sessionstart', () => {
                 document.getElementById('fallback-bg').style.opacity = '0';
-                showToast('Apunta al suelo y mueve el celular para detectar superficie');
+                showToast('CONEXIÓN ESTABLECIDA CON SUPERFICIE DE MARTE');
             });
             renderer.xr.addEventListener('sessionend', () => {
                 document.getElementById('fallback-bg').style.opacity = '1';
-                showToast('Sesión AR finalizada');
+                showToast('SESIÓN AR FINALIZADA');
             });
 
-            // Loop de animación y detección de superficies (Hit Test)
+            // Loop de renderizado y WebXR Hit-Test
             let hitTestSource = null;
             let hitTestSourceRequested = false;
 
@@ -193,13 +228,10 @@
                     const session = renderer.xr.getSession();
 
                     if (!hitTestSourceRequested) {
-                        session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                            session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                        session.requestReferenceSpace('viewer').then((viewerSpace) => {
+                            session.requestHitTestSource({ space: viewerSpace }).then((source) => {
                                 hitTestSource = source;
                             });
-                        });
-                        session.requestReferenceSpace('local').then((space) => {
-                            // referencia local
                         });
                         hitTestSourceRequested = true;
                     }
@@ -219,40 +251,41 @@
             });
         }
 
-        // Acción al hacer Tap en la pantalla en modo AR
+        // Interacción táctil para desplegar objetos o medir
         function onSelect() {
             if (reticle.visible) {
                 if (currentMode === 'shapes') {
-                    // Colocar figura geométrica analítica
                     const config = SHAPE_CONFIGS[currentShape];
                     const geometry = config.geo();
-                    const material = new THREE.MeshPhysicalMaterial({ 
-                        color: 0x818cf8, 
-                        roughness: 0.2, 
-                        metalness: 0.3, 
-                        clearcoat: 0.5,
-                        transparent: true,
-                        opacity: 0.9 
-                    });
-                    const mesh = new THREE.Mesh(geometry, material);
                     
+                    // Material holográfico de alta tecnología (PBR estilo interfaz espacial)
+                    const material = new THREE.MeshPhysicalMaterial({ 
+                        color: 0xf97316, 
+                        roughness: 0.1, 
+                        metalness: 0.8, 
+                        transmission: 0.2,
+                        transparent: true,
+                        opacity: 0.9,
+                        wireframe: false
+                    });
+                    
+                    const mesh = new THREE.Mesh(geometry, material);
                     mesh.position.setFromMatrixPosition(reticle.matrix);
-                    mesh.position.y += 0.15; // Elevar ligeramente sobre el suelo
+                    mesh.position.y += 0.2;
                     scene.add(mesh);
                     placedObjects.push(mesh);
                     
-                    showToast(`Figura colocada: Volumen ${config.vol()}`);
+                    showToast(`ESTRUCTURA DESPLEGADA: ${currentShape.toUpperCase()}`);
                 } else if (currentMode === 'measure') {
-                    // Modo CINTA MÉTRICA: Registrar puntos de distancia
                     const pos = new THREE.Vector3();
                     pos.setFromMatrixPosition(reticle.matrix);
-                    
                     measurePoints.push(pos);
                     
-                    // Colocar esfera marcadora pequeña
-                    const dotGeo = new THREE.SphereGeometry(0.02, 16, 16);
-                    const dotMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
-                    const dot = new THREE.Mesh(dotGeo, dotMat);
+                    // Baliza marcadora de posición
+                    const dot = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.015, 16, 16),
+                        new THREE.MeshBasicMaterial({ color: 0x10b981 })
+                    );
                     dot.position.copy(pos);
                     scene.add(dot);
                     placedObjects.push(dot);
@@ -261,64 +294,59 @@
                         const dist = measurePoints[0].distanceTo(measurePoints[1]);
                         document.getElementById('measure-distance').textContent = (dist * 100).toFixed(1) + ' cm';
                         
-                        // Dibujar línea de medición
-                        const lineMat = new THREE.LineBasicMaterial({ color: 0x10b981, linewidth: 5 });
+                        const lineMat = new THREE.LineBasicMaterial({ color: 0x10b981, linewidth: 4 });
                         const lineGeo = new THREE.BufferGeometry().setFromPoints(measurePoints);
                         measureLine = new THREE.Line(lineGeo, lineMat);
                         scene.add(measureLine);
                         placedObjects.push(measureLine);
 
-                        showToast(`Distancia calculada: ${(dist * 100).toFixed(1)} cm`);
-                        measurePoints = []; // Reiniciar para nueva medición
+                        showToast(`DISTANCIA CALCULADA: ${(dist * 100).toFixed(1)} CM`);
+                        measurePoints = [];
                     } else {
-                        showToast('Primer punto fijado. Toca el segundo punto.');
+                        showToast('BALIZA 1 FIJADA. FIJE BALIZA 2.');
                     }
                 }
             }
         }
 
-        // Evento global para el toque de colocación en WebXR
         window.addEventListener('click', () => {
-            if(renderer.xr.isPresenting) {
+            if (renderer.xr.isPresenting) {
                 onSelect();
             }
         });
 
         function selectShape(shapeName) {
             currentShape = shapeName;
-            document.querySelectorAll('.shape-btn').forEach(btn => {
-                btn.classList.remove('border-indigo-500/40', 'bg-indigo-500/10', 'text-indigo-300');
-                btn.classList.add('text-zinc-300');
-            });
-            event.currentTarget.classList.add('border-indigo-500/40', 'bg-indigo-500/10', 'text-indigo-300');
+            document.querySelectorAll('.shape-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
             
             const cfg = SHAPE_CONFIGS[shapeName];
             document.getElementById('val-vol').textContent = cfg.vol();
             document.getElementById('val-area').textContent = cfg.area();
-            showToast(`Seleccionado: ${shapeName.toUpperCase()}`);
+            showToast(`SELECCIONADO: ${shapeName.toUpperCase()}`);
         }
 
-        // Alternar entre modo Figuras y modo Medición
-        const btnMode = document.getElementById('btn-mode-shape');
+        // Alternar Modo Figuras vs Medición
+        const btnMode = document.getElementById('btn-mode');
         btnMode.onclick = () => {
             if (currentMode === 'shapes') {
                 currentMode = 'measure';
-                document.getElementById('mode-text').textContent = 'Medición AR';
-                btnMode.className = 'panel-glass bg-emerald-600/30 text-emerald-300 px-4 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-2 border-emerald-500/40 shadow-xl';
+                document.getElementById('mode-label').textContent = 'CINTA MÉTRICA';
+                btnMode.style.borderColor = '#10b981';
                 document.getElementById('panel-shapes').classList.add('hidden');
                 document.getElementById('panel-measure').classList.remove('hidden');
-                showToast('Modo Medición Activado');
+                showToast('MODO TELEMETRÍA MÉTRICA ACTIVADO');
             } else {
                 currentMode = 'shapes';
-                document.getElementById('mode-text').textContent = 'Figuras R³';
-                btnMode.className = 'panel-glass bg-indigo-600/30 text-indigo-300 px-4 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-2 border-indigo-500/40 shadow-xl';
+                document.getElementById('mode-label').textContent = 'GEOMETRÍA R³';
+                btnMode.style.borderColor = '#f97316';
                 document.getElementById('panel-measure').classList.add('hidden');
                 document.getElementById('panel-shapes').classList.remove('hidden');
-                showToast('Modo Figuras Geométricas Activado');
+                showToast('MODO FIGURAS R³ ACTIVADO');
             }
         };
 
-        // Botón limpiar escena
+        // Purgar objetos de la escena
         document.getElementById('btn-clear').onclick = () => {
             placedObjects.forEach(obj => {
                 scene.remove(obj);
@@ -327,7 +355,7 @@
             });
             placedObjects = [];
             measurePoints = [];
-            showToast('Escena limpiada');
+            showToast('ESCENA PURGADA CON ÉXITO');
         };
 
         function onWindowResize() {
