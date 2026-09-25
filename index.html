@@ -428,6 +428,8 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
         <button onclick="toggleGridOverlay()">▦ Guía</button>
         <button onclick="exportPNG()">🖼️ PNG</button>
         <button onclick="saveLocalSilent()">💾 Guardar rápido</button>
+        <button onclick="descargarRespaldo()" style="background:#0f766e; border-color:#0d9488;">📥 Descargar Backup</button>
+        <button onclick="cargarRespaldo()" style="background:#b45309; border-color:#d97706;">📤 Restaurar Backup</button>
       </div>
       <div class="ep-row">
         <select id="textSize"><option value="14">Texto 14</option><option value="18" selected>Texto 18</option><option value="24">Texto 24</option><option value="32">Texto 32</option></select>
@@ -1832,6 +1834,60 @@ changeBackgroundAll=function(){_changeBackgroundAll();scheduleAutosave();};
     if(e.key==='Escape'&&document.body.classList.contains('reading-mode')) toggleReadingMode(false);
   });
 })();
+</script>
+
+<!-- BACKUP SYSTEM -->
+<script>
+function descargarRespaldo() {
+    const datosRespaldo = {
+        materias: localStorage.getItem('cuadernosMaterias_v1'),
+        avanzado_v1: localStorage.getItem('cuadernoAvanzado_v1'),
+        avanzado_v2: localStorage.getItem('cuadernoAvanzado_v2')
+    };
+
+    const blob = new Blob([JSON.stringify(datosRespaldo)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement("a");
+    a.href = url;
+    
+    const fecha = new Date().toISOString().split('T')[0];
+    a.download = "Mis_Cuadernos_Backup_" + fecha + ".json";
+    
+    a.click();
+    URL.revokeObjectURL(url);
+    if (typeof toast === 'function') toast('📥 Copia de seguridad descargada con éxito');
+}
+
+function cargarRespaldo() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(evento) {
+            try {
+                const datos = JSON.parse(evento.target.result);
+                
+                if (datos.materias) localStorage.setItem('cuadernosMaterias_v1', datos.materias);
+                if (datos.avanzado_v1) localStorage.setItem('cuadernoAvanzado_v1', datos.avanzado_v1);
+                if (datos.avanzado_v2) localStorage.setItem('cuadernoAvanzado_v2', datos.avanzado_v2);
+                
+                alert("¡Respaldo restaurado con éxito! La página se actualizará para mostrar tus cuadernos.");
+                location.reload();
+            } catch (err) {
+                alert("Error: El archivo seleccionado no es un respaldo válido.");
+            }
+        };
+        reader.readAsText(file);
+    };
+    
+    input.click();
+}
 </script>
 </body>
 </html>
