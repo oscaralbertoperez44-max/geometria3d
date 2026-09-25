@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuaderno Universitario Avanzado - Herramientas y Fixes</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --bg-color: #2c2c2c;
@@ -199,6 +200,12 @@
 
 /* ================= DOLA + ESCRITURA FLUIDA ================= */
 #dolaWindow{position:fixed;z-index:6100;left:50%;top:50%;transform:translate(-50%,-50%);width:min(920px,92vw);height:min(700px,84vh);display:none;background:#0b1020;border:1px solid rgba(255,255,255,.16);border-radius:18px;box-shadow:0 28px 100px rgba(0,0,0,.65);overflow:hidden}
+#dolaWindow.dola-minimized{height:48px!important;min-height:48px!important;width:min(360px,calc(100vw - 20px))!important;resize:none!important}
+#dolaWindow.dola-minimized .dola-frame,#dolaWindow.dola-minimized .dola-foot,#dolaWindow.dola-minimized .dola-resizer{display:none!important}
+#dolaWindow{min-width:320px;min-height:240px;resize:none}
+.dola-resizer{position:absolute;right:3px;bottom:3px;width:18px;height:18px;cursor:nwse-resize;z-index:20}
+.dola-resizer:after{content:"";position:absolute;right:2px;bottom:2px;width:10px;height:10px;border-right:2px solid #93c5fd;border-bottom:2px solid #93c5fd;opacity:.9}
+.dola-head button.dola-tool{font-size:12px;padding:7px 9px}
 #dolaWindow.open{display:flex;flex-direction:column}
 .dola-head{height:48px;display:flex;align-items:center;gap:10px;padding:0 12px;background:linear-gradient(135deg,#111827,#172554);color:#fff;cursor:move;user-select:none}
 .dola-head strong{flex:1;font-size:14px}.dola-head button{border:0;background:#25314f;color:#fff;border-radius:9px;padding:7px 10px;cursor:pointer}.dola-head button:hover{background:#33467a}
@@ -336,6 +343,11 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
 .solver-step{border-left:3px solid #4285f4;background:#f8fafc;margin:9px 0;padding:10px 12px;border-radius:0 10px 10px 0}.solver-step b{display:block;margin-bottom:4px}.solver-final{font-size:18px;font-weight:800;padding:13px;border-radius:12px;background:#edf7ed;border:1px solid #cde8ce;margin-top:12px}.solver-note{font-size:12px;color:#64748b;margin-top:10px}.solver-kbd{font:11px ui-monospace,monospace;background:#f1f5f9;border:1px solid #e2e8f0;padding:2px 5px;border-radius:4px}
 @media(max-width:820px){.solver-grid{grid-template-columns:1fr}.solver-card{max-height:95vh}.solver-body{padding:12px}}
 
+
+/* Pantalla completa: máxima superficie de escritura */
+:fullscreen #toolbar{position:fixed;top:8px;left:50%;transform:translateX(-50%);width:auto;max-width:96vw;opacity:.08;transition:opacity .2s;z-index:9000;border-radius:14px}
+:fullscreen #toolbar:hover{opacity:1}
+:fullscreen #notebook{width:98%;max-width:none;padding-top:12px}
 </style>
 </head>
 <body>
@@ -413,9 +425,10 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
     </div>
 
     <div id="dolaWindow" aria-label="Dola IA">
-      <div class="dola-head" id="dolaDragHead"><strong>✨ Dola IA — asistente</strong><button onclick="window.open('https://www.dola.com/chat/','_blank','noopener,noreferrer')">↗ Abrir Dola</button><button onclick="toggleDola()">✕</button></div>
+      <div class="dola-head" id="dolaDragHead"><strong>✨ Dola IA — asistente</strong><button class="dola-tool" onclick="captureDolaWindow()" title="Capturar ventana">📸</button><button class="dola-tool" onclick="minimizeDola()" title="Minimizar">—</button><button class="dola-tool" onclick="window.open('https://www.dola.com/chat/','_blank','noopener,noreferrer')">↗ Abrir</button><button class="dola-tool" onclick="toggleDola()">✕</button></div>
       <iframe class="dola-frame" src="https://www.dola.com/chat/" title="Dola IA" allow="microphone;camera;clipboard-read;clipboard-write"></iframe>
-      <div class="dola-foot"><span>Acceso directo a Dola. Si el sitio bloquea la carga incrustada, usa “Abrir Dola”.</span><a href="https://www.dola.com/chat/" target="_blank" rel="noopener noreferrer">dola.com/chat</a></div>
+      <div class="dola-foot"><span>Ventana flotante · redimensionable · minimizable</span><a href="https://www.dola.com/chat/" target="_blank" rel="noopener noreferrer">dola.com/chat</a></div>
+      <div class="dola-resizer" title="Redimensionar"></div>
     </div>
 
     <div id="enhancedPanel" class="enhanced-panel" aria-label="Herramientas avanzadas">
@@ -579,13 +592,14 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
             const rect = page.container.getBoundingClientRect();
             const scale = 2; 
             
-            page.bgCanvas.width = rect.width * scale;
-            page.bgCanvas.height = rect.height * scale;
-            page.drawCanvas.width = rect.width * scale;
-            page.drawCanvas.height = rect.height * scale;
-            
-            page.bgCtx.scale(scale, scale);
-            page.drawCtx.scale(scale, scale);
+            page.bgCanvas.width = Math.max(1, Math.round(rect.width * scale));
+            page.bgCanvas.height = Math.max(1, Math.round(rect.height * scale));
+            page.drawCanvas.width = Math.max(1, Math.round(rect.width * scale));
+            page.drawCanvas.height = Math.max(1, Math.round(rect.height * scale));
+            // Resetear la transformación antes de aplicar la escala evita acumulación
+            // de scale() tras cada resize/fullscreen y mantiene el trazo estable.
+            page.bgCtx.setTransform(scale, 0, 0, scale, 0, 0);
+            page.drawCtx.setTransform(scale, 0, 0, scale, 0, 0);
         }
 
         // --- DIBUJO DEL FONDO ---
@@ -944,7 +958,7 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
         }
 
         window.addEventListener('keydown', (e) => {
-            if((e.key === 'Delete' || e.key === 'Backspace') && activePastedElement) {
+            if((e.key === 'Delete' || e.key === 'Backspace') && activePastedElement && !(e.target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName||''))) {
                 activePastedElement.remove();
                 activePastedElement = null;
             }
@@ -983,8 +997,71 @@ body.reading-mode #readingModeBar button.active{background:#4b5563!important}
         function calcMemory(op){let v=calcAns;try{const d=document.getElementById('calcDisplay');if(d?.value.trim())v=new MathParser(d.value).parse()}catch(_){}switch(op){case'MC':calcMemoryValue=0;break;case'MR':calcInsert(String(calcMemoryValue));break;case'M+':calcMemoryValue+=v;break;case'M-':calcMemoryValue-=v;break;case'MS':calcMemoryValue=v;break}document.getElementById('calcResult').textContent='M = '+Number(calcMemoryValue.toPrecision(12))}
         document.addEventListener('keydown',e=>{const calc=document.getElementById('scientificCalc');if(!calc?.classList.contains('open'))return;if(e.key==='Enter'){e.preventDefault();calcEvaluate()}else if(e.key==='Escape'){calc.classList.remove('open')}});
 
-        function toggleDola(){document.getElementById('dolaWindow')?.classList.toggle('open')}
-        (function(){const win=document.getElementById('dolaWindow'),head=document.getElementById('dolaDragHead');if(!win||!head)return;let drag=false,dx=0,dy=0;head.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;drag=true;const r=win.getBoundingClientRect();dx=e.clientX-r.left;dy=e.clientY-r.top;win.style.transform='none';win.style.left=r.left+'px';win.style.top=r.top+'px';head.setPointerCapture?.(e.pointerId)});head.addEventListener('pointermove',e=>{if(!drag)return;const x=Math.max(4,Math.min(innerWidth-win.offsetWidth-4,e.clientX-dx));const y=Math.max(4,Math.min(innerHeight-win.offsetHeight-4,e.clientY-dy));win.style.left=x+'px';win.style.top=y+'px'});head.addEventListener('pointerup',()=>drag=false);head.addEventListener('pointercancel',()=>drag=false)})();
+        function toggleDola(){
+            const win=document.getElementById('dolaWindow');
+            if(!win)return;
+            win.classList.toggle('open');
+            if(win.classList.contains('open')){
+                win.classList.remove('dola-minimized');
+                bringDolaToFront();
+            }
+        }
+        function minimizeDola(){
+            const win=document.getElementById('dolaWindow');
+            if(!win)return;
+            win.classList.toggle('dola-minimized');
+            bringDolaToFront();
+        }
+        function bringDolaToFront(){
+            const win=document.getElementById('dolaWindow');
+            if(win) win.style.zIndex=++window.__topZ;
+        }
+        window.__topZ=6200;
+        (function(){
+            const win=document.getElementById('dolaWindow'),head=document.getElementById('dolaDragHead'),resizer=win?.querySelector('.dola-resizer');
+            if(!win||!head)return;
+            let drag=false,dx=0,dy=0,resize=false,startX=0,startY=0,startW=0,startH=0;
+            head.addEventListener('pointerdown',e=>{
+                if(e.target.closest('button'))return;
+                bringDolaToFront(); drag=true;
+                const r=win.getBoundingClientRect(); dx=e.clientX-r.left; dy=e.clientY-r.top;
+                win.style.transform='none'; win.style.left=r.left+'px'; win.style.top=r.top+'px';
+                head.setPointerCapture?.(e.pointerId);
+            });
+            head.addEventListener('pointermove',e=>{
+                if(!drag)return; e.preventDefault();
+                win.style.left=Math.max(4,Math.min(innerWidth-win.offsetWidth-4,e.clientX-dx))+'px';
+                win.style.top=Math.max(4,Math.min(innerHeight-win.offsetHeight-4,e.clientY-dy))+'px';
+            });
+            head.addEventListener('pointerup',()=>drag=false); head.addEventListener('pointercancel',()=>drag=false);
+            resizer?.addEventListener('pointerdown',e=>{
+                e.preventDefault(); e.stopPropagation(); bringDolaToFront(); resize=true;
+                const r=win.getBoundingClientRect(); startX=e.clientX; startY=e.clientY; startW=r.width; startH=r.height;
+                resizer.setPointerCapture?.(e.pointerId);
+            });
+            resizer?.addEventListener('pointermove',e=>{
+                if(!resize)return; e.preventDefault();
+                const w=Math.max(320,Math.min(innerWidth-12,startW+e.clientX-startX));
+                const h=Math.max(240,Math.min(innerHeight-12,startH+e.clientY-startY));
+                win.style.width=w+'px'; win.style.height=h+'px';
+            });
+            resizer?.addEventListener('pointerup',()=>resize=false); resizer?.addEventListener('pointercancel',()=>resize=false);
+            win.addEventListener('pointerdown',bringDolaToFront);
+        })();
+
+        async function captureDolaWindow(){
+            const win=document.getElementById('dolaWindow');
+            if(!win?.classList.contains('open'))return;
+            try{
+                // html2canvas no puede leer el contenido interno de un iframe de otro dominio
+                // por la política de seguridad del navegador. Capturamos la ventana y su UI.
+                if(typeof html2canvas!=='undefined'){
+                    const canvas=await html2canvas(win,{backgroundColor:'#0b1020',scale:2,useCORS:true,ignoreElements:el=>el===document.querySelector('.dola-resizer')});
+                    const a=document.createElement('a'); a.download='dola-ventana.png'; a.href=canvas.toDataURL('image/png'); a.click();
+                    toast('📸 Captura guardada');
+                }else toast('📸 Activa conexión para usar captura');
+            }catch(err){ toast('No se pudo capturar la ventana'); }
+        }
 
         // --- GUARDADO LOCAL ---
         function saveLocal() {
