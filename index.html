@@ -285,19 +285,18 @@
         }
 
         // ================= GESTIÓN DE HOJAS =================
+        // El lienzo de dibujo NO se reescala cuando cambia el ancho de la ventana.
+        // Así abrir/cerrar paneles del navegador, pantalla completa o DevTools no vuelve
+        // a muestrear el dibujo una y otra vez (causa habitual de pérdida de nitidez).
+        // Sólo se regenera el fondo; el dibujo conserva siempre sus píxeles originales.
         const pageResizeObserver = new ResizeObserver(entries => {
             for (const entry of entries) {
                 const page = pagesData.find(p => p.container === entry.target);
                 if (!page || page._resizeRaf) continue;
                 page._resizeRaf = requestAnimationFrame(() => {
                     page._resizeRaf = 0;
-                    const r = page.container.getBoundingClientRect();
-                    const targetW = Math.round(r.width * PIXEL_RATIO);
-                    const targetH = Math.round(r.height * PIXEL_RATIO);
-                    if (Math.abs(page.drawCanvas.width - targetW) > 1 || Math.abs(page.drawCanvas.height - targetH) > 1) {
-                        resizePageCanvases(page);
-                        drawBackground(page);
-                    }
+                    resizeBackgroundCanvas(page);
+                    drawBackground(page);
                 });
             }
         });
@@ -406,38 +405,35 @@
         }
 
         function resizePageCanvases(page) {
+            // Se usa sólo para la creación inicial de la hoja. Después el drawCanvas
+            // mantiene su resolución interna y se adapta visualmente por CSS.
             const rect = page.container.getBoundingClientRect();
             if (!rect.width || !rect.height) return;
-            let tempCanvas = null;
-            if (page.drawCanvas.width > 0 && page.drawCanvas.height > 0) {
-                tempCanvas = document.createElement('canvas');
-                tempCanvas.width = page.drawCanvas.width;
-                tempCanvas.height = page.drawCanvas.height;
-                tempCanvas.getContext('2d').drawImage(page.drawCanvas, 0, 0);
-            }
-
             const newW = Math.max(1, Math.round(rect.width * PIXEL_RATIO));
             const newH = Math.max(1, Math.round(rect.height * PIXEL_RATIO));
             page.bgCanvas.width = newW;
             page.bgCanvas.height = newH;
             page.drawCanvas.width = newW;
             page.drawCanvas.height = newH;
-
             page.bgCtx.setTransform(PIXEL_RATIO,0,0,PIXEL_RATIO,0,0);
             page.drawCtx.setTransform(PIXEL_RATIO,0,0,PIXEL_RATIO,0,0);
             page.drawCtx.lineCap = 'round';
             page.drawCtx.lineJoin = 'round';
-
-            if (tempCanvas) {
-                page.drawCtx.save();
-                page.drawCtx.setTransform(1,0,0,1,0,0);
-                page.drawCtx.drawImage(tempCanvas,0,0,newW,newH);
-                page.drawCtx.restore();
-            }
             if (page.linePreview) {
                 page.linePreview.width = newW;
                 page.linePreview.height = newH;
             }
+        }
+
+        function resizeBackgroundCanvas(page) {
+            const rect = page.container.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            const newW = Math.max(1, Math.round(rect.width * PIXEL_RATIO));
+            const newH = Math.max(1, Math.round(rect.height * PIXEL_RATIO));
+            if (Math.abs(page.bgCanvas.width - newW) <= 1 && Math.abs(page.bgCanvas.height - newH) <= 1) return;
+            page.bgCanvas.width = newW;
+            page.bgCanvas.height = newH;
+            page.bgCtx.setTransform(PIXEL_RATIO,0,0,PIXEL_RATIO,0,0);
         }
 
         function changeBackgroundAll() {
@@ -536,7 +532,14 @@
 
         function getMousePos(canvas, e) {
             const rect = drawRectCache || canvas.getBoundingClientRect();
-            return {x:e.clientX - rect.left, y:e.clientY - rect.top};
+            const logicalW = canvas.width / PIXEL_RATIO;
+            const logicalH = canvas.height / PIXEL_RATIO;
+            const scaleX = rect.width ? logicalW / rect.width : 1;
+            const scaleY = rect.height ? logicalH / rect.height : 1;
+            return {
+                x:(e.clientX - rect.left) * scaleX,
+                y:(e.clientY - rect.top) * scaleY
+            };
         }
 
         function ensureLinePreview(page){
@@ -563,7 +566,7 @@
                 const preview=ensureLinePreview(page);
                 preview.width=page.drawCanvas.width;preview.height=page.drawCanvas.height;preview.style.display='block';
                 page.linePreviewCtx.setTransform(PIXEL_RATIO,0,0,PIXEL_RATIO,0,0);
-                page.linePreviewCtx.clearRect(0,0,page.drawCanvas.clientWidth,page.drawCanvas.clientHeight);
+                page.linePreviewCtx.clearRect(0,0,page.linePreview.width/PIXEL_RATIO,page.linePreview.height/PIXEL_RATIO);
             } else draw(e,page);
         }
 
@@ -575,16 +578,16 @@
             const events=e.getCoalescedEvents?e.getCoalescedEvents():[e];
             if(currentTool==='line'){
                 const ev=events.at(-1);
-                const pos={x:ev.clientX-rect.left,y:ev.clientY-rect.top};
+                const pos=getMousePos(page.drawCanvas,ev);
                 const pctx=page.linePreviewCtx;
                 pctx.setTransform(PIXEL_RATIO,0,0,PIXEL_RATIO,0,0);
-                pctx.clearRect(0,0,page.drawCanvas.clientWidth,page.drawCanvas.clientHeight);
+                pctx.clearRect(0,0,page.linePreview.width/PIXEL_RATIO,page.linePreview.height/PIXEL_RATIO);
                 pctx.globalCompositeOperation='source-over';pctx.globalAlpha=1;pctx.strokeStyle=strokeColor;pctx.lineWidth=strokeSize;pctx.lineCap='round';pctx.lineJoin='round';
                 pctx.beginPath();pctx.moveTo(page.startX,page.startY);pctx.lineTo(pos.x,pos.y);pctx.stroke();
                 return;
             }
             for(const ev of events){
-                const pos={x:ev.clientX-rect.left,y:ev.clientY-rect.top};
+                const pos=getMousePos(page.drawCanvas,ev);
                 ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(pos.x,pos.y);
                 if(currentTool==='eraser'){
                     ctx.globalCompositeOperation='destination-out';ctx.lineWidth=strokeSize*8;ctx.strokeStyle='#000';ctx.globalAlpha=1;
@@ -607,11 +610,11 @@
             if(page && currentTool==='line' && drawRectCache){
                 const ev=e||window.event;
                 if(ev && typeof ev.clientX==='number'){
-                    const pos={x:ev.clientX-drawRectCache.left,y:ev.clientY-drawRectCache.top};
+                    const pos=getMousePos(page.drawCanvas,ev);
                     page.drawCtx.save();page.drawCtx.globalCompositeOperation='source-over';page.drawCtx.globalAlpha=1;page.drawCtx.strokeStyle=strokeColor;page.drawCtx.lineWidth=strokeSize;page.drawCtx.lineCap='round';page.drawCtx.lineJoin='round';
                     page.drawCtx.beginPath();page.drawCtx.moveTo(page.startX,page.startY);page.drawCtx.lineTo(pos.x,pos.y);page.drawCtx.stroke();page.drawCtx.restore();
                 }
-                if(page.linePreviewCtx) page.linePreviewCtx.clearRect(0,0,page.linePreview.width,page.linePreview.height);
+                if(page.linePreviewCtx) page.linePreviewCtx.clearRect(0,0,page.linePreview.width/PIXEL_RATIO,page.linePreview.height/PIXEL_RATIO);
                 if(page.linePreview) page.linePreview.style.display='none';
             }
             isDrawing=false;activeDrawingPointerId=null;drawRectCache=null;
@@ -777,6 +780,29 @@
             document.querySelectorAll('.pasted-element').forEach(el=>el.classList.remove('active-element'));
             activePastedElement=null;
         }
+
+        // ================= PROTECCIÓN CONTRA INSPECCIÓN ACCIDENTAL =================
+        // Una página web no puede deshabilitar DevTools de forma absoluta, pero sí puede
+        // bloquear los accesos accidentales más comunes sin afectar el funcionamiento normal.
+        function isInspectShortcut(e){
+            const key=(e.key||'').toUpperCase();
+            const ctrlOrMeta=e.ctrlKey||e.metaKey;
+            if(e.key==='F12') return true;
+            if(ctrlOrMeta && e.shiftKey && ['I','J','C','K','M'].includes(key)) return true;
+            if(e.metaKey && e.altKey && ['I','J','C'].includes(key)) return true;
+            if(ctrlOrMeta && key==='U') return true;
+            return false;
+        }
+        window.addEventListener('keydown',e=>{
+            if(!isInspectShortcut(e)) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            toast('🔒 Inspección bloqueada para evitar aperturas accidentales');
+        },true);
+        window.addEventListener('contextmenu',e=>{
+            e.preventDefault();
+            toast('🔒 Menú contextual bloqueado');
+        },{capture:true});
 
         window.addEventListener('keydown',e=>{
             if((e.key==='Delete'||e.key==='Backspace') && activePastedElement && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName||'')){
