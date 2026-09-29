@@ -124,6 +124,8 @@
             <input type="color" id="colorPicker" value="#000000" onchange="updateColor()" title="Color del trazo">
             <label style="font-size:12px; margin-left:4px;">Grosor:</label>
             <input type="range" id="strokeSize" min="1" max="25" value="3" onchange="updateSize()" style="width: 80px;">
+            <label style="font-size:12px; margin-left:4px;">Goma:</label>
+            <input type="range" id="eraserSize" min="6" max="120" value="24" onchange="updateEraserSize()" style="width: 80px;" title="Tamaño independiente de la goma">
         </div>
         <div class="tool-group">
             <select id="bgType" onchange="changeBackgroundAll()">
@@ -141,7 +143,15 @@
         </div>
         <div class="tool-group">
             <button id="btnRecord" onclick="toggleTaskRecording()" title="Graba esta pestaña/pantalla en un formato listo para YouTube">⏺ Grabar tarea</button>
-            <button id="btnWritingCursor" onclick="toggleWritingCursor()" title="Muestra u oculta un lápiz que acompaña la escritura">✏️ Cursor lápiz</button>
+            <button id="btnWritingCursor" onclick="toggleWritingCursor()" title="Muestra u oculta el cursor visual de escritura">✏️ Cursor</button>
+            <select id="writingCursorStyle" onchange="setWritingCursorStyle(this.value)" title="Elegir estilo del cursor de escritura" aria-label="Estilo del cursor de escritura">
+                <option value="classic">✏️ Lápiz clásico</option>
+                <option value="wood">✏️ Lápiz negro</option>
+                <option value="mechanical">🖊️ Portaminas</option>
+                <option value="pen">✒️ Lapicera</option>
+                <option value="marker">🖍️ Marcador</option>
+                <option value="fine">• Punta fina</option>
+            </select>
         </div>
         <div class="tool-group" style="border-right: none;">
             <button onclick="toggleFullScreen()">⛶ Pantalla Completa</button>
@@ -153,17 +163,7 @@
     <div id="pageIndicator">Hoja 0 / 0</div>
     <div id="toast"></div>
     <div id="recordingIndicator"><span class="rec-dot"></span><span>GRABANDO</span><span id="recordingTime">00:00</span><button class="rec-fullscreen" onclick="toggleFullScreen()" title="Entrar/salir de pantalla completa durante la grabación">⛶</button></div>
-    <div id="writingCursor" aria-hidden="true">
-        <svg viewBox="0 0 44 44" focusable="false" aria-hidden="true">
-            <g>
-                <path d="M6 38 L9.2 29.8 L31.9 7.1 C33.1 5.9 35.1 5.9 36.3 7.1 L38 8.8 C39.2 10 39.2 12 38 13.2 L15.3 35.9 Z" fill="#f4c542" stroke="#242424" stroke-width="1.4" stroke-linejoin="round"/>
-                <path d="M9.2 29.8 L15.3 35.9 L6 38 Z" fill="#e8c39e" stroke="#242424" stroke-width="1.2" stroke-linejoin="round"/>
-                <path d="M6 38 L9.1 36.9 L7.1 34.9 Z" fill="#202020"/>
-                <path d="M29.6 9.4 L35.7 15.5" stroke="#e7a9af" stroke-width="4.3"/>
-                <path d="M32.2 6.8 L38.3 12.9" stroke="#d7d7d7" stroke-width="2.1"/>
-            </g>
-        </svg>
-    </div>
+    <div id="writingCursor" aria-hidden="true"></div>
 
     <div id="notebook">
         <!-- Las hojas se generan dinámicamente -->
@@ -217,6 +217,7 @@
         let currentTool = 'pen';
         let strokeColor = '#000000';
         let strokeSize = 3;
+        let eraserSize = 24;
         let isDrawing = false;
         let activeDrawingPointerId = null;
         let lastX = 0, lastY = 0;
@@ -228,6 +229,8 @@
         const MAX_PIXEL_RATIO = (navigator.deviceMemory && navigator.deviceMemory <= 4) ? 1.5 : 2;
         const PIXEL_RATIO = Math.max(1, Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO));
         let writingCursorEnabled = false;
+        let writingCursorStyle = 'classic';
+        let writingCursorTipX = 6, writingCursorTipY = 38;
         let writingCursorRaf = 0;
         let writingCursorX = 0, writingCursorY = 0;
         let taskRecorder = null;
@@ -257,16 +260,52 @@
             else document.exitFullscreen?.();
         }
 
-        // ---------- CURSOR VISUAL TIPO LÁPIZ (OPCIONAL Y LIGERO) ----------
-        // La punta negra del SVG está en (6,38). Ese punto coincide exactamente
-        // con la coordenada del puntero donde el motor de dibujo deposita el trazo.
-        const WRITING_CURSOR_TIP_X = 6;
-        const WRITING_CURSOR_TIP_Y = 38;
+        // ---------- CURSOR VISUAL DE ESCRITURA (OPCIONAL Y LIGERO) ----------
+        // Todos los estilos usan SVG inline y un único elemento DOM. No cargan imágenes externas.
+        // La goma reemplaza automáticamente al cursor elegido sólo mientras la herramienta Goma está activa.
+        const WRITING_CURSOR_SVGS = {
+            classic: {
+                tip:[6,38],
+                svg:`<svg viewBox="0 0 44 44" focusable="false" aria-hidden="true"><g><path d="M6 38 L9.2 29.8 L31.9 7.1 C33.1 5.9 35.1 5.9 36.3 7.1 L38 8.8 C39.2 10 39.2 12 38 13.2 L15.3 35.9 Z" fill="#f4c542" stroke="#242424" stroke-width="1.4" stroke-linejoin="round"/><path d="M9.2 29.8 L15.3 35.9 L6 38 Z" fill="#e8c39e" stroke="#242424" stroke-width="1.2" stroke-linejoin="round"/><path d="M6 38 L9.1 36.9 L7.1 34.9 Z" fill="#202020"/><path d="M29.6 9.4 L35.7 15.5" stroke="#e7a9af" stroke-width="4.3"/><path d="M32.2 6.8 L38.3 12.9" stroke="#d7d7d7" stroke-width="2.1"/></g></svg>`
+            },
+            wood: {
+                tip:[6,38],
+                svg:`<svg viewBox="0 0 44 44" focusable="false" aria-hidden="true"><g><path d="M6 38 L10 29 L32 7 L38 13 L16 35 Z" fill="#202124" stroke="#050505" stroke-width="1.3"/><path d="M10 29 L16 35 L6 38 Z" fill="#d7ae7b" stroke="#222" stroke-width="1.1"/><path d="M6 38 L9.2 36.8 L7.2 34.8 Z" fill="#050505"/><path d="M31 8 L37 14" stroke="#62666b" stroke-width="2.2"/></g></svg>`
+            },
+            mechanical: {
+                tip:[6,38],
+                svg:`<svg viewBox="0 0 44 44" focusable="false" aria-hidden="true"><g><path d="M6 38 L8.2 31.4 L29.4 10.2 L34.2 15 L13 36.2 Z" fill="#b9d7ef" stroke="#1f2937" stroke-width="1.4"/><path d="M8.2 31.4 L13 36.2 L6 38 Z" fill="#c9c9c9" stroke="#1f2937" stroke-width="1.1"/><path d="M6 38 L8 36.9 L7.1 35.8 Z" fill="#171717"/><path d="M27.8 11.8 L32.6 16.6" stroke="#4b5563" stroke-width="2.2"/><path d="M30.4 8.5 L36 14.1" stroke="#6b7280" stroke-width="3.5"/><rect x="34" y="5.5" width="4.2" height="7" rx="1" transform="rotate(45 36.1 9)" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/></g></svg>`
+            },
+            pen: {
+                tip:[6,38],
+                svg:`<svg viewBox="0 0 44 44" focusable="false" aria-hidden="true"><g><path d="M6 38 L9 30.8 L29.5 10.3 L35.7 16.5 L15.2 37 Z" fill="#2563eb" stroke="#172554" stroke-width="1.4"/><path d="M6 38 L10.2 34.1 L12.4 36.3 Z" fill="#c8d3df" stroke="#111827" stroke-width="1"/><path d="M6 38 L8.7 36.6 L7.4 35.3 Z" fill="#111827"/><path d="M28.2 11.6 L34.4 17.8" stroke="#93c5fd" stroke-width="2"/><path d="M31.3 7.2 L38.8 14.7" stroke="#111827" stroke-width="3.4"/><path d="M36.1 7.8 L40 11.7" stroke="#60a5fa" stroke-width="1.4"/></g></svg>`
+            },
+            marker: {
+                tip:[7,37],
+                svg:`<svg viewBox="0 0 44 44" focusable="false" aria-hidden="true"><g><path d="M7 37 L10 29.6 L28.8 10.8 L36 18 L17.2 36.8 Z" fill="#22c55e" stroke="#14532d" stroke-width="1.4"/><path d="M7 37 L10 29.6 L14.5 34.1 Z" fill="#111827" stroke="#111827" stroke-width="1"/><path d="M27.4 12.2 L34.6 19.4" stroke="#86efac" stroke-width="2"/><path d="M30.7 7.2 L39.6 16.1" stroke="#166534" stroke-width="4"/></g></svg>`
+            },
+            fine: {
+                tip:[7,37],
+                svg:`<svg viewBox="0 0 44 44" focusable="false" aria-hidden="true"><g><path d="M7 37 L9.2 32.7 L30.7 11.2 L34.8 15.3 L13.3 36.8 Z" fill="#e5e7eb" stroke="#374151" stroke-width="1.2"/><path d="M7 37 L9.5 35.7 L8.3 34.5 Z" fill="#111827"/><path d="M30 11.9 L34.1 16" stroke="#9ca3af" stroke-width="1.8"/></g></svg>`
+            },
+            eraser: {
+                tip:[8,37],
+                svg:`<svg viewBox="0 0 44 44" focusable="false" aria-hidden="true"><g><path d="M8 37 L4.8 33.8 C4 33 4 31.7 4.8 30.9 L24.9 10.8 C25.7 10 27 10 27.8 10.8 L39.2 22.2 C40 23 40 24.3 39.2 25.1 L27.3 37 Z" fill="#f59eae" stroke="#5b2333" stroke-width="1.4"/><path d="M8 37 L4.8 33.8 C4 33 4 31.7 4.8 30.9 L10.9 24.8 L23.1 37 Z" fill="#60a5fa" stroke="#1e3a8a" stroke-width="1.2"/><path d="M10.9 24.8 L23.1 37" stroke="#f8fafc" stroke-width="1.5"/><path d="M8 37 L23.1 37" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></g></svg>`
+            }
+        };
+        function renderWritingCursor(){
+            const el=document.getElementById('writingCursor');
+            if(!el) return;
+            const visual=currentTool==='eraser'?WRITING_CURSOR_SVGS.eraser:(WRITING_CURSOR_SVGS[writingCursorStyle]||WRITING_CURSOR_SVGS.classic);
+            writingCursorTipX=visual.tip[0];writingCursorTipY=visual.tip[1];
+            el.innerHTML=visual.svg;
+            el.classList.toggle('eraser-cursor',currentTool==='eraser');
+        }
         function updateWritingCursorFrame(){
             writingCursorRaf=0;
             const el=document.getElementById('writingCursor');
             if(!el || !writingCursorEnabled) return;
-            el.style.transform=`translate3d(${writingCursorX-WRITING_CURSOR_TIP_X}px,${writingCursorY-WRITING_CURSOR_TIP_Y}px,0)`;
+            el.style.transform=`translate3d(${writingCursorX-writingCursorTipX}px,${writingCursorY-writingCursorTipY}px,0)`;
         }
         function moveWritingCursor(e){
             if(!writingCursorEnabled) return;
@@ -279,13 +318,22 @@
             const el=document.getElementById('writingCursor');
             if(el) el.style.display='none';
         }
+        window.setWritingCursorStyle=function(style){
+            if(!WRITING_CURSOR_SVGS[style] || style==='eraser') style='classic';
+            writingCursorStyle=style;
+            renderWritingCursor();
+            if(writingCursorEnabled) toast('Cursor: '+(document.getElementById('writingCursorStyle')?.selectedOptions?.[0]?.textContent||'Lápiz'));
+        };
         window.toggleWritingCursor=function(){
             writingCursorEnabled=!writingCursorEnabled;
+            renderWritingCursor();
             document.body.classList.toggle('writing-cursor-enabled',writingCursorEnabled);
             document.getElementById('btnWritingCursor')?.classList.toggle('active',writingCursorEnabled);
             if(!writingCursorEnabled) hideWritingCursor();
-            toast(writingCursorEnabled?'✏️ Cursor lápiz activado':'Cursor original restaurado');
+            toast(writingCursorEnabled?'✏️ Cursor visual activado':'Cursor original restaurado');
         };
+
+        renderWritingCursor();
 
         // ---------- GRABACIÓN DE TAREAS / YOUTUBE ----------
         function chooseRecordingFormat(){
@@ -402,8 +450,10 @@
             currentTool = tool;
             ['btnPen','btnPencil','btnLine','btnEraser'].forEach(id => document.getElementById(id)?.classList.remove('active'));
             document.getElementById('btn' + tool.charAt(0).toUpperCase() + tool.slice(1))?.classList.add('active');
+            renderWritingCursor();
         }
         function updateSize() { strokeSize = parseFloat(document.getElementById('strokeSize').value) || 3; }
+        function updateEraserSize() { eraserSize = parseFloat(document.getElementById('eraserSize').value) || 24; }
         function updateColor() { strokeColor = document.getElementById('colorPicker').value || '#000000'; }
 
         // ---------- HELPERS DE CANVAS / BLOB ----------
@@ -777,7 +827,7 @@
                 const pos=getMousePos(page.drawCanvas,ev);
                 ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(pos.x,pos.y);
                 if(currentTool==='eraser'){
-                    ctx.globalCompositeOperation='destination-out';ctx.lineWidth=strokeSize*8;ctx.strokeStyle='#000';ctx.globalAlpha=1;
+                    ctx.globalCompositeOperation='destination-out';ctx.lineWidth=eraserSize;ctx.strokeStyle='#000';ctx.globalAlpha=1;
                 } else {
                     ctx.globalCompositeOperation='source-over';ctx.strokeStyle=strokeColor;
                     if(currentTool==='pen'){ctx.globalAlpha=1;ctx.lineWidth=strokeSize;}
