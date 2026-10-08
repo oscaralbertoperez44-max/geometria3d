@@ -52,7 +52,6 @@
         #pageIndicator { position: fixed; left: 16px; bottom: 16px; z-index: 450; background: rgba(15,15,15,.9); padding: 8px 12px; border-radius: 8px; font-size: 13px; border: 1px solid var(--ui-border); font-weight: bold; pointer-events: none; }
         #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0; z-index: 9999; background: #222; color: #fff; border: 1px solid #555; border-radius: 8px; padding: 10px 16px; font-size: 14px; pointer-events: none; transition: .2s ease-out; box-shadow: 0 8px 25px rgba(0,0,0,.5); }
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
         /* Gestor de Materias */
         #nb-launcher { position: fixed; left: 16px; top: 70px; z-index: 5000; background: #1a202c; color: #fff; border: 1px solid #4a5568; border-radius: 8px; padding: 10px 14px; font-weight: bold; box-shadow: 0 6px 20px rgba(0,0,0,0.6); cursor: pointer; }
         #nb-drawer { position: fixed; inset: 0 auto 0 0; width: min(340px, 90vw); background: #1a202c; z-index: 5001; transform: translateX(-105%); transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 12px 0 40px rgba(0,0,0,0.7); display: flex; flex-direction: column; }
@@ -85,6 +84,72 @@
         .pdf-page-wrap { position: relative; background: #fff; box-shadow: 0 8px 30px rgba(0,0,0,0.6); display: inline-block; }
         .pdf-crop-box { position: absolute; border: 2px dashed #22c55e; background: rgba(34,197,94,0.15); display: none; pointer-events: none; z-index: 4; }
 
+        /* Math Lab: se abre bajo demanda y no toca el canvas de escritura. */
+        #mathLab { position: fixed; z-index: 7200; top: 70px; right: 16px; width: min(930px, calc(100vw - 32px)); height: min(650px, calc(100vh - 88px)); min-width: 380px; min-height: 330px; display: none; flex-direction: column; overflow: hidden; resize: both; color: #e5edf7; background: linear-gradient(145deg,#0d1728,#07111e); border: 1px solid #226b60; border-radius: 16px; box-shadow: 0 24px 74px rgba(0,0,0,.72), 0 0 0 1px rgba(32,201,151,.08) inset; }
+        #mathLab.open { display: flex; }
+        #mathLab.minimized { height: 48px !important; min-height: 48px; resize: none; }
+        #mathLab.minimized .math-lab-workspace { display: none; }
+        .math-lab-head { min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 12px; cursor: move; user-select: none; background: linear-gradient(90deg,#052d2a,#0e2436); border-bottom: 1px solid rgba(94,234,212,.2); }
+        .math-lab-title { display: flex; align-items: center; gap: 9px; min-width: 0; font-size: 14px; font-weight: 800; letter-spacing: .2px; }
+        .math-lab-title small { color: #8ba7bb; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .math-lab-spacer { flex: 1; }
+        .math-lab-head button { width: 30px; height: 30px; padding: 0; border-radius: 8px; color: #cbd5e1; background: rgba(15,23,42,.74); border-color: rgba(148,163,184,.28); font-size: 18px; line-height: 1; }
+        .math-lab-head button:hover { color: #fff; background: #145f55; border-color: #5eead4; }
+        .math-lab-workspace { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(268px, .86fr) minmax(330px, 1.14fr); overflow: hidden; }
+        .math-control-column { min-height: 0; display: flex; flex-direction: column; border-right: 1px solid rgba(148,163,184,.16); background: rgba(5,14,26,.48); }
+        .math-tabs { display: flex; gap: 4px; overflow-x: auto; padding: 9px 8px 7px; scrollbar-width: thin; border-bottom: 1px solid rgba(148,163,184,.16); }
+        .math-tabs button { flex: 0 0 auto; padding: 6px 9px; border-radius: 8px; border-color: transparent; background: transparent; color: #9db3c8; font-size: 11px; }
+        .math-tabs button:hover { background: rgba(45,212,191,.12); color: #e7fffb; }
+        .math-tabs button.active { color: #022c22; background: #5eead4; border-color: #99f6e4; }
+        #mathKeyboard { display: none; padding: 9px; border-bottom: 1px solid rgba(148,163,184,.16); background: linear-gradient(180deg,rgba(2,12,23,.95),rgba(10,27,42,.92)); }
+        #mathLab.keyboard-open #mathKeyboard { display: block; }
+        #mathLab.keyboard-open input[data-ml-keyboard-readonly="1"], #mathLab.keyboard-open textarea[data-ml-keyboard-readonly="1"] { caret-color: #5eead4; }
+        .math-keyboard-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 2px 7px; color: #d6f8f3; font-size: 11px; font-weight: 800; }
+        .math-keyboard-top small { color: #7896aa; font-size: 10px; font-weight: 600; }
+        .math-key-grid { display: grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap: 5px; }
+        .math-key-grid button { min-width: 0; padding: 7px 4px; border-radius: 7px; border-color: #314a5f; background: #102338; color: #e2f3f7; font: 750 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+        .math-key-grid button:hover { background: #1d5361; border-color: #5eead4; color: #fff; }
+        .math-key-grid button.math-key-op { background: #164e63; border-color: #155e75; color: #cffafe; }
+        .math-key-grid button.math-key-fn { background: #203454; border-color: #415d8c; color: #dbeafe; font-size: 10px; }
+        .math-key-grid button.math-key-danger { background: #4c1d2b; border-color: #7f1d3b; color: #fecdd3; }
+        .math-panel { display: none; gap: 9px; padding: 12px; overflow: auto; }
+        .math-panel.active { display: grid; }
+        .math-panel h3 { margin: 0 0 2px; color: #d8fff6; font-size: 14px; }
+        .math-panel p { margin: 0; color: #89a3b9; font-size: 11px; line-height: 1.35; }
+        .math-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .math-form-grid .math-wide { grid-column: 1 / -1; }
+        .math-panel label { display: grid; gap: 4px; color: #b8c8d8; font-size: 11px; font-weight: 650; }
+        #mathLab input, #mathLab textarea, #mathLab select { width: 100%; box-sizing: border-box; min-width: 0; border: 1px solid #344c61; border-radius: 8px; outline: none; color: #edf9ff; background: #081522; padding: 8px 9px; font: 600 12px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+        #mathLab textarea { min-height: 70px; resize: vertical; }
+        #mathLab input:focus, #mathLab textarea:focus, #mathLab select:focus { border-color: #2dd4bf; box-shadow: 0 0 0 2px rgba(45,212,191,.13); }
+        .math-action-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 2px; }
+        .math-action-row button, .math-output-tools button { padding: 8px 10px; border-radius: 8px; border-color: #187469; background: #0f766e; color: #effffc; font-size: 11px; font-weight: 800; }
+        .math-action-row button:hover, .math-output-tools button:hover { background: #159687; border-color: #5eead4; }
+        .math-action-row .math-secondary, .math-output-tools .math-secondary { color: #cbd5e1; background: #172638; border-color: #40566d; }
+        .math-action-row .math-secondary:hover, .math-output-tools .math-secondary:hover { background: #26394f; border-color: #94a3b8; }
+        .math-output-column { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: radial-gradient(circle at 75% 0, rgba(20,184,166,.08), transparent 40%), #07111d; }
+        .math-output-caption { padding: 11px 13px 8px; color: #8da9bd; font-size: 11px; font-weight: 700; border-bottom: 1px solid rgba(148,163,184,.16); }
+        #mathOutput { min-height: 0; flex: 1; overflow: auto; padding: 12px; display: flex; align-items: flex-start; justify-content: center; }
+        .math-empty { align-self: center; max-width: 310px; color: #91a4b7; text-align: center; font-size: 13px; line-height: 1.55; }
+        .math-result-card { width: 100%; max-width: 780px; display: grid; gap: 10px; }
+        .math-result-card h2 { margin: 0; color: #d7fff7; font-size: 17px; }
+        .math-result-card .math-kicker { color: #5eead4; font-size: 11px; font-weight: 850; text-transform: uppercase; letter-spacing: .1em; }
+        .math-result-lines { display: grid; gap: 7px; }
+        .math-result-line { padding: 8px 10px; border: 1px solid rgba(71,102,128,.55); border-radius: 8px; color: #e5edf7; background: rgba(15,31,48,.76); font: 600 12px/1.42 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; }
+        .math-visual { width: 100%; border: 1px solid #254457; border-radius: 10px; overflow: hidden; background: #081521; }
+        .math-visual svg { display: block; width: 100%; height: auto; }
+        .math-output-tools { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid rgba(148,163,184,.16); background: rgba(2,8,18,.45); }
+        .math-output-tools button:first-child { flex: 1; }
+        .math-hint { padding: 8px 9px; border-left: 3px solid #2dd4bf; border-radius: 0 7px 7px 0; color: #b8d7d8; background: rgba(45,212,191,.07); font-size: 11px; line-height: 1.4; }
+        @media (max-width: 760px) {
+            #mathLab { top: 56px; right: 8px; width: calc(100vw - 16px); height: min(78vh, 720px); min-width: 0; min-height: 300px; border-radius: 12px; resize: vertical; }
+            .math-lab-workspace { grid-template-columns: 1fr; grid-template-rows: minmax(235px, .87fr) minmax(220px, 1.13fr); overflow: auto; }
+            .math-control-column { border-right: 0; border-bottom: 1px solid rgba(148,163,184,.16); }
+            .math-panel { max-height: 300px; }
+            .math-lab-title small { display: none; }
+            .math-key-grid { grid-template-columns: repeat(6, minmax(0,1fr)); }
+        }
+
         /* Grabación ligera + cursor lápiz opcional */
         #recordingIndicator { position: fixed; top: 72px; right: 16px; z-index: 9100; display: none; align-items: center; gap: 8px; background: rgba(20,20,20,.94); border: 1px solid #ef4444; border-radius: 9px; padding: 8px 10px 8px 12px; font-size: 13px; font-weight: 700; box-shadow: 0 6px 22px rgba(0,0,0,.45); pointer-events: auto; }
         #recordingIndicator.show { display: flex; }
@@ -113,6 +178,9 @@
     <div id="toolbar">
         <div class="tool-group" style="border-right:none;">
             <button onclick="togglePdfStudio()">📄 PDF Studio & Buscador</button>
+        </div>
+        <div class="tool-group" style="border-right:none;">
+            <button id="btnMathLab" onclick="toggleMathLab()" title="Gráficas, cálculo, álgebra, matrices, probabilidad y geometría 3D">✦ Math Lab</button>
         </div>
         <div class="tool-group">
             <button id="btnPen" class="active" onclick="setTool('pen')">✒️ Lapicera</button>
@@ -164,7 +232,6 @@
     <div id="toast"></div>
     <div id="recordingIndicator"><span class="rec-dot"></span><span>GRABANDO</span><span id="recordingTime">00:00</span><button class="rec-fullscreen" onclick="toggleFullScreen()" title="Entrar/salir de pantalla completa durante la grabación">⛶</button></div>
     <div id="writingCursor" aria-hidden="true"></div>
-
     <div id="notebook">
         <!-- Las hojas se generan dinámicamente -->
     </div>
@@ -207,6 +274,143 @@
       <div id="pdfLibrary"><div style="font-size:12px; color:#94a3b8;">Sube un PDF para verlo aquí.</div></div>
       <div id="pdfView" class="pdf-view"><div style="font-size:13px; color:#94a3b8;">Selecciona un PDF de la lista, busca en internet o carga uno nuevo.</div></div>
     </div>
+
+    <!-- MATH LAB: ventana independiente y liviana; los cálculos se ejecutan únicamente al solicitarlos. -->
+    <aside id="mathLab" aria-label="Laboratorio matemático">
+        <div class="math-lab-head" id="mathLabDragHandle">
+        <div class="math-lab-title"><span>✦ Math Lab</span><small>Gráficas, cálculo, álgebra y datos</small></div>
+        <span class="math-lab-spacer"></span>
+        <button id="mathKeyboardToggle" onclick="toggleMathKeyboard()" title="Mostrar teclado matemático">⌨</button>
+        <button id="mathLabMinimize" onclick="toggleMathLabMinimize()" title="Minimizar">—</button>
+        <button onclick="toggleMathLab()" title="Cerrar">×</button>
+      </div>
+      <div class="math-lab-workspace">
+        <section class="math-control-column">
+          <nav class="math-tabs" aria-label="Temas de Math Lab">
+            <button class="active" data-math-tab="graph" onclick="switchMathTab('graph')">📈 Gráficas</button>
+            <button data-math-tab="calculus" onclick="switchMathTab('calculus')">∫ Cálculo</button>
+            <button data-math-tab="algebra" onclick="switchMathTab('algebra')">𝑥 Álgebra</button>
+            <button data-math-tab="matrices" onclick="switchMathTab('matrices')">▦ Matrices</button>
+            <button data-math-tab="probability" onclick="switchMathTab('probability')">◔ Prob./Est.</button>
+            <button data-math-tab="geometry3d" onclick="switchMathTab('geometry3d')">◈ Geo 3D</button>
+          </nav>
+          <div id="mathKeyboard" aria-label="Teclado matemático">
+            <div class="math-keyboard-top"><span>⌨ Teclado matemático</span><small id="mathKeyboardHint">Elegí un campo y escribí</small></div>
+            <div class="math-key-grid">
+              <button onclick="mathKey('7')">7</button><button onclick="mathKey('8')">8</button><button onclick="mathKey('9')">9</button><button class="math-key-op" onclick="mathKey('/')">÷</button><button class="math-key-op" onclick="mathKey('(')">(</button><button class="math-key-op" onclick="mathKey(')')">)</button><button class="math-key-op" onclick="mathKey('^')">xʸ</button><button class="math-key-danger" onclick="mathKey('backspace')">⌫</button>
+              <button onclick="mathKey('4')">4</button><button onclick="mathKey('5')">5</button><button onclick="mathKey('6')">6</button><button class="math-key-op" onclick="mathKey('*')">×</button><button class="math-key-op" onclick="mathKey('+')">+</button><button class="math-key-op" onclick="mathKey('-')">−</button><button class="math-key-op" onclick="mathKey('.')">.</button><button class="math-key-danger" onclick="mathKey('clear')">CLR</button>
+              <button onclick="mathKey('1')">1</button><button onclick="mathKey('2')">2</button><button onclick="mathKey('3')">3</button><button class="math-key-op" onclick="mathKey('pi')">π</button><button class="math-key-op" onclick="mathKey('e')">e</button><button class="math-key-op" onclick="mathKey(',')">,</button><button class="math-key-op" onclick="mathKey(';')">;</button><button class="math-key-op" onclick="mathKey('=')">=</button>
+              <button onclick="mathKey('0')">0</button><button onclick="mathKey('x')">x</button><button onclick="mathKey('y')">y</button><button onclick="mathKey('z')">z</button><button class="math-key-op" onclick="mathKey('<')">&lt;</button><button class="math-key-op" onclick="mathKey('>')">&gt;</button><button class="math-key-op" onclick="mathKey('<=')">≤</button><button class="math-key-op" onclick="mathKey('>=')">≥</button>
+              <button class="math-key-fn" onclick="mathKey('sin(')">sin</button><button class="math-key-fn" onclick="mathKey('cos(')">cos</button><button class="math-key-fn" onclick="mathKey('tan(')">tan</button><button class="math-key-fn" onclick="mathKey('asin(')">asin</button><button class="math-key-fn" onclick="mathKey('acos(')">acos</button><button class="math-key-fn" onclick="mathKey('atan(')">atan</button><button class="math-key-fn" onclick="mathKey('sqrt(')">√</button><button class="math-key-fn" onclick="mathKey('abs(')">|x|</button>
+              <button class="math-key-fn" onclick="mathKey('log(')">ln</button><button class="math-key-fn" onclick="mathKey('exp(')">exp</button><button class="math-key-fn" onclick="mathKey('floor(')">⌊x⌋</button><button class="math-key-fn" onclick="mathKey('ceil(')">⌈x⌉</button><button class="math-key-fn" onclick="mathKey('round(')">round</button><button class="math-key-fn" onclick="mathKey('left')">←</button><button class="math-key-fn" onclick="mathKey('right')">→</button><button class="math-key-fn" onclick="mathKey('space')">espacio</button>
+            </div>
+          </div>
+
+          <div class="math-panel active" data-math-panel="graph">
+            <h3>Gráfico cartesiano (x,y)</h3>
+            <p>Admite sen, cos, tan, ln, log, √, abs, π, potencias y funciones por tramos.</p>
+            <div class="math-form-grid">
+              <label class="math-wide">f(x)<input id="mlGraphExpr" value="sin(x)" placeholder="Ej.: sin(x), x^2-4*x+3"></label>
+              <label>x mínimo<input id="mlGraphMin" value="-2*pi"></label>
+              <label>x máximo<input id="mlGraphMax" value="2*pi"></label>
+            </div>
+            <div class="math-hint">Por tramos: <b>x^2 si x&lt;0; 2*x+1 si x&gt;=0</b>.</div>
+            <div class="math-action-row"><button onclick="mathRunGraph()">📈 Graficar</button><button class="math-secondary" onclick="mathAnalyzeGraph()">🔎 Analizar</button><button class="math-secondary" onclick="mathLoadExample('graph')">Ejemplo</button></div>
+          </div>
+
+          <div class="math-panel" data-math-panel="calculus">
+            <h3>Cálculo: derivadas, integrales y límites</h3>
+            <p>Incluye área, Teorema Fundamental, pendiente local y límites laterales.</p>
+            <div class="math-form-grid">
+              <label class="math-wide">Modo<select id="mlCalcMode"><option value="integral">Integral + Teorema Fundamental</option><option value="limit">Límite en un punto</option><option value="derivative">Derivada y recta tangente</option></select></label>
+              <label class="math-wide">f(x)<input id="mlCalcExpr" value="x^2"></label>
+              <label>a<input id="mlCalcA" value="0"></label>
+              <label>b<input id="mlCalcB" value="3"></label>
+              <label class="math-wide">Punto x₀ / límite<input id="mlCalcX0" value="2"></label>
+            </div>
+            <div class="math-action-row"><button onclick="mathRunCalculus()">∫ Analizar</button><button class="math-secondary" onclick="mathLoadExample('calculus')">Ejemplo</button></div>
+          </div>
+
+          <div class="math-panel" data-math-panel="algebra">
+            <h3>Álgebra, inecuaciones y sistemas</h3>
+            <p>Resuelve ecuaciones lineales/cuadráticas, inecuaciones lineales y sistemas 2×2 por Cramer.</p>
+            <div class="math-form-grid">
+              <label class="math-wide">Modo<select id="mlAlgebraMode" onchange="updateAlgebraFields()"><option value="equation">Ecuación lineal o cuadrática</option><option value="inequality">Inecuación lineal</option><option value="system">Sistema 2×2</option></select></label>
+              <label class="math-wide" data-algebra-field="equation">Ecuación<input id="mlAlgebraEq" value="x^2-5*x+6=0" placeholder="Ej.: 2*x+3=11"></label>
+              <label class="math-wide" data-algebra-field="inequality">Inecuación<input id="mlInequality" value="2*x-3<=5" placeholder="Ej.: 2*x-3<=5"></label>
+              <label data-algebra-field="system">a₁<input id="mlSysA1" value="2"></label>
+              <label data-algebra-field="system">b₁<input id="mlSysB1" value="1"></label>
+              <label data-algebra-field="system">c₁<input id="mlSysC1" value="7"></label>
+              <label data-algebra-field="system">a₂<input id="mlSysA2" value="1"></label>
+              <label data-algebra-field="system">b₂<input id="mlSysB2" value="-1"></label>
+              <label data-algebra-field="system">c₂<input id="mlSysC2" value="1"></label>
+            </div>
+            <div class="math-action-row"><button onclick="mathRunAlgebra()">𝑥 Resolver</button><button class="math-secondary" onclick="mathLoadExample('algebra')">Ejemplo</button></div>
+          </div>
+
+          <div class="math-panel" data-math-panel="matrices">
+            <h3>Matrices y Gauss-Jordan</h3>
+            <p>Filas separadas por <b>;</b> o Enter. Valores separados por espacios o comas.</p>
+            <div class="math-form-grid">
+              <label class="math-wide">Matriz A<textarea id="mlMatrixA">1 2; 3 4</textarea></label>
+              <label class="math-wide">Matriz B o vector b <small>(para A×B o A·X=B)</small><textarea id="mlMatrixB">2 0; 1 2</textarea></label>
+              <label class="math-wide">Operación<select id="mlMatrixOp"><option value="det">Determinante</option><option value="inverse">Inversa</option><option value="rref">Gauss-Jordan</option><option value="multiply">Producto A × B</option><option value="transpose">Traspuesta</option><option value="rank">Rango</option><option value="solve">Resolver A·X = B</option></select></label>
+            </div>
+            <div class="math-action-row"><button onclick="mathRunMatrices()">▦ Calcular</button><button class="math-secondary" onclick="mathLoadExample('matrices')">Ejemplo</button></div>
+          </div>
+
+          <div class="math-panel" data-math-panel="probability">
+            <h3>Probabilidad y estadística completa</h3>
+            <p>Elegí un modelo: el laboratorio explica datos, identifica parámetros y grafica la distribución.</p>
+            <div class="math-form-grid">
+              <label class="math-wide">Modo<select id="mlProbMode" onchange="updateProbabilityFields()"><option value="stats">Estadística descriptiva + frecuencias</option><option value="regression">Correlación y regresión lineal</option><option value="binomial">Binomial</option><option value="poisson">Poisson</option><option value="hypergeometric">Hipergeométrica</option><option value="geometric">Geométrica</option><option value="normal">Normal</option><option value="venn">Conjuntos / diagrama de Venn</option><option value="counting">Conteo: permutaciones y combinaciones</option></select></label>
+              <label class="math-wide" data-prob-field="stats">Datos<input id="mlStatsData" value="2, 4, 5, 5, 7, 9, 10" placeholder="Ej.: 2, 4, 5, 5, 7"></label>
+              <label class="math-wide" data-prob-field="regression">Valores de X<input id="mlRegX" value="1, 2, 3, 4, 5"></label>
+              <label class="math-wide" data-prob-field="regression">Valores de Y<input id="mlRegY" value="2, 3, 5, 4, 6"></label>
+              <label data-prob-field="binomial">n<input id="mlBinN" value="10"></label>
+              <label data-prob-field="binomial">p<input id="mlBinP" value="0.4"></label>
+              <label data-prob-field="events">k<input id="mlProbK" value="4"></label>
+              <label data-prob-field="poisson">λ<input id="mlPoissonLambda" value="3"></label>
+              <label data-prob-field="hypergeometric">N población<input id="mlHyperN" value="50"></label>
+              <label data-prob-field="hypergeometric">K éxitos<input id="mlHyperK" value="18"></label>
+              <label data-prob-field="hypergeometric">n muestra<input id="mlHyperNDraw" value="8"></label>
+              <label data-prob-field="hypergeometric">k éxitos<input id="mlHyperKDraw" value="3"></label>
+              <label data-prob-field="geometric">p éxito<input id="mlGeoP" value="0.25"></label>
+              <label data-prob-field="geometric">k intento<input id="mlGeoK" value="4"></label>
+              <label data-prob-field="normal">μ media<input id="mlNormalMu" value="70"></label>
+              <label data-prob-field="normal">σ desvío<input id="mlNormalSigma" value="10"></label>
+              <label data-prob-field="normal">a límite inferior<input id="mlNormalA" value="60"></label>
+              <label data-prob-field="normal">b límite superior<input id="mlNormalB" value="80"></label>
+              <label data-prob-field="venn">|U| universo<input id="mlVennU" value="40"></label>
+              <label data-prob-field="venn">|A|<input id="mlVennA" value="22"></label>
+              <label data-prob-field="venn">|B|<input id="mlVennB" value="18"></label>
+              <label data-prob-field="venn">|A ∩ B|<input id="mlVennI" value="8"></label>
+              <label data-prob-field="counting">n elementos<input id="mlCountN" value="8"></label>
+              <label data-prob-field="counting">r lugares<input id="mlCountR" value="3"></label>
+              <label class="math-wide" data-prob-field="counting">Modelo de conteo<select id="mlCountMode"><option value="combination">Combinación sin repetición C(n,r)</option><option value="permutation">Permutación sin repetición P(n,r)</option><option value="combRep">Combinación con repetición</option><option value="permRep">Variaciones con repetición n^r</option></select></label>
+            </div>
+            <div class="math-action-row"><button onclick="mathRunProbability()">◔ Calcular</button><button class="math-secondary" onclick="mathLoadExample('probability')">Ejemplo</button></div>
+          </div>
+
+          <div class="math-panel" data-math-panel="geometry3d">
+            <h3>Geometría analítica 3D</h3>
+            <p>Visualizá un punto, una recta r=P+t·v y un plano; calcula módulo, distancia e intersección recta–plano.</p>
+            <div class="math-form-grid">
+              <label class="math-wide">Punto P (x, y, z)<input id="ml3dPoint" value="1, 2, 1"></label>
+              <label class="math-wide">Vector v (a, b, c)<input id="ml3dVector" value="2, -1, 3"></label>
+              <label class="math-wide">Plano a, b, c, d para ax+by+cz=d<input id="ml3dPlane" value="1, 1, 1, 3"></label>
+            </div>
+            <div class="math-action-row"><button onclick="mathRun3D()">◈ Visualizar</button><button class="math-secondary" onclick="mathLoadExample('geometry3d')">Ejemplo</button></div>
+          </div>
+        </section>
+
+        <section class="math-output-column">
+          <div class="math-output-caption">Resultado listo para pegar en el cuaderno</div>
+          <div id="mathOutput"><div class="math-empty">Elegí un tema, completá los datos y tocá <b>Graficar</b> o <b>Calcular</b>. La pizarra seguirá escribiendo igual de fluida.</div></div>
+          <div class="math-output-tools"><button onclick="pasteMathResult()">📌 Pegar en cuaderno</button><button class="math-secondary" onclick="copyMathResult()" title="Copiar el resumen de texto">Copiar</button></div>
+        </section>
+      </div>
+    </aside>
 
     <!-- SCRIPT PRINCIPAL: MOTOR GRÁFICO OPTIMIZADO -->
     <script>
@@ -1442,6 +1646,714 @@ Se borrarán sus hojas, imágenes y PDFs guardados. Esta acción no se puede des
         handle.addEventListener('pointermove',e=>{if(!pdfDrag||e.pointerId!==pdfDrag.id)return;const maxX=Math.max(0,window.innerWidth-studio.offsetWidth),maxY=Math.max(0,window.innerHeight-46);studio.style.left=clamp(e.clientX-pdfDrag.x,0,maxX)+'px';studio.style.top=clamp(e.clientY-pdfDrag.y,0,maxY)+'px';studio.style.right='auto';});
         const endPdfDrag=e=>{if(!pdfDrag||e.pointerId!==pdfDrag.id)return;pdfDrag=null;};
         handle.addEventListener('pointerup',endPdfDrag);handle.addEventListener('pointercancel',endPdfDrag);window.addEventListener('resize',clampPdfStudio,{passive:true});
+
+        // ================= MATH LAB: MOTOR BAJO DEMANDA =================
+        // No usa bucles de animación ni escucha eventos del canvas. Sólo calcula cuando
+        // el usuario presiona un botón y pega el resultado como una imagen SVG movible.
+        let mathLastAsset=null;
+        let mathLastText='';
+        let mathLabDrag=null;
+        const ML_EPS=1e-10;
+
+        function mlEscape(value){
+            return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+        }
+        function mlFmt(value,digits=6){
+            const n=Number(value);
+            if(!Number.isFinite(n)) return 'indefinido';
+            if(Math.abs(n)<1e-11) return '0';
+            if(Math.abs(n)>=1e7||Math.abs(n)<1e-5) return n.toExponential(Math.max(1,digits-2)).replace(/\.?0+e/,'e');
+            return Number(n.toFixed(digits)).toString();
+        }
+        function mlDataUri(svg){ return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg); }
+        function mlWrap(text,max=78){
+            return String(text??'').split('\n').flatMap(part=>{
+                const words=part.trim().split(/\s+/).filter(Boolean);
+                if(!words.length) return [''];
+                const out=[];let line='';
+                for(const word of words){
+                    if((line?line.length+1:0)+word.length>max&&line){out.push(line);line=word;}
+                    else line+=(line?' ':'')+word;
+                }
+                if(line) out.push(line);
+                return out;
+            });
+        }
+        function mlError(message){
+            mathLastAsset=null;mathLastText='';
+            const out=document.getElementById('mathOutput');
+            out.innerHTML='<div class="math-empty"><b style="color:#fca5a5;">Revisá los datos</b><br>'+mlEscape(message)+'</div>';
+            toast('⚠️ '+message,2600);
+        }
+        function mlReportSvg(title,subtitle,lines,visual){
+            const width=1000,pad=36;
+            const wrapped=lines.flatMap(line=>mlWrap(line,92));
+            const lineH=29,infoTop=112,visualH=visual?Math.max(220,Math.min(510,Math.round((width-2*pad)*(visual.height/visual.width)))):0;
+            const visualTop=infoTop+wrapped.length*lineH+18;
+            const height=Math.max(210,visualTop+(visual?visualH+36:26));
+            const text=wrapped.map((line,i)=>'<text x="'+pad+'" y="'+(infoTop+i*lineH)+'" fill="#e5edf7" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="18">'+mlEscape(line)+'</text>').join('');
+            const visualNode=visual?'<rect x="'+pad+'" y="'+visualTop+'" width="'+(width-pad*2)+'" height="'+visualH+'" rx="13" fill="#071520" stroke="#22506a"/><image href="'+mlDataUri(visual.svg)+'" x="'+pad+'" y="'+visualTop+'" width="'+(width-pad*2)+'" height="'+visualH+'" preserveAspectRatio="xMidYMid meet"/>':'';
+            return '<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'"><defs><linearGradient id="mlBg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#082337"/><stop offset="1" stop-color="#08131f"/></linearGradient></defs><rect width="100%" height="100%" rx="20" fill="url(#mlBg)"/><rect x="0" y="0" width="'+width+'" height="82" rx="20" fill="#063b38"/><rect x="0" y="62" width="'+width+'" height="20" fill="#063b38"/><text x="'+pad+'" y="34" fill="#99f6e4" font-family="Arial,sans-serif" font-size="14" font-weight="800" letter-spacing="2">MATH LAB • RESULTADO</text><text x="'+pad+'" y="66" fill="#ffffff" font-family="Arial,sans-serif" font-size="28" font-weight="800">'+mlEscape(title)+'</text><text x="'+(width-pad)+'" y="66" fill="#b5d4df" text-anchor="end" font-family="Arial,sans-serif" font-size="15">'+mlEscape(subtitle)+'</text>'+text+visualNode+'</svg>';
+        }
+        function mlPublish(title,subtitle,lines,visual=null){
+            const safeLines=lines.map(x=>String(x));
+            const out=document.getElementById('mathOutput');
+            const lineHtml=safeLines.map(line=>'<div class="math-result-line">'+mlEscape(line)+'</div>').join('');
+            out.innerHTML='<div class="math-result-card"><div class="math-kicker">Resultado</div><h2>'+mlEscape(title)+'</h2><div class="math-hint">'+mlEscape(subtitle)+'</div><div class="math-result-lines">'+lineHtml+'</div>'+(visual?'<div class="math-visual">'+visual.svg+'</div>':'')+'</div>';
+            mathLastText=[title,subtitle,...safeLines].join('\n');
+            mathLastAsset=mlDataUri(mlReportSvg(title,subtitle,safeLines,visual));
+        }
+        function mlNiceStep(span,count=8){
+            const raw=Math.max(Math.abs(span)/Math.max(1,count),1e-12);
+            const power=Math.pow(10,Math.floor(Math.log10(raw))),fraction=raw/power;
+            const nice=fraction<=1?1:fraction<=2?2:fraction<=2.5?2.5:fraction<=5?5:10;
+            return nice*power;
+        }
+        function mlNumericTicks(min,max,count=8){
+            const step=mlNiceStep(max-min,count),out=[];
+            for(let n=Math.ceil(min/step)*step;n<=max+step*.0001;n+=step) out.push(Math.abs(n)<step*1e-7?0:n);
+            return out;
+        }
+        function mlPiLabel(units){
+            if(Math.abs(units)<1e-8) return '0';
+            const sign=units<0?'−':'',u=Math.abs(units),q=Math.round(u*4);
+            if(Math.abs(u-q/4)<1e-7){
+                if(q===4) return sign+'π';
+                if(q%4===0) return sign+(q/4)+'π';
+                if(q===2) return sign+'π/2';
+                if(q===1) return sign+'π/4';
+                if(q===3) return sign+'3π/4';
+                return sign+q+'π/4';
+            }
+            return sign+mlFmt(u,3)+'π';
+        }
+        function mlPiTicks(min,max,count=8){
+            const span=(max-min)/Math.PI,candidates=[.125,.25,.5,1,2,4,8,16],step=candidates.find(v=>span/v<=count)||16,out=[];
+            for(let n=Math.ceil((min/Math.PI)/step)*step;n<=max/Math.PI+step*.0001;n+=step) out.push(Math.abs(n)<1e-8?0:n*Math.PI);
+            return {ticks:out,label:x=>mlPiLabel(x/Math.PI)};
+        }
+        function mlPrepareExpression(raw){
+            let s=String(raw??'').trim().toLowerCase();
+            if(!s) throw new Error('Escribí una expresión matemática.');
+            s=s.replace(/[−–—]/g,'-').replace(/[×·]/g,'*').replace(/÷/g,'/').replace(/π/g,'pi').replace(/√/g,'sqrt').replace(/²/g,'^2').replace(/³/g,'^3').replace(/\bsen\b/g,'sin').replace(/\btg\b/g,'tan').replace(/\bln\b/g,'log').replace(/,/g,'.').replace(/\s+/g,'');
+            if(!/^[0-9a-z_+\-*/^().]+$/.test(s)) throw new Error('La expresión contiene símbolos no admitidos.');
+            const allowed=new Set(['x','pi','e','sin','cos','tan','asin','acos','atan','sqrt','abs','exp','log','floor','ceil','round','sign']);
+            const words=s.match(/[a-z_]+/g)||[];
+            if(words.some(word=>!allowed.has(word))) throw new Error('Usá sólo x, números y funciones como sin, cos, sqrt, log o abs.');
+            const fnWords='sin|cos|tan|asin|acos|atan|sqrt|abs|exp|log|floor|ceil|round|sign';
+            s=s.replace(/(\d|\)|x)(?=(?:x|pi|e|\())/g,'$1*');
+            s=s.replace(new RegExp('(\\d|\\)|x)(?=(?:'+fnWords+')(?=\\())','g'),'$1*');
+            s=s.replace(/\b(pi|e)(?=(?:x|\())/g,'$1*');
+            s=s.replace(/(\d|\)|x)(?=(?:pi|e)\b)/g,'$1*');
+            s=s.replace(/\^/g,'**').replace(/\bpi\b/g,'Math.PI').replace(/\be\b/g,'Math.E');
+            s=s.replace(/\b(sin|cos|tan|asin|acos|atan|sqrt|abs|exp|log|floor|ceil|round|sign)\b/g,'Math.$1');
+            return s;
+        }
+        function mlCompileExpression(raw){
+            const js=mlPrepareExpression(raw);let evaluator;
+            try{evaluator=new Function('x','"use strict"; return ('+js+');');}catch(_){throw new Error('No pude interpretar la expresión.');}
+            return x=>{try{return Number(evaluator(x));}catch(_){return NaN;}};
+        }
+        function mlCompileCondition(raw){
+            let s=String(raw??'').trim().toLowerCase().replace(/[−–—]/g,'-').replace(/π/g,'pi').replace(/,/g,'.').replace(/\s+/g,'');
+            if(!s||!/^[0-9a-z_+\-*/^().<>=!&|]+$/.test(s)) throw new Error('La condición por tramos no es válida.');
+            const words=s.match(/[a-z_]+/g)||[];
+            if(words.some(word=>!['x','pi','e'].includes(word))) throw new Error('En la condición usá x y comparadores, por ejemplo x<0.');
+            s=s.replace(/(\d|\)|x)(?=(?:x|pi|e|\())/g,'$1*').replace(/\b(pi|e)(?=(?:x|\())/g,'$1*').replace(/(\d|\)|x)(?=(?:pi|e)\b)/g,'$1*');
+            s=s.replace(/(^|[^<>=!])=($|[^=])/g,'$1===$2').replace(/\^/g,'**').replace(/\bpi\b/g,'Math.PI').replace(/\be\b/g,'Math.E');
+            let tester;try{tester=new Function('x','"use strict"; return Boolean('+s+');');}catch(_){throw new Error('No pude interpretar la condición por tramos.');}
+            return x=>{try{return !!tester(x);}catch(_){return false;}};
+        }
+        function mlCompilePiecewise(raw){
+            const chunks=String(raw??'').split(';').map(x=>x.trim()).filter(Boolean);
+            if(!chunks.length) throw new Error('Escribí una función.');
+            const pieces=chunks.map(chunk=>{const match=chunk.match(/^(.*?)(?:\s+(?:si|if)\s+(.+))$/i);return match?{fn:mlCompileExpression(match[1]),test:mlCompileCondition(match[2])}:{fn:mlCompileExpression(chunk),test:null};});
+            return x=>{for(const piece of pieces)if(!piece.test||piece.test(x))return piece.fn(x);return NaN;};
+        }
+        function mlReadNumber(id,label){
+            const value=mlCompileExpression(document.getElementById(id).value)(0);
+            if(!Number.isFinite(value)) throw new Error((label||'Este valor')+' debe ser un número válido.');
+            return value;
+        }
+        function mlGraphSvg(fn,xMin,xMax,raw,options={}){
+            if(!Number.isFinite(xMin)||!Number.isFinite(xMax)||xMax<=xMin) throw new Error('El máximo de x debe ser mayor que el mínimo.');
+            const samples=options.samples||520,points=[],finite=[];
+            for(let i=0;i<=samples;i++){const x=xMin+(xMax-xMin)*i/samples;let y;try{y=fn(x);}catch(_){y=NaN;}points.push({x,y});if(Number.isFinite(y)&&Math.abs(y)<1e9)finite.push(y);}
+            if(finite.length<2) throw new Error('No hay valores finitos para dibujar en ese intervalo.');
+            const sorted=[...finite].sort((a,b)=>a-b);let yMin=sorted[Math.floor(sorted.length*.03)],yMax=sorted[Math.ceil(sorted.length*.97)-1];
+            if(Math.abs(yMax-yMin)<1e-8){yMin-=1;yMax+=1;}const padding=(yMax-yMin)*.14;yMin-=padding;yMax+=padding;
+            const W=900,H=440,L=66,R=24,T=42,B=56,plotW=W-L-R,plotH=H-T-B,sx=x=>L+(x-xMin)/(xMax-xMin)*plotW,sy=y=>T+(yMax-y)/(yMax-yMin)*plotH;
+            const wantsPi=/\b(sin|cos|tan|asin|acos|atan|pi)\b|π/i.test(raw||''),xSpec=wantsPi?mlPiTicks(xMin,xMax):{ticks:mlNumericTicks(xMin,xMax),label:x=>mlFmt(x,4)},yTicks=mlNumericTicks(yMin,yMax);
+            const gridX=xSpec.ticks.map(x=>'<line x1="'+sx(x).toFixed(2)+'" y1="'+T+'" x2="'+sx(x).toFixed(2)+'" y2="'+(H-B)+'" stroke="#244157" stroke-width="1"/><text x="'+sx(x).toFixed(2)+'" y="'+(H-B+20)+'" text-anchor="middle" fill="#9db5c7" font-size="12" font-family="Arial">'+mlEscape(xSpec.label(x))+'</text>').join('');
+            const gridY=yTicks.map(y=>'<line x1="'+L+'" y1="'+sy(y).toFixed(2)+'" x2="'+(W-R)+'" y2="'+sy(y).toFixed(2)+'" stroke="#244157" stroke-width="1"/><text x="'+(L-9)+'" y="'+(sy(y)+4).toFixed(2)+'" text-anchor="end" fill="#9db5c7" font-size="12" font-family="Arial">'+mlEscape(mlFmt(y,4))+'</text>').join('');
+            let shade='';
+            if(options.shade&&Number.isFinite(options.shade.a)&&Number.isFinite(options.shade.b)){
+                const a=Math.max(xMin,Math.min(xMax,Math.min(options.shade.a,options.shade.b))),b=Math.max(xMin,Math.min(xMax,Math.max(options.shade.a,options.shade.b))),base=sy(0),sp=[];
+                for(let i=0;i<=180;i++){const x=a+(b-a)*i/180,y=fn(x);if(Number.isFinite(y))sp.push([sx(x),sy(y)]);}
+                if(sp.length>2&&base>=T&&base<=H-B)shade='<path d="M '+sx(a).toFixed(2)+' '+base.toFixed(2)+' L '+sp.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' L ')+' L '+sx(b).toFixed(2)+' '+base.toFixed(2)+' Z" fill="rgba(45,212,191,.20)" stroke="none"/>';
+            }
+            let path='',segment=[],prev=null;const flush=()=>{if(segment.length>1)path+='<path d="M '+segment.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' L ')+'" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>';segment=[];};
+            for(const point of points){const py=sy(point.y),px=sx(point.x),outside=!Number.isFinite(point.y)||py<T-plotH*.28||py>H-B+plotH*.28;if(outside||(prev&&Math.abs(py-prev[1])>plotH*.72)){flush();prev=null;continue;}segment.push([px,py]);prev=[px,py];}flush();
+            const axisX=xMin<=0&&xMax>=0?'<line x1="'+sx(0).toFixed(2)+'" y1="'+T+'" x2="'+sx(0).toFixed(2)+'" y2="'+(H-B)+'" stroke="#8aa4b8" stroke-width="1.5"/>':'',axisY=yMin<=0&&yMax>=0?'<line x1="'+L+'" y1="'+sy(0).toFixed(2)+'" x2="'+(W-R)+'" y2="'+sy(0).toFixed(2)+'" stroke="#8aa4b8" stroke-width="1.5"/>':'';
+            const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Gráfico cartesiano"><rect width="'+W+'" height="'+H+'" fill="#071521"/><text x="'+L+'" y="25" fill="#d9fff8" font-size="16" font-family="Arial" font-weight="700">f(x) = '+mlEscape(raw)+'</text><g>'+gridX+gridY+axisX+axisY+shade+path+'</g><text x="'+(W-R)+'" y="'+(H-15)+'" fill="#b6cbd9" font-size="13" text-anchor="end">x</text><text x="'+(L+8)+'" y="'+(T+15)+'" fill="#b6cbd9" font-size="13">y</text></svg>';
+            return {svg,width:W,height:H};
+        }
+        function mlIntegrate(fn,a,b,steps=720){
+            if(a===b)return 0;let sign=1;if(b<a){[a,b]=[b,a];sign=-1;}let n=Math.max(80,Math.round(steps));if(n%2)n++;
+            const h=(b-a)/n;let total=0;for(let i=0;i<=n;i++){const y=fn(a+i*h);if(!Number.isFinite(y)||Math.abs(y)>1e12)throw new Error('La función no es integrable numéricamente en todo el intervalo.');total+=(i===0||i===n?1:(i%2?4:2))*y;}return sign*total*h/3;
+        }
+        function mlDerivative(fn,x){
+            const h=Math.max(1e-5,Math.abs(x)*1e-5),up=fn(x+h),down=fn(x-h);if(!Number.isFinite(up)||!Number.isFinite(down))throw new Error('No se pudo estimar la derivada en ese punto.');return (up-down)/(2*h);
+        }
+        function mlRunGraph(){
+            try{const raw=document.getElementById('mlGraphExpr').value,fn=mlCompilePiecewise(raw),xMin=mlReadNumber('mlGraphMin','El mínimo de x'),xMax=mlReadNumber('mlGraphMax','El máximo de x'),graph=mlGraphSvg(fn,xMin,xMax,raw);mlPublish('Gráfico cartesiano de f(x)','Ejes numerados; si es trigonométrica, se muestran radianes en π.',['f(x) = '+raw,'Dominio visual: ['+mlFmt(xMin)+', '+mlFmt(xMax)+']','Podés pegarlo, moverlo, agrandarlo, bloquearlo o eliminarlo desde la hoja.'],graph);}
+            catch(err){mlError(err.message||'No se pudo graficar la función.');}
+        }
+        function mlRunCalculus(){
+            try{
+                const raw=document.getElementById('mlCalcExpr').value,fn=mlCompilePiecewise(raw),a=mlReadNumber('mlCalcA','a'),b=mlReadNumber('mlCalcB','b'),x0=mlReadNumber('mlCalcX0','x₀');
+                if(a===b)throw new Error('Los extremos a y b deben ser distintos.');
+                const integral=mlIntegrate(fn,a,b),derivative=mlDerivative(fn,x0),h=Math.max(1e-4,Math.abs(x0)*1e-4),fAt=fn(x0),ftcDerivative=(mlIntegrate(fn,a,x0+h)-mlIntegrate(fn,a,x0-h))/(2*h),margin=Math.max(1,Math.abs(b-a)*.35),graph=mlGraphSvg(fn,Math.min(a,b)-margin,Math.max(a,b)+margin,raw,{shade:{a,b}});
+                mlPublish('Integral y Teorema Fundamental','La integral se calcula con Simpson; la derivada se estima localmente.',['f(x) = '+raw,'∫_'+mlFmt(a)+'^'+mlFmt(b)+' f(x) dx ≈ '+mlFmt(integral,8),"f'("+mlFmt(x0)+') ≈ '+mlFmt(derivative,8),"Si F(x)=∫_"+mlFmt(a)+"^x f(t)dt, entonces F'("+mlFmt(x0)+') ≈ '+mlFmt(ftcDerivative,8)+' y f('+mlFmt(x0)+') = '+mlFmt(fAt,8),"Esto verifica numéricamente que F'(x)=f(x)."],graph);
+            }catch(err){mlError(err.message||'No se pudo analizar la integral.');}
+        }
+
+        // ===== MATH LAB MODULE: ÁLGEBRA, MATRICES Y PROBABILIDAD =====
+        function mlRunAlgebra(){
+            try{
+                const equation=document.getElementById('mlAlgebraEq').value.trim();
+                if(!equation.includes('='))throw new Error('Escribí la igualdad completa, por ejemplo x^2-5*x+6=0.');
+                const parts=equation.split('=');if(parts.length!==2)throw new Error('Usá un solo signo igual.');
+                const left=mlCompileExpression(parts[0]),right=mlCompileExpression(parts[1]),g=x=>left(x)-right(x);
+                const c=g(0),y1=g(1),y2=g(2),a=(y2-2*y1+c)/2,b=y1-c-a;
+                for(const x of [-2,3,4]){const actual=g(x),model=a*x*x+b*x+c;if(!Number.isFinite(actual)||Math.abs(actual-model)>1e-6*(1+Math.abs(actual)))throw new Error('Este modo resuelve ecuaciones lineales o cuadráticas. Para otras, usá Gráficas.');}
+                const lines=['Ecuación: '+equation,'Forma estándar: '+mlFmt(a)+'x² '+(b<0?'− ':'+ ')+mlFmt(Math.abs(b))+'x '+(c<0?'− ':'+ ')+mlFmt(Math.abs(c))+' = 0'];
+                let roots=[],subtitle='Modelo cuadrático';
+                if(Math.abs(a)<ML_EPS){
+                    if(Math.abs(b)<ML_EPS)throw new Error(Math.abs(c)<ML_EPS?'La igualdad se cumple para todo x.':'La ecuación no tiene solución.');
+                    const root=-c/b;roots=[root];subtitle='Ecuación lineal';lines.push('x = −c/b = '+mlFmt(root,8));
+                }else{
+                    const delta=b*b-4*a*c;lines.push('Δ = b² − 4ac = '+mlFmt(delta,8));
+                    if(delta>=-ML_EPS){const d=Math.sqrt(Math.max(0,delta)),r1=(-b+d)/(2*a),r2=(-b-d)/(2*a);roots=[r1,r2];lines.push('x₁ = '+mlFmt(r1,8),'x₂ = '+mlFmt(r2,8));}
+                    else{const real=-b/(2*a),imag=Math.sqrt(-delta)/(2*Math.abs(a));lines.push('No hay raíces reales.','x = '+mlFmt(real,8)+' ± '+mlFmt(imag,8)+'i');}
+                }
+                const range=Math.max(5,...roots.filter(Number.isFinite).map(x=>Math.abs(x)+2)),graph=mlGraphSvg(g,-range,range,'('+parts[0]+')−('+parts[1]+')');
+                mlPublish('Resolución algebraica',subtitle,lines,graph);
+            }catch(err){mlError(err.message||'No se pudo resolver la ecuación.');}
+        }
+        function mlParseMatrix(raw,label){
+            const rows=String(raw??'').trim().split(/[;\n]+/).map(r=>r.trim()).filter(Boolean).map(r=>r.split(/[\s,]+/).filter(Boolean).map(cell=>mlCompileExpression(cell)(0)));
+            if(!rows.length||rows.some(r=>!r.length))throw new Error((label||'La matriz')+' está vacía.');
+            if(rows.some(r=>r.some(x=>!Number.isFinite(x))))throw new Error((label||'La matriz')+' tiene un valor inválido.');
+            const cols=rows[0].length;if(rows.some(r=>r.length!==cols))throw new Error((label||'La matriz')+' debe tener la misma cantidad de columnas en cada fila.');
+            return rows;
+        }
+        function mlRref(matrix){
+            const a=matrix.map(row=>row.map(Number)),rows=a.length,cols=a[0].length;let lead=0;
+            for(let r=0;r<rows;r++){
+                if(lead>=cols)break;let i=r;
+                while(Math.abs(a[i][lead])<ML_EPS){i++;if(i===rows){i=r;lead++;if(lead===cols)return a;}}
+                [a[i],a[r]]=[a[r],a[i]];const pivot=a[r][lead];a[r]=a[r].map(v=>v/pivot);
+                for(let j=0;j<rows;j++)if(j!==r){const factor=a[j][lead];a[j]=a[j].map((v,k)=>Math.abs(v-factor*a[r][k])<ML_EPS?0:v-factor*a[r][k]);}
+                lead++;
+            }
+            return a.map(row=>row.map(v=>Math.abs(v)<ML_EPS?0:v));
+        }
+        function mlDet(matrix){
+            const n=matrix.length;if(matrix.some(r=>r.length!==n))throw new Error('El determinante requiere una matriz cuadrada.');
+            const a=matrix.map(r=>[...r]);let sign=1,det=1;
+            for(let col=0;col<n;col++){
+                let pivot=col;for(let r=col+1;r<n;r++)if(Math.abs(a[r][col])>Math.abs(a[pivot][col]))pivot=r;
+                if(Math.abs(a[pivot][col])<ML_EPS)return 0;
+                if(pivot!==col){[a[pivot],a[col]]=[a[col],a[pivot]];sign*=-1;}
+                const p=a[col][col];det*=p;
+                for(let r=col+1;r<n;r++){const f=a[r][col]/p;for(let c=col;c<n;c++)a[r][c]-=f*a[col][c];}
+            }
+            return det*sign;
+        }
+        function mlInverse(matrix){
+            const n=matrix.length;if(matrix.some(r=>r.length!==n))throw new Error('La inversa requiere una matriz cuadrada.');
+            const augmented=matrix.map((row,i)=>[...row,...Array.from({length:n},(_,j)=>i===j?1:0)]),reduced=mlRref(augmented);
+            for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(Math.abs(reduced[i][j]-(i===j?1:0))>1e-7)throw new Error('La matriz no es invertible porque su determinante es 0.');
+            return reduced.map(row=>row.slice(n));
+        }
+        function mlMultiply(A,B){
+            if(A[0].length!==B.length)throw new Error('Para A×B, las columnas de A deben igualar las filas de B.');
+            return A.map(row=>B[0].map((_,j)=>row.reduce((sum,v,k)=>sum+v*B[k][j],0)));
+        }
+        function mlMatrixText(matrix){return matrix.map(row=>'[ '+row.map(v=>mlFmt(v,7).padStart(9)).join('  ')+' ]').join('\n');}
+        function mlRunMatrices(){
+            try{
+                const A=mlParseMatrix(document.getElementById('mlMatrixA').value,'La matriz A'),op=document.getElementById('mlMatrixOp').value;
+                let result,title,lines=['A =\n'+mlMatrixText(A)];
+                if(op==='det'){const det=mlDet(A);title='Determinante de A';lines.push('det(A) = '+mlFmt(det,10),det===0?'A es singular: no tiene inversa.':'Como det(A) ≠ 0, A es invertible.');}
+                else if(op==='inverse'){result=mlInverse(A);title='Inversa de A';lines.push('A⁻¹ =\n'+mlMatrixText(result),'Se obtuvo aplicando Gauss-Jordan a [A | I].');}
+                else if(op==='rref'){result=mlRref(A);const rank=result.filter(row=>row.some(v=>Math.abs(v)>1e-8)).length;title='Reducción de Gauss-Jordan';lines.push('RREF(A) =\n'+mlMatrixText(result),'Rango(A) = '+rank);}
+                else{const B=mlParseMatrix(document.getElementById('mlMatrixB').value,'La matriz B');result=mlMultiply(A,B);title='Producto A × B';lines.push('B =\n'+mlMatrixText(B),'A × B =\n'+mlMatrixText(result));}
+                mlPublish(title,'Resultado matricial listo para pegar y explicar.',lines);
+            }catch(err){mlError(err.message||'No se pudo calcular la matriz.');}
+        }
+        function mlBarSvg(labels,values,title){
+            const W=900,H=390,L=58,R=22,T=45,B=65,plotW=W-L-R,plotH=H-T-B,max=Math.max(...values,1)*1.14,bw=plotW/Math.max(1,values.length),ticks=mlNumericTicks(0,max,5);
+            const grid=ticks.map(v=>'<line x1="'+L+'" y1="'+(T+plotH-v/max*plotH).toFixed(2)+'" x2="'+(W-R)+'" y2="'+(T+plotH-v/max*plotH).toFixed(2)+'" stroke="#244157"/><text x="'+(L-8)+'" y="'+(T+plotH-v/max*plotH+4).toFixed(2)+'" text-anchor="end" fill="#9db5c7" font-size="12" font-family="Arial">'+mlEscape(mlFmt(v,4))+'</text>').join('');
+            const bars=values.map((v,i)=>{const h=v/max*plotH,x=L+i*bw+bw*.12,y=T+plotH-h,label=labels.length<=18||i%Math.ceil(labels.length/14)===0?'<text x="'+(x+bw*.38).toFixed(2)+'" y="'+(H-B+21)+'" text-anchor="middle" fill="#9db5c7" font-size="11" font-family="Arial">'+mlEscape(labels[i])+'</text>':'';return '<rect x="'+x.toFixed(2)+'" y="'+y.toFixed(2)+'" width="'+Math.max(2,bw*.76).toFixed(2)+'" height="'+h.toFixed(2)+'" rx="3" fill="url(#barGrad)"/>'+label;}).join('');
+            const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'"><defs><linearGradient id="barGrad" x1="0" x2="0" y1="1" y2="0"><stop stop-color="#0d9488"/><stop offset="1" stop-color="#67e8f9"/></linearGradient></defs><rect width="'+W+'" height="'+H+'" fill="#071521"/><text x="'+L+'" y="25" fill="#d9fff8" font-size="16" font-family="Arial" font-weight="700">'+mlEscape(title)+'</text>'+grid+'<line x1="'+L+'" y1="'+(T+plotH)+'" x2="'+(W-R)+'" y2="'+(T+plotH)+'" stroke="#8aa4b8" stroke-width="1.5"/>'+bars+'</svg>';
+            return {svg,width:W,height:H};
+        }
+        function mlLogFactorial(n){let out=0;for(let i=2;i<=n;i++)out+=Math.log(i);return out;}
+        function mlBinomialP(n,p,k){if(k<0||k>n)return 0;if(p===0)return k===0?1:0;if(p===1)return k===n?1:0;return Math.exp(mlLogFactorial(n)-mlLogFactorial(k)-mlLogFactorial(n-k)+k*Math.log(p)+(n-k)*Math.log(1-p));}
+        function mlPoissonP(lambda,k){if(k<0)return 0;if(lambda===0)return k===0?1:0;return Math.exp(-lambda+k*Math.log(lambda)-mlLogFactorial(k));}
+        function mlFrequencyVisual(data){
+            const freq=new Map;for(const x of data){const key=mlFmt(x,6);freq.set(key,(freq.get(key)||0)+1);}
+            const pairs=[...freq.entries()].sort((a,b)=>Number(a[0])-Number(b[0]));
+            return mlBarSvg(pairs.map(x=>x[0]),pairs.map(x=>x[1]),'Frecuencias observadas');
+        }
+        function mlRunProbability(){
+            try{
+                const mode=document.getElementById('mlProbMode').value;
+                if(mode==='stats'){
+                    const data=document.getElementById('mlStatsData').value.split(/[;,\s]+/).filter(Boolean).map(x=>Number(x));
+                    if(data.length<1||data.some(x=>!Number.isFinite(x)))throw new Error('Ingresá datos numéricos separados por comas o espacios.');
+                    const sorted=[...data].sort((a,b)=>a-b),n=data.length,mean=data.reduce((s,x)=>s+x,0)/n,median=n%2?sorted[(n-1)/2]:(sorted[n/2-1]+sorted[n/2])/2,variance=data.reduce((s,x)=>s+(x-mean)**2,0)/n,sample=n>1?variance*n/(n-1):0;
+                    mlPublish('Estadística descriptiva','Se muestran medidas de tendencia central y dispersión.',['n = '+n,'Media = '+mlFmt(mean,8),'Mediana = '+mlFmt(median,8),'Mínimo = '+mlFmt(sorted[0])+'   |   Máximo = '+mlFmt(sorted.at(-1)),'Varianza poblacional = '+mlFmt(variance,8),'Desvío estándar poblacional = '+mlFmt(Math.sqrt(variance),8),'Varianza muestral = '+mlFmt(sample,8)],mlFrequencyVisual(data));
+                }else if(mode==='binomial'){
+                    const n=Math.round(mlReadNumber('mlBinN','n')),p=mlReadNumber('mlBinP','p'),k=Math.round(mlReadNumber('mlProbK','k'));
+                    if(n<0||n>1000||!Number.isInteger(n)||p<0||p>1||k<0||k>n)throw new Error('Usá n entero entre 0 y 1000, p entre 0 y 1 y 0≤k≤n.');
+                    const pk=mlBinomialP(n,p,k),acc=Array.from({length:k+1},(_,i)=>mlBinomialP(n,p,i)).reduce((s,x)=>s+x,0),mu=n*p,sigma=Math.sqrt(n*p*(1-p));
+                    const lo=Math.max(0,Math.min(k,Math.floor(mu-4*sigma))),hi=Math.min(n,Math.max(k,Math.ceil(mu+4*sigma))),labels=[],values=[];for(let i=lo;i<=hi;i++){labels.push(String(i));values.push(mlBinomialP(n,p,i));}
+                    mlPublish('Distribución binomial','X = número de éxitos en n ensayos independientes.',['X ~ Bin('+n+', '+mlFmt(p)+')','P(X = '+k+') = '+mlFmt(pk,10),'P(X ≤ '+k+') = '+mlFmt(acc,10),'Media μ = np = '+mlFmt(mu,8)+'   |   Desvío σ = √(npq) = '+mlFmt(sigma,8)],mlBarSvg(labels,values,'Probabilidades P(X = k)'));
+                }else{
+                    const lambda=mlReadNumber('mlPoissonLambda','λ'),k=Math.round(mlReadNumber('mlProbK','k'));
+                    if(lambda<0||lambda>1000||k<0||k>1000)throw new Error('Usá λ≥0 y k entero entre 0 y 1000.');
+                    const pk=mlPoissonP(lambda,k),acc=Array.from({length:k+1},(_,i)=>mlPoissonP(lambda,i)).reduce((s,x)=>s+x,0),hi=Math.max(k+4,Math.ceil(lambda+4*Math.sqrt(Math.max(lambda,1)))),labels=[],values=[];for(let i=0;i<=Math.min(80,hi);i++){labels.push(String(i));values.push(mlPoissonP(lambda,i));}
+                    mlPublish('Distribución de Poisson','X cuenta sucesos en un intervalo con media λ.',['X ~ Pois('+mlFmt(lambda)+')','P(X = '+k+') = '+mlFmt(pk,10),'P(X ≤ '+k+') = '+mlFmt(acc,10),'Media = Varianza = λ = '+mlFmt(lambda)],mlBarSvg(labels,values,'Probabilidades P(X = k)'));
+                }
+            }catch(err){mlError(err.message||'No se pudo calcular la probabilidad.');}
+        }
+
+        // ===== MATH LAB MODULE: GEOMETRÍA 3D E INTERFAZ =====
+        function mlParseTuple(raw,count,label){
+            const parts=String(raw??'').trim().split(/[;,\s]+/).filter(Boolean);
+            if(parts.length!==count)throw new Error((label||'El vector')+' debe tener '+count+' valores.');
+            const values=parts.map(x=>mlCompileExpression(x)(0));
+            if(values.some(x=>!Number.isFinite(x)))throw new Error((label||'El vector')+' tiene un valor inválido.');
+            return values;
+        }
+        const mlDot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
+        const mlCross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+        const mlNorm=a=>Math.hypot(...a);
+        const mlUnit=a=>{const n=mlNorm(a);return n<ML_EPS?null:a.map(x=>x/n);};
+        function ml3dSvg(P,V,plane){
+            const [a,b,c,d]=plane,n=[a,b,c],norm=mlNorm(n);
+            if(norm<ML_EPS)throw new Error('El vector normal del plano no puede ser nulo.');
+            const maxCoord=Math.max(3,...P.map(Math.abs),...V.map(Math.abs),Math.abs(d)/norm+2),axis=Math.min(12,Math.ceil(maxCoord+1)),W=900,H=440,scale=Math.min(70,260/axis);
+            const project=q=>[450+scale*.78*(q[0]-q[1]),255+scale*.29*(q[0]+q[1])-scale*.84*q[2]];
+            const segment=(q1,q2,color,width=2,dash='')=>{const p1=project(q1),p2=project(q2);return '<line x1="'+p1[0].toFixed(2)+'" y1="'+p1[1].toFixed(2)+'" x2="'+p2[0].toFixed(2)+'" y2="'+p2[1].toFixed(2)+'" stroke="'+color+'" stroke-width="'+width+'" '+(dash?'stroke-dasharray="'+dash+'"':'')+'/>';};
+            let base;
+            if(Math.abs(c)>=Math.abs(a)&&Math.abs(c)>=Math.abs(b))base=[0,0,d/c];
+            else if(Math.abs(b)>=Math.abs(a))base=[0,d/b,0];
+            else base=[d/a,0,0];
+            const guide=Math.abs(n[0]/norm)<.85?[1,0,0]:[0,1,0],u=mlUnit(mlCross(n,guide)),v=mlUnit(mlCross(n,u)),size=Math.min(axis*.72,5);
+            const quad=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([m1,m2])=>base.map((q,i)=>q+size*(m1*u[i]+m2*v[i]))),poly=quad.map(q=>project(q).map(x=>x.toFixed(2)).join(',')).join(' ');
+            const origin=project([0,0,0]),pPoint=project(P),pVector=project(V),pBase=project(base),pNormal=project(base.map((q,i)=>q+size*.75*n[i]/norm));
+            const axes=segment([-axis,0,0],[axis,0,0],'#7593aa',1.6)+segment([0,-axis,0],[0,axis,0],'#7593aa',1.6)+segment([0,0,-axis],[0,0,axis],'#7593aa',1.6);
+            const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'"><defs><marker id="arrow3d" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2dd4bf"/></marker><marker id="arrowNormal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#fbbf24"/></marker></defs><rect width="'+W+'" height="'+H+'" fill="#071521"/><text x="30" y="32" fill="#d9fff8" font-size="17" font-family="Arial" font-weight="700">Vista espacial: punto, vector y plano</text><polygon points="'+poly+'" fill="rgba(56,189,248,.22)" stroke="#38bdf8" stroke-width="2"/>'+axes+'<line x1="'+origin[0].toFixed(2)+'" y1="'+origin[1].toFixed(2)+'" x2="'+pVector[0].toFixed(2)+'" y2="'+pVector[1].toFixed(2)+'" stroke="#2dd4bf" stroke-width="4" marker-end="url(#arrow3d)"/><line x1="'+pBase[0].toFixed(2)+'" y1="'+pBase[1].toFixed(2)+'" x2="'+pNormal[0].toFixed(2)+'" y2="'+pNormal[1].toFixed(2)+'" stroke="#fbbf24" stroke-width="3" marker-end="url(#arrowNormal)"/><circle cx="'+pPoint[0].toFixed(2)+'" cy="'+pPoint[1].toFixed(2)+'" r="7" fill="#f472b6" stroke="#fff" stroke-width="2"/><circle cx="'+origin[0].toFixed(2)+'" cy="'+origin[1].toFixed(2)+'" r="4" fill="#fff"/><text x="'+(pPoint[0]+10).toFixed(2)+'" y="'+(pPoint[1]-8).toFixed(2)+'" fill="#fbcfe8" font-size="15" font-family="Arial">P</text><text x="'+(pVector[0]+10).toFixed(2)+'" y="'+(pVector[1]-6).toFixed(2)+'" fill="#99f6e4" font-size="15" font-family="Arial">v</text><text x="'+(pNormal[0]+8).toFixed(2)+'" y="'+(pNormal[1]-6).toFixed(2)+'" fill="#fde68a" font-size="14" font-family="Arial">normal</text><text x="'+(project([axis,0,0])[0]+8).toFixed(2)+'" y="'+(project([axis,0,0])[1]+3).toFixed(2)+'" fill="#bdd1df" font-size="14" font-family="Arial">x</text><text x="'+(project([0,axis,0])[0]+8).toFixed(2)+'" y="'+(project([0,axis,0])[1]+3).toFixed(2)+'" fill="#bdd1df" font-size="14" font-family="Arial">y</text><text x="'+(project([0,0,axis])[0]+7).toFixed(2)+'" y="'+(project([0,0,axis])[1]-5).toFixed(2)+'" fill="#bdd1df" font-size="14" font-family="Arial">z</text></svg>';
+            return {svg,width:W,height:H};
+        }
+        function mlRun3D(){
+            try{
+                const P=mlParseTuple(document.getElementById('ml3dPoint').value,3,'El punto P'),V=mlParseTuple(document.getElementById('ml3dVector').value,3,'El vector v'),plane=mlParseTuple(document.getElementById('ml3dPlane').value,4,'El plano');
+                const norm=mlNorm(V),n=plane.slice(0,3),distance=Math.abs(mlDot(n,P)-plane[3])/mlNorm(n),graph=ml3dSvg(P,V,plane);
+                mlPublish('Geometría analítica 3D','Podés pegar esta vista en la hoja y escribir arriba de ella.',['P = ('+P.map(x=>mlFmt(x)).join(', ')+')','v = ⟨'+V.map(x=>mlFmt(x)).join(', ')+'⟩   |v| = '+mlFmt(norm,8),'Plano: '+mlFmt(plane[0])+'x + '+mlFmt(plane[1])+'y + '+mlFmt(plane[2])+'z = '+mlFmt(plane[3]),'Vector normal n = ⟨'+n.map(x=>mlFmt(x)).join(', ')+'⟩','Distancia de P al plano = '+mlFmt(distance,8)],graph);
+            }catch(err){mlError(err.message||'No se pudo construir la vista 3D.');}
+        }
+        function mlSwitchProbabilityFields(){
+            const mode=document.getElementById('mlProbMode')?.value||'stats';
+            document.querySelectorAll('#mathLab [data-prob-field]').forEach(el=>{
+                const field=el.dataset.probField;
+                const show=(field==='stats'&&mode==='stats')||(field==='binomial'&&mode==='binomial')||(field==='events'&&(mode==='binomial'||mode==='poisson'))||(field==='poisson'&&mode==='poisson');
+                el.style.display=show?'grid':'none';
+            });
+        }
+        function mlLoadExample(topic){
+            if(topic==='graph'){document.getElementById('mlGraphExpr').value='x^2 si x<0; sin(x) si x>=0';document.getElementById('mlGraphMin').value='-2*pi';document.getElementById('mlGraphMax').value='2*pi';mlRunGraph();}
+            else if(topic==='calculus'){document.getElementById('mlCalcExpr').value='sin(x)+1';document.getElementById('mlCalcA').value='0';document.getElementById('mlCalcB').value='pi';document.getElementById('mlCalcX0').value='pi/2';mlRunCalculus();}
+            else if(topic==='algebra'){document.getElementById('mlAlgebraEq').value='2*x^2-3*x-2=0';mlRunAlgebra();}
+            else if(topic==='matrices'){document.getElementById('mlMatrixA').value='2 1; 5 3';document.getElementById('mlMatrixB').value='1 0; 2 1';document.getElementById('mlMatrixOp').value='inverse';mlRunMatrices();}
+            else if(topic==='probability'){document.getElementById('mlProbMode').value='binomial';document.getElementById('mlBinN').value='12';document.getElementById('mlBinP').value='0.35';document.getElementById('mlProbK').value='4';mlSwitchProbabilityFields();mlRunProbability();}
+            else if(topic==='geometry3d'){document.getElementById('ml3dPoint').value='1, -1, 3';document.getElementById('ml3dVector').value='2, 1, -2';document.getElementById('ml3dPlane').value='1, 2, -1, 4';mlRun3D();}
+        }
+        window.switchMathTab=function(name){
+            document.querySelectorAll('#mathLab [data-math-tab]').forEach(btn=>btn.classList.toggle('active',btn.dataset.mathTab===name));
+            document.querySelectorAll('#mathLab [data-math-panel]').forEach(panel=>panel.classList.toggle('active',panel.dataset.mathPanel===name));
+        };
+        window.toggleMathLab=function(){
+            const lab=document.getElementById('mathLab'),opening=!lab.classList.contains('open');
+            lab.classList.toggle('open');lab.classList.remove('minimized');
+            document.getElementById('btnMathLab')?.classList.toggle('active',opening);
+            if(opening)clampMathLab();
+        };
+        window.toggleMathLabMinimize=function(){
+            const lab=document.getElementById('mathLab');if(!lab.classList.contains('open'))return;
+            lab.classList.toggle('minimized');
+            document.getElementById('mathLabMinimize').textContent=lab.classList.contains('minimized')?'□':'—';
+        };
+        window.mathRunGraph=mlRunGraph;
+        window.mathRunCalculus=mlRunCalculus;
+        window.mathRunAlgebra=mlRunAlgebra;
+        window.mathRunMatrices=mlRunMatrices;
+        window.mathRunProbability=mlRunProbability;
+        window.mathRun3D=mlRun3D;
+        window.mathLoadExample=mlLoadExample;
+        window.updateProbabilityFields=mlSwitchProbabilityFields;
+        window.pasteMathResult=function(){
+            if(!mathLastAsset){toast('Primero generá un resultado para pegar.');return;}
+            const target=getVisibleContainer();if(!target){toast('No hay una hoja disponible.');return;}
+            const width=Math.min(Math.max(220,target.clientWidth-40),760),position=getCenterPosRelative(target,width,360);
+            createPastedImage(mathLastAsset,target,position.x,position.y,width,null);
+            const page=pagesData.find(p=>p.container===target);if(page)page._elementsDirty=true;
+            scheduleAutosave();toast('📌 Resultado pegado: podés moverlo y redimensionarlo.');
+        };
+        window.copyMathResult=async function(){
+            if(!mathLastText){toast('No hay resultado para copiar.');return;}
+            try{await navigator.clipboard?.writeText(mathLastText);toast('📋 Resumen copiado.');}
+            catch(_){toast('No se pudo copiar automáticamente.');}
+        };
+        function clampMathLab(){
+            const lab=document.getElementById('mathLab');if(!lab?.classList.contains('open'))return;
+            const r=lab.getBoundingClientRect(),maxX=Math.max(0,window.innerWidth-Math.min(lab.offsetWidth,window.innerWidth)),maxY=Math.max(0,window.innerHeight-48);
+            lab.style.left=clamp(r.left,0,maxX)+'px';lab.style.top=clamp(r.top,0,maxY)+'px';lab.style.right='auto';
+        }
+        const mathLabEl=document.getElementById('mathLab'),mathLabHandle=document.getElementById('mathLabDragHandle');
+        mathLabHandle.addEventListener('pointerdown',e=>{
+            if(e.target.closest('button'))return;
+            const r=mathLabEl.getBoundingClientRect();mathLabDrag={id:e.pointerId,x:e.clientX-r.left,y:e.clientY-r.top};mathLabHandle.setPointerCapture?.(e.pointerId);
+        });
+        mathLabHandle.addEventListener('pointermove',e=>{
+            if(!mathLabDrag||e.pointerId!==mathLabDrag.id)return;
+            const maxX=Math.max(0,window.innerWidth-mathLabEl.offsetWidth),maxY=Math.max(0,window.innerHeight-48);
+            mathLabEl.style.left=clamp(e.clientX-mathLabDrag.x,0,maxX)+'px';mathLabEl.style.top=clamp(e.clientY-mathLabDrag.y,0,maxY)+'px';mathLabEl.style.right='auto';
+        });
+        const endMathLabDrag=e=>{if(!mathLabDrag||e.pointerId!==mathLabDrag.id)return;mathLabDrag=null;};
+        mathLabHandle.addEventListener('pointerup',endMathLabDrag);mathLabHandle.addEventListener('pointercancel',endMathLabDrag);
+        window.addEventListener('resize',clampMathLab,{passive:true});
+        // ================= AMPLIACIÓN AVANZADA DE MATH LAB =================
+        function mlAnalyzeGraphAdvanced(){
+            try{
+                const raw=document.getElementById('mlGraphExpr').value,fn=mlCompilePiecewise(raw),xMin=mlReadNumber('mlGraphMin','El mínimo de x'),xMax=mlReadNumber('mlGraphMax','El máximo de x');
+                if(xMax<=xMin)throw new Error('El máximo de x debe ser mayor.');
+                const samples=900,points=[],roots=[],mins=[],maxs=[];
+                for(let i=0;i<=samples;i++){const x=xMin+(xMax-xMin)*i/samples,y=fn(x);points.push({x,y});}
+                for(let i=1;i<points.length;i++){
+                    const p=points[i-1],q=points[i];
+                    if(Number.isFinite(p.y)&&Number.isFinite(q.y)&&p.y*q.y<0){
+                        const t=-p.y/(q.y-p.y),root=p.x+t*(q.x-p.x);
+                        if(!roots.length||Math.abs(root-roots.at(-1))>(xMax-xMin)/samples*2)roots.push(root);
+                    }else if(Number.isFinite(q.y)&&Math.abs(q.y)<1e-6)roots.push(q.x);
+                }
+                for(let i=1;i<points.length-1;i++){
+                    const p=points[i-1],q=points[i],r=points[i+1];
+                    if(![p.y,q.y,r.y].every(Number.isFinite))continue;
+                    if(q.y<p.y&&q.y<r.y)mins.push(q);
+                    if(q.y>p.y&&q.y>r.y)maxs.push(q);
+                }
+                const compact=list=>list.filter((v,i)=>i===0||Math.abs(v.x-list[i-1].x)>(xMax-xMin)/30).slice(0,4);
+                const graph=mlGraphSvg(fn,xMin,xMax,raw);
+                const lines=['f(x) = '+raw,'Ceros aproximados: '+(compact(roots.map(x=>({x}))).map(p=>mlFmt(p.x,6)).join(', ')||'No se detectaron en este intervalo.'),'Mínimos locales aproximados: '+(compact(mins).map(p=>'('+mlFmt(p.x,4)+', '+mlFmt(p.y,4)+')').join(' · ')||'No se detectaron.'),'Máximos locales aproximados: '+(compact(maxs).map(p=>'('+mlFmt(p.x,4)+', '+mlFmt(p.y,4)+')').join(' · ')||'No se detectaron.')];
+                mlPublish('Análisis de función','Lectura numérica del gráfico: raíces y extremos dentro del intervalo elegido.',lines,graph);
+            }catch(err){mlError(err.message||'No se pudo analizar la función.');}
+        }
+        function mlRunCalculusAdvanced(){
+            try{
+                const mode=document.getElementById('mlCalcMode').value;
+                if(mode==='integral'){mlRunCalculus();return;}
+                const raw=document.getElementById('mlCalcExpr').value,fn=mlCompilePiecewise(raw),x0=mlReadNumber('mlCalcX0','x₀'),span=Math.max(2,Math.abs(x0)*.8),graph=mlGraphSvg(fn,x0-span,x0+span,raw);
+                if(mode==='derivative'){
+                    const slope=mlDerivative(fn,x0),value=fn(x0);
+                    if(!Number.isFinite(value))throw new Error('f(x₀) no está definida en ese punto.');
+                    const intercept=value-slope*x0;
+                    mlPublish('Derivada y recta tangente','La derivada es la pendiente instantánea de la curva.',['f(x) = '+raw,'Punto: ('+mlFmt(x0)+', '+mlFmt(value,8)+')',"f'("+mlFmt(x0)+') ≈ '+mlFmt(slope,10),'Recta tangente: y = '+mlFmt(slope,8)+'x '+(intercept<0?'− ':'+ ')+mlFmt(Math.abs(intercept),8)],graph);
+                }else{
+                    const hs=[1e-1,1e-2,1e-3,1e-4,1e-5],left=[],right=[];
+                    for(const h of hs){left.push(fn(x0-h));right.push(fn(x0+h));}
+                    const l=left.at(-1),r=right.at(-1),exists=Number.isFinite(l)&&Number.isFinite(r)&&Math.abs(l-r)<1e-3*Math.max(1,Math.abs(l),Math.abs(r));
+                    mlPublish('Límite de una función','Se comparan los valores que se acercan por izquierda y por derecha.',['f(x) = '+raw,'x → '+mlFmt(x0),'Límite por izquierda ≈ '+mlFmt(l,10),'Límite por derecha ≈ '+mlFmt(r,10),exists?'Conclusión: lim f(x) = '+mlFmt((l+r)/2,10):'Conclusión: los límites laterales no coinciden o no son finitos.'],graph);
+                }
+            }catch(err){mlError(err.message||'No se pudo analizar el cálculo.');}
+        }
+        function mlLinearCoefficients(fn){
+            const c=fn(0),y1=fn(1),y2=fn(2),a=(y2-2*y1+c)/2,b=y1-c-a;
+            if(![a,b,c].every(Number.isFinite)||Math.abs(a)>1e-7)throw new Error('Este modo necesita una expresión lineal.');
+            return {b,c};
+        }
+        function mlReverseRelation(rel){return ({'<':'>','>':'<','<=':'>=','>=':'<='})[rel]||rel;}
+        function mlRunAlgebraAdvanced(){
+            try{
+                const mode=document.getElementById('mlAlgebraMode').value;
+                if(mode==='equation'){mlRunAlgebra();return;}
+                if(mode==='inequality'){
+                    const raw=document.getElementById('mlInequality').value.replace(/≤/g,'<=').replace(/≥/g,'>=').trim(),match=raw.match(/^(.+?)(<=|>=|<|>)(.+)$/);
+                    if(!match)throw new Error('Escribí una inecuación, por ejemplo 2*x-3<=5.');
+                    const g=x=>mlCompileExpression(match[1])(x)-mlCompileExpression(match[3])(x),coef=mlLinearCoefficients(g);
+                    if(Math.abs(coef.b)<ML_EPS)throw new Error('La expresión no permite despejar x.');
+                    const root=-coef.c/coef.b,relation=coef.b>0?match[2]:mlReverseRelation(match[2]),range=Math.max(5,Math.abs(root)+3),graph=mlGraphSvg(g,-range,range,'('+match[1]+')−('+match[3]+')');
+                    mlPublish('Resolución de inecuación','Al dividir por un número negativo, el sentido de la desigualdad se invierte.',['Inecuación: '+raw,'Forma: '+mlFmt(coef.b)+'x '+(coef.c<0?'− ':'+ ')+mlFmt(Math.abs(coef.c))+' '+match[2]+' 0','Punto crítico: x = '+mlFmt(root,8),'Solución: x '+relation+' '+mlFmt(root,8)],graph);
+                }else{
+                    const ids=['mlSysA1','mlSysB1','mlSysC1','mlSysA2','mlSysB2','mlSysC2'],[a1,b1,c1,a2,b2,c2]=ids.map(id=>mlReadNumber(id,id));
+                    const det=a1*b2-a2*b1,detX=c1*b2-c2*b1,detY=a1*c2-a2*c1;
+                    if(Math.abs(det)<ML_EPS){
+                        const compatible=Math.abs(detX)<ML_EPS&&Math.abs(detY)<ML_EPS;
+                        mlPublish('Sistema 2×2',compatible?'Sistema compatible indeterminado.':'Sistema incompatible.',['E₁: '+mlFmt(a1)+'x + '+mlFmt(b1)+'y = '+mlFmt(c1),'E₂: '+mlFmt(a2)+'x + '+mlFmt(b2)+'y = '+mlFmt(c2),'Δ = '+mlFmt(det),compatible?'Hay infinitas soluciones.':'No existe un par (x,y) que cumpla las dos ecuaciones.']);
+                    }else{
+                        const x=detX/det,y=detY/det;
+                        mlPublish('Sistema 2×2 por Cramer','Cada incógnita se obtiene reemplazando una columna por los términos independientes.',['E₁: '+mlFmt(a1)+'x + '+mlFmt(b1)+'y = '+mlFmt(c1),'E₂: '+mlFmt(a2)+'x + '+mlFmt(b2)+'y = '+mlFmt(c2),'Δ = '+mlFmt(det)+'   |   Δx = '+mlFmt(detX)+'   |   Δy = '+mlFmt(detY),'x = Δx/Δ = '+mlFmt(x,9),'y = Δy/Δ = '+mlFmt(y,9)]);
+                    }
+                }
+            }catch(err){mlError(err.message||'No se pudo resolver el ejercicio de álgebra.');}
+        }
+        function mlTranspose(matrix){return matrix[0].map((_,j)=>matrix.map(row=>row[j]));}
+        function mlRunMatricesAdvanced(){
+            try{
+                const op=document.getElementById('mlMatrixOp').value;
+                if(!['transpose','rank','solve'].includes(op)){mlRunMatrices();return;}
+                const A=mlParseMatrix(document.getElementById('mlMatrixA').value,'La matriz A');
+                if(op==='transpose'){
+                    const T=mlTranspose(A);
+                    mlPublish('Traspuesta de A','Se intercambian filas por columnas.',['A =\n'+mlMatrixText(A),'Aᵀ =\n'+mlMatrixText(T)]);
+                }else if(op==='rank'){
+                    const R=mlRref(A),rank=R.filter(row=>row.some(value=>Math.abs(value)>1e-8)).length;
+                    mlPublish('Rango de una matriz','El rango es la cantidad de filas no nulas luego de Gauss-Jordan.',['A =\n'+mlMatrixText(A),'RREF(A) =\n'+mlMatrixText(R),'rango(A) = '+rank]);
+                }else{
+                    const B=mlParseMatrix(document.getElementById('mlMatrixB').value,'El vector B'),n=A.length;
+                    if(A.some(row=>row.length!==n)||B.length!==n||B[0].length!==1)throw new Error('Para A·X=B usá A cuadrada y B como una columna, por ejemplo 7; 1.');
+                    const augmented=A.map((row,i)=>[...row,B[i][0]]),R=mlRref(augmented);
+                    for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(Math.abs(R[i][j]-(i===j?1:0))>1e-7)throw new Error('El sistema no tiene solución única.');
+                    const solution=R.map(row=>row.at(-1));
+                    mlPublish('Sistema matricial A·X = B','Se aplica Gauss-Jordan a la matriz aumentada [A | B].',['A =\n'+mlMatrixText(A),'B =\n'+mlMatrixText(B),'RREF([A|B]) =\n'+mlMatrixText(R),'X = ('+solution.map(x=>mlFmt(x,9)).join(', ')+')']);
+                }
+            }catch(err){mlError(err.message||'No se pudo resolver la operación matricial.');}
+        }
+
+        // ===== PROBABILIDAD Y ESTADÍSTICA AVANZADAS =====
+        function mlReadNumericList(raw,label){
+            const values=String(raw??'').split(/[;,\s]+/).filter(Boolean).map(Number);
+            if(!values.length||values.some(x=>!Number.isFinite(x)))throw new Error((label||'Los datos')+' deben ser números separados por comas, espacios o punto y coma.');
+            return values;
+        }
+        function mlQuantile(sorted,p){
+            const index=(sorted.length-1)*p,low=Math.floor(index),high=Math.ceil(index),part=index-low;
+            return sorted[low]*(1-part)+sorted[high]*part;
+        }
+        function mlCombinationLog(n,r){
+            if(!Number.isInteger(n)||!Number.isInteger(r)||r<0||r>n)return -Infinity;
+            return mlLogFactorial(n)-mlLogFactorial(r)-mlLogFactorial(n-r);
+        }
+        function mlHypergeometricP(N,K,n,k){
+            if(k<0||k>K||k>n||n-k>N-K)return 0;
+            return Math.exp(mlCombinationLog(K,k)+mlCombinationLog(N-K,n-k)-mlCombinationLog(N,n));
+        }
+        function mlGeometricP(p,k){return k<1?0:Math.pow(1-p,k-1)*p;}
+        function mlErf(x){
+            const sign=x<0?-1:1,z=Math.abs(x),t=1/(1+.3275911*z);
+            const y=1-((((((1.061405429*t-1.453152027)*t+1.421413741)*t-.284496736)*t+.254829592)*t)*Math.exp(-z*z));
+            return sign*y;
+        }
+        function mlNormalCdf(z){return .5*(1+mlErf(z/Math.SQRT2));}
+        function mlVennSvg(U,aOnly,bOnly,intersection,neither){
+            const W=820,H=400;
+            const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'"><rect x="28" y="42" width="764" height="315" rx="16" fill="#081a27" stroke="#5a7590" stroke-width="2"/><text x="52" y="74" fill="#b7d3e8" font-size="16" font-family="Arial">Universo U = '+mlEscape(U)+'</text><circle cx="344" cy="205" r="120" fill="rgba(45,212,191,.28)" stroke="#5eead4" stroke-width="3"/><circle cx="480" cy="205" r="120" fill="rgba(96,165,250,.28)" stroke="#93c5fd" stroke-width="3"/><text x="266" y="120" fill="#bafff3" font-size="22" font-family="Arial" font-weight="700">A</text><text x="548" y="120" fill="#dbeafe" font-size="22" font-family="Arial" font-weight="700">B</text><text x="302" y="214" fill="#eafffb" font-size="28" font-family="Arial" text-anchor="middle">'+mlEscape(aOnly)+'</text><text x="412" y="214" fill="#fff" font-size="28" font-family="Arial" text-anchor="middle">'+mlEscape(intersection)+'</text><text x="522" y="214" fill="#eff6ff" font-size="28" font-family="Arial" text-anchor="middle">'+mlEscape(bOnly)+'</text><text x="674" y="328" fill="#cbd5e1" font-size="18" font-family="Arial">Ninguno: '+mlEscape(neither)+'</text><text x="54" y="336" fill="#cbd5e1" font-size="16" font-family="Arial">A solo</text><text x="383" y="247" fill="#cbd5e1" font-size="16" font-family="Arial">A ∩ B</text></svg>';
+            return {svg,width:W,height:H};
+        }
+        function mlRunProbabilityAdvanced(){
+            try{
+                const mode=document.getElementById('mlProbMode').value;
+                if(mode==='stats'){
+                    const data=mlReadNumericList(document.getElementById('mlStatsData').value,'Los datos'),sorted=[...data].sort((a,b)=>a-b),n=data.length,sum=data.reduce((s,x)=>s+x,0),mean=sum/n,median=mlQuantile(sorted,.5),q1=mlQuantile(sorted,.25),q3=mlQuantile(sorted,.75),variance=data.reduce((s,x)=>s+(x-mean)**2,0)/n,sample=n>1?variance*n/(n-1):0,sd=Math.sqrt(variance),freq=new Map;
+                    for(const x of data)freq.set(mlFmt(x,8),(freq.get(mlFmt(x,8))||0)+1);
+                    const top=Math.max(...freq.values()),modes=[...freq.entries()].filter(([,f])=>f===top&&top>1).map(([x])=>x);
+                    mlPublish('Estadística descriptiva completa','Frecuencias, posición y dispersión para interpretar el conjunto de datos.',['n = '+n+'   |   Σx = '+mlFmt(sum,8),'Media = '+mlFmt(mean,8)+'   |   Mediana = '+mlFmt(median,8),'Moda = '+(modes.length?modes.join(', '):'No hay moda'),'Mínimo = '+mlFmt(sorted[0])+'   |   Máximo = '+mlFmt(sorted.at(-1))+'   |   Rango = '+mlFmt(sorted.at(-1)-sorted[0]),'Q₁ = '+mlFmt(q1,8)+'   |   Q₃ = '+mlFmt(q3,8)+'   |   RIQ = '+mlFmt(q3-q1,8),'Varianza poblacional = '+mlFmt(variance,8)+'   |   Desvío estándar = '+mlFmt(sd,8),'Coeficiente de variación = '+(Math.abs(mean)>ML_EPS?mlFmt(sd/Math.abs(mean)*100,6)+'%':'no definido')],mlFrequencyVisual(data));
+                }else if(mode==='regression'){
+                    const xs=mlReadNumericList(document.getElementById('mlRegX').value,'Los valores de X'),ys=mlReadNumericList(document.getElementById('mlRegY').value,'Los valores de Y');
+                    if(xs.length!==ys.length||xs.length<2)throw new Error('X e Y deben tener la misma cantidad de al menos dos datos.');
+                    const mx=xs.reduce((s,x)=>s+x,0)/xs.length,my=ys.reduce((s,x)=>s+x,0)/ys.length,ssxx=xs.reduce((s,x)=>s+(x-mx)**2,0),ssyy=ys.reduce((s,y)=>s+(y-my)**2,0),ssxy=xs.reduce((s,x,i)=>s+(x-mx)*(ys[i]-my),0);
+                    if(Math.abs(ssxx)<ML_EPS||Math.abs(ssyy)<ML_EPS)throw new Error('Se necesitan valores distintos para calcular la correlación.');
+                    const slope=ssxy/ssxx,intercept=my-slope*mx,r=ssxy/Math.sqrt(ssxx*ssyy),min=Math.min(...xs),max=Math.max(...xs),margin=Math.max(1,(max-min)*.25),visual=mlGraphSvg(x=>intercept+slope*x,min-margin,max+margin,'recta de regresión');
+                    mlPublish('Correlación y regresión lineal','La recta resume la tendencia de Y en función de X.',['Pares analizados: '+xs.length,'Recta estimada: ŷ = '+mlFmt(intercept,8)+' '+(slope<0?'− ':'+ ')+mlFmt(Math.abs(slope),8)+'x','Coeficiente de correlación r = '+mlFmt(r,8),'Interpretación: '+(Math.abs(r)>.8?'relación lineal fuerte':Math.abs(r)>.45?'relación lineal moderada':'relación lineal débil')],visual);
+                }else if(mode==='binomial'){
+                    const n=Math.round(mlReadNumber('mlBinN','n')),p=mlReadNumber('mlBinP','p'),k=Math.round(mlReadNumber('mlProbK','k'));
+                    if(n<0||n>1000||p<0||p>1||k<0||k>n)throw new Error('Usá n entero entre 0 y 1000, p entre 0 y 1 y 0≤k≤n.');
+                    const exact=mlBinomialP(n,p,k),lower=Array.from({length:k+1},(_,i)=>mlBinomialP(n,p,i)).reduce((s,x)=>s+x,0),upper=1-(k?Array.from({length:k},(_,i)=>mlBinomialP(n,p,i)).reduce((s,x)=>s+x,0):0),mu=n*p,sigma=Math.sqrt(n*p*(1-p)),lo=Math.max(0,Math.min(k,Math.floor(mu-4*sigma))),hi=Math.min(n,Math.max(k,Math.ceil(mu+4*sigma))),labels=[],values=[];
+                    for(let i=lo;i<=hi;i++){labels.push(String(i));values.push(mlBinomialP(n,p,i));}
+                    mlPublish('Distribución binomial','Ensayos independientes, dos resultados posibles y probabilidad p constante.',['X ~ Bin('+n+', '+mlFmt(p)+')','P(X = '+k+') = '+mlFmt(exact,10),'P(X ≤ '+k+') = '+mlFmt(lower,10),'P(X ≥ '+k+') = '+mlFmt(upper,10),'Media μ = np = '+mlFmt(mu,8)+'   |   σ = √(npq) = '+mlFmt(sigma,8)],mlBarSvg(labels,values,'Distribución binomial'));
+                }else if(mode==='poisson'){
+                    const lambda=mlReadNumber('mlPoissonLambda','λ'),k=Math.round(mlReadNumber('mlProbK','k'));
+                    if(lambda<0||lambda>1000||k<0||k>1000)throw new Error('Usá λ≥0 y k entero entre 0 y 1000.');
+                    const exact=mlPoissonP(lambda,k),lower=Array.from({length:k+1},(_,i)=>mlPoissonP(lambda,i)).reduce((s,x)=>s+x,0),upper=1-(k?Array.from({length:k},(_,i)=>mlPoissonP(lambda,i)).reduce((s,x)=>s+x,0):0),hi=Math.max(k+4,Math.ceil(lambda+4*Math.sqrt(Math.max(lambda,1)))),labels=[],values=[];
+                    for(let i=0;i<=Math.min(80,hi);i++){labels.push(String(i));values.push(mlPoissonP(lambda,i));}
+                    mlPublish('Distribución de Poisson','Cuenta sucesos independientes con tasa media λ en un intervalo.',['X ~ Pois('+mlFmt(lambda)+')','P(X = '+k+') = '+mlFmt(exact,10),'P(X ≤ '+k+') = '+mlFmt(lower,10),'P(X ≥ '+k+') = '+mlFmt(upper,10),'Media = Varianza = λ = '+mlFmt(lambda)],mlBarSvg(labels,values,'Distribución de Poisson'));
+                }else if(mode==='hypergeometric'){
+                    const N=Math.round(mlReadNumber('mlHyperN','N')),K=Math.round(mlReadNumber('mlHyperK','K')),n=Math.round(mlReadNumber('mlHyperNDraw','n')),k=Math.round(mlReadNumber('mlHyperKDraw','k'));
+                    if(N<1||K<0||K>N||n<0||n>N||k<Math.max(0,n-(N-K))||k>Math.min(n,K))throw new Error('Revisá N, K, n y k: se extrae sin reemplazo de una población finita.');
+                    const lo=Math.max(0,n-(N-K)),hi=Math.min(n,K),exact=mlHypergeometricP(N,K,n,k),lower=Array.from({length:k-lo+1},(_,i)=>mlHypergeometricP(N,K,lo+i)).reduce((s,x)=>s+x,0),upper=Array.from({length:hi-k+1},(_,i)=>mlHypergeometricP(N,K,k+i)).reduce((s,x)=>s+x,0),labels=[],values=[];
+                    for(let i=lo;i<=hi;i++){labels.push(String(i));values.push(mlHypergeometricP(N,K,n,i));}
+                    mlPublish('Distribución hipergeométrica','Se elige una muestra sin reemplazo: la probabilidad cambia en cada extracción.',['N = '+N+' población   |   K = '+K+' éxitos   |   n = '+n+' muestra','P(X = '+k+') = '+mlFmt(exact,10),'P(X ≤ '+k+') = '+mlFmt(lower,10),'P(X ≥ '+k+') = '+mlFmt(upper,10),'Media μ = n·K/N = '+mlFmt(n*K/N,8)],mlBarSvg(labels,values,'Distribución hipergeométrica'));
+                }else if(mode==='geometric'){
+                    const p=mlReadNumber('mlGeoP','p'),k=Math.round(mlReadNumber('mlGeoK','k'));
+                    if(p<=0||p>1||k<1)throw new Error('Usá 0<p≤1 y k entero mayor o igual a 1.');
+                    const exact=mlGeometricP(p,k),lower=1-Math.pow(1-p,k),upper=Math.pow(1-p,k-1),hi=Math.max(k+4,Math.ceil(8/p)),labels=[],values=[];
+                    for(let i=1;i<=Math.min(80,hi);i++){labels.push(String(i));values.push(mlGeometricP(p,i));}
+                    mlPublish('Distribución geométrica','X es el número de intento en el que aparece el primer éxito.',['p = '+mlFmt(p)+'   |   k = '+k,'P(X = '+k+') = '+mlFmt(exact,10),'P(X ≤ '+k+') = '+mlFmt(lower,10),'P(X ≥ '+k+') = '+mlFmt(upper,10),'Media = 1/p = '+mlFmt(1/p,8)],mlBarSvg(labels,values,'Probabilidad del primer éxito'));
+                }else if(mode==='normal'){
+                    const mu=mlReadNumber('mlNormalMu','μ'),sigma=mlReadNumber('mlNormalSigma','σ'),a=mlReadNumber('mlNormalA','a'),b=mlReadNumber('mlNormalB','b');
+                    if(sigma<=0||b<a)throw new Error('Usá σ>0 y un intervalo con a≤b.');
+                    const za=(a-mu)/sigma,zb=(b-mu)/sigma,prob=mlNormalCdf(zb)-mlNormalCdf(za),density=x=>Math.exp(-.5*((x-mu)/sigma)**2)/(sigma*Math.sqrt(2*Math.PI)),visual=mlGraphSvg(density,mu-4*sigma,mu+4*sigma,'normal',{shade:{a,b}});
+                    mlPublish('Distribución normal','La probabilidad pedida es el área entre los límites a y b.',['X ~ N('+mlFmt(mu)+', '+mlFmt(sigma)+'²)','z(a) = '+mlFmt(za,8)+'   |   z(b) = '+mlFmt(zb,8),'P('+mlFmt(a)+' ≤ X ≤ '+mlFmt(b)+') = '+mlFmt(prob,10),'Porcentaje = '+mlFmt(prob*100,8)+'%'],visual);
+                }else if(mode==='venn'){
+                    const U=mlReadNumber('mlVennU','El universo'),A=mlReadNumber('mlVennA','|A|'),B=mlReadNumber('mlVennB','|B|'),I=mlReadNumber('mlVennI','|A∩B|'),aOnly=A-I,bOnly=B-I,union=A+B-I,neither=U-union;
+                    if([U,A,B,I,aOnly,bOnly,neither].some(x=>x<0)||I>A||I>B)throw new Error('Los datos de conjuntos son incompatibles.');
+                    mlPublish('Conjuntos y diagrama de Venn','Se usa la fórmula |A ∪ B| = |A| + |B| − |A ∩ B|.',['|A solamente| = '+mlFmt(aOnly),'|B solamente| = '+mlFmt(bOnly),'|A ∩ B| = '+mlFmt(I),'|A ∪ B| = '+mlFmt(union),'|Ninguno| = '+mlFmt(neither),'P(A ∪ B) = '+mlFmt(union/U,8)],mlVennSvg(U,aOnly,bOnly,I,neither));
+                }else{
+                    const n=Math.round(mlReadNumber('mlCountN','n')),r=Math.round(mlReadNumber('mlCountR','r')),kind=document.getElementById('mlCountMode').value;
+                    if(n<1||r<0||n>10000)throw new Error('Usá n≥1, r≥0 y n≤10000.');
+                    let value,formula,label;
+                    if(kind==='combination'){if(r>n)throw new Error('En combinaciones sin repetición debe ser r≤n.');value=Math.exp(mlCombinationLog(n,r));formula='C(n,r) = n!/[r!(n-r)!]';label='Combinaciones sin repetición';}
+                    else if(kind==='permutation'){if(r>n)throw new Error('En permutaciones sin repetición debe ser r≤n.');value=Math.exp(mlLogFactorial(n)-mlLogFactorial(n-r));formula='P(n,r) = n!/(n-r)!';label='Permutaciones sin repetición';}
+                    else if(kind==='combRep'){value=Math.exp(mlCombinationLog(n+r-1,r));formula='C(n+r−1,r)';label='Combinaciones con repetición';}
+                    else{value=Math.pow(n,r);formula='n^r';label='Variaciones con repetición';}
+                    mlPublish('Conteo combinatorio',label,['n = '+n+'   |   r = '+r,'Fórmula: '+formula,'Cantidad de resultados = '+mlFmt(value,12),kind.includes('comb')?'El orden no importa.':'El orden importa.']);
+                }
+            }catch(err){mlError(err.message||'No se pudo resolver el problema de probabilidad.');}
+        }
+        function mlSwitchProbabilityFieldsAdvanced(){
+            const mode=document.getElementById('mlProbMode')?.value||'stats';
+            document.querySelectorAll('#mathLab [data-prob-field]').forEach(el=>{
+                const field=el.dataset.probField;
+                const show=(field===mode)||(field==='events'&&(mode==='binomial'||mode==='poisson'));
+                el.style.display=show?'grid':'none';
+            });
+        }
+
+        // ===== GEOMETRÍA 3D AVANZADA Y VÍNCULOS DE INTERFAZ =====
+        function mlRun3DAdvanced(){
+            try{
+                const P=mlParseTuple(document.getElementById('ml3dPoint').value,3,'El punto P'),V=mlParseTuple(document.getElementById('ml3dVector').value,3,'El vector v'),plane=mlParseTuple(document.getElementById('ml3dPlane').value,4,'El plano'),n=plane.slice(0,3),normV=mlNorm(V),normN=mlNorm(n);
+                if(normV<ML_EPS||normN<ML_EPS)throw new Error('El vector director y el vector normal deben ser distintos de cero.');
+                const distance=Math.abs(mlDot(n,P)-plane[3])/normN,denom=mlDot(n,V),numer=plane[3]-mlDot(n,P),angle=Math.asin(clamp(Math.abs(denom)/(normN*normV),0,1))*180/Math.PI,lines=['Recta: r(t) = ('+P.map(x=>mlFmt(x)).join(', ')+') + t⟨'+V.map(x=>mlFmt(x)).join(', ')+'⟩','|v| = '+mlFmt(normV,8)+'   |   ángulo recta–plano = '+mlFmt(angle,7)+'°','Plano: '+mlFmt(plane[0])+'x + '+mlFmt(plane[1])+'y + '+mlFmt(plane[2])+'z = '+mlFmt(plane[3]),'Distancia de P al plano = '+mlFmt(distance,8)];
+                if(Math.abs(denom)<ML_EPS){
+                    lines.push(Math.abs(numer)<ML_EPS?'La recta está contenida en el plano (infinitas intersecciones).':'La recta es paralela al plano: no hay intersección.');
+                }else{
+                    const t=numer/denom,I=P.map((x,i)=>x+t*V[i]);
+                    lines.push('Parámetro de corte t = '+mlFmt(t,9),'Intersección recta–plano: I = ('+I.map(x=>mlFmt(x,9)).join(', ')+')');
+                }
+                mlPublish('Geometría analítica 3D','Punto, recta, plano, distancia, ángulo e intersección en una sola vista.',lines,ml3dSvg(P,V,plane));
+            }catch(err){mlError(err.message||'No se pudo construir la vista 3D.');}
+        }
+        function mlSwitchAlgebraFieldsAdvanced(){
+            const mode=document.getElementById('mlAlgebraMode')?.value||'equation';
+            document.querySelectorAll('#mathLab [data-algebra-field]').forEach(el=>{el.style.display=el.dataset.algebraField===mode?'grid':'none';});
+        }
+        function mlLoadExampleAdvanced(topic){
+            if(topic==='graph'){
+                document.getElementById('mlGraphExpr').value='x^2 si x<0; sin(x) si x>=0';
+                document.getElementById('mlGraphMin').value='-2*pi';document.getElementById('mlGraphMax').value='2*pi';mlRunGraph();
+            }else if(topic==='calculus'){
+                document.getElementById('mlCalcMode').value='limit';document.getElementById('mlCalcExpr').value='sin(x)/x';document.getElementById('mlCalcA').value='0';document.getElementById('mlCalcB').value='pi';document.getElementById('mlCalcX0').value='0';mlRunCalculusAdvanced();
+            }else if(topic==='algebra'){
+                document.getElementById('mlAlgebraMode').value='system';document.getElementById('mlSysA1').value='2';document.getElementById('mlSysB1').value='1';document.getElementById('mlSysC1').value='7';document.getElementById('mlSysA2').value='1';document.getElementById('mlSysB2').value='-1';document.getElementById('mlSysC2').value='1';mlSwitchAlgebraFieldsAdvanced();mlRunAlgebraAdvanced();
+            }else if(topic==='matrices'){
+                document.getElementById('mlMatrixA').value='2 1; 1 -1';document.getElementById('mlMatrixB').value='7; 1';document.getElementById('mlMatrixOp').value='solve';mlRunMatricesAdvanced();
+            }else if(topic==='probability'){
+                document.getElementById('mlProbMode').value='hypergeometric';document.getElementById('mlHyperN').value='50';document.getElementById('mlHyperK').value='18';document.getElementById('mlHyperNDraw').value='8';document.getElementById('mlHyperKDraw').value='3';mlSwitchProbabilityFieldsAdvanced();mlRunProbabilityAdvanced();
+            }else if(topic==='geometry3d'){
+                document.getElementById('ml3dPoint').value='1, -1, 3';document.getElementById('ml3dVector').value='2, 1, -2';document.getElementById('ml3dPlane').value='1, 2, -1, 4';mlRun3DAdvanced();
+            }
+        }
+
+        // ===== TECLADO MATEMÁTICO CONTEXTUAL =====
+        // Inserta símbolos en el último campo del Math Lab que recibió foco. No captura
+        // teclas del cuaderno ni modifica los eventos del lienzo de dibujo.
+        let mathKeyboardTarget=null;
+        function mlKeyboardIsField(element){
+            return !!(element&&element.closest&&element.closest('#mathLab')&&
+                (element.tagName==='INPUT'||element.tagName==='TEXTAREA')&&!element.disabled);
+        }
+        function mlKeyboardCanEdit(element){
+            return mlKeyboardIsField(element)&&(!element.readOnly||element.dataset.mlKeyboardReadonly==='1');
+        }
+        function mlRememberKeyboardTarget(event){
+            if(mlKeyboardCanEdit(event.target))mathKeyboardTarget=event.target;
+        }
+        function mlSetNativeKeyboardSuppression(enabled){
+            document.querySelectorAll('#mathLab input, #mathLab textarea').forEach(field=>{
+                if(field.disabled)return;
+                if(enabled){
+                    if(!field.readOnly){field.readOnly=true;field.dataset.mlKeyboardReadonly='1';}
+                    field.dataset.mlKeyboardHadInputmode=field.hasAttribute('inputmode')?'1':'0';
+                    if(field.hasAttribute('inputmode'))field.dataset.mlKeyboardInputmode=field.getAttribute('inputmode')||'';
+                    field.setAttribute('inputmode','none');
+                }else{
+                    if(field.dataset.mlKeyboardReadonly==='1'){field.readOnly=false;delete field.dataset.mlKeyboardReadonly;}
+                    if(field.dataset.mlKeyboardHadInputmode==='1')field.setAttribute('inputmode',field.dataset.mlKeyboardInputmode||'');
+                    else field.removeAttribute('inputmode');
+                    delete field.dataset.mlKeyboardHadInputmode;delete field.dataset.mlKeyboardInputmode;
+                }
+            });
+        }
+        window.toggleMathKeyboard=function(){
+            const lab=document.getElementById('mathLab'),button=document.getElementById('mathKeyboardToggle');
+            if(!lab)return;
+            const focused=document.activeElement;
+            if(mlKeyboardCanEdit(focused))mathKeyboardTarget=focused;
+            const open=lab.classList.toggle('keyboard-open');
+            mlSetNativeKeyboardSuppression(open);
+            button?.setAttribute('aria-pressed',String(open));
+            button?.setAttribute('title',open?'Ocultar teclado matemático':'Mostrar teclado matemático');
+            button?.classList.toggle('active',open);
+            const hint=document.getElementById('mathKeyboardHint');
+            if(hint)hint.textContent=open?'Modo interno: teclado del sistema bloqueado':'Elegí un campo y escribí';
+            if(open)requestAnimationFrame(()=>{
+                const active=document.activeElement;
+                if(mlKeyboardIsField(active))active.blur?.();
+            });
+        };
+        window.mathKey=function(key){
+            const active=document.activeElement,target=mlKeyboardCanEdit(active)?active:mathKeyboardTarget;
+            if(!mlKeyboardCanEdit(target))return;
+            const value=target.value??'',start=Number.isInteger(target.selectionStart)?target.selectionStart:value.length,end=Number.isInteger(target.selectionEnd)?target.selectionEnd:start;
+            let next=value,cursor=start;
+            if(key==='clear'){
+                next='';cursor=0;
+            }else if(key==='backspace'){
+                if(start!==end){next=value.slice(0,start)+value.slice(end);cursor=start;}
+                else if(start>0){next=value.slice(0,start-1)+value.slice(end);cursor=start-1;}
+            }else if(key==='left'||key==='right'){
+                cursor=key==='left'?Math.max(0,start-1):Math.min(value.length,end+1);
+                target.focus();target.setSelectionRange?.(cursor,cursor);return;
+            }else{
+                const insertion=key==='space'?' ':String(key);
+                next=value.slice(0,start)+insertion+value.slice(end);cursor=start+insertion.length;
+            }
+            target.value=next;target.focus();target.setSelectionRange?.(cursor,cursor);
+            target.dispatchEvent?.(new Event('input',{bubbles:true}));
+            target.dispatchEvent?.(new Event('change',{bubbles:true}));
+            mathKeyboardTarget=target;
+        };
+        const mathKeyboardLab=document.getElementById('mathLab');
+        mathKeyboardLab?.addEventListener('focusin',mlRememberKeyboardTarget);
+        document.getElementById('mathKeyboard')?.addEventListener('pointerdown',event=>{
+            if(event.target.closest?.('button'))event.preventDefault();
+        });
+        window.mathAnalyzeGraph=mlAnalyzeGraphAdvanced;
+        window.mathRunCalculus=mlRunCalculusAdvanced;
+        window.mathRunAlgebra=mlRunAlgebraAdvanced;
+        window.mathRunMatrices=mlRunMatricesAdvanced;
+        window.mathRunProbability=mlRunProbabilityAdvanced;
+        window.mathRun3D=mlRun3DAdvanced;
+        window.mathLoadExample=mlLoadExampleAdvanced;
+        window.updateProbabilityFields=mlSwitchProbabilityFieldsAdvanced;
+        window.updateAlgebraFields=mlSwitchAlgebraFieldsAdvanced;
+        mlSwitchProbabilityFieldsAdvanced();
+        mlSwitchAlgebraFieldsAdvanced();
 
     </script>
 </body>
