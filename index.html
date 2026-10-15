@@ -164,12 +164,62 @@
         .nb-delete-btn { color: #fecaca; border-color: #7f1d1d; background: #451a1a; }
         .nb-delete-btn:hover { background: #7f1d1d; border-color: #ef4444; }
 
+        /* Aula virtual P2P: la señalización usa PeerJS y la pizarra con el chat viajan directamente entre pares. */
+        #classPanel { position:fixed; top:72px; right:16px; z-index:9600; width:min(390px,calc(100vw - 24px)); max-height:calc(100vh - 88px); display:none; flex-direction:column; overflow:hidden; color:#e5edf8; background:linear-gradient(155deg,#0f172a,#111827 58%,#0b1220); border:1px solid #334155; border-radius:15px; box-shadow:0 26px 75px rgba(0,0,0,.68); }
+        #classPanel.open { display:flex; }
+        .class-head { min-height:48px; display:flex; align-items:center; gap:9px; padding:0 12px; background:rgba(2,6,23,.76); border-bottom:1px solid #334155; }
+        .class-head strong { font-size:15px; letter-spacing:.1px; }
+        .class-head small { display:block; margin-top:2px; color:#94a3b8; font-size:10px; }
+        .class-head .class-close { margin-left:auto; width:32px; height:30px; padding:0; border:0; background:transparent; color:#cbd5e1; font-size:20px; }
+        .class-body { overflow:auto; padding:12px; display:flex; flex-direction:column; gap:10px; }
+        .class-intro { margin:0; color:#b7c5d8; font-size:12px; line-height:1.45; }
+        .class-tabs { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+        .class-tabs button { padding:8px; font-size:12px; }
+        .class-tabs button.active { background:#38bdf8; border-color:#7dd3fc; color:#082f49; }
+        .class-form { display:flex; flex-direction:column; gap:8px; }
+        .class-form label, .class-room-line label { display:flex; flex-direction:column; gap:4px; color:#cbd5e1; font-size:11px; font-weight:700; }
+        .class-form input { width:100%; box-sizing:border-box; padding:9px 10px; background:#020617; border-color:#475569; color:#f8fafc; }
+        .class-primary { background:#0ea5e9; border-color:#38bdf8; color:#062033; font-weight:800; }
+        .class-primary:hover { background:#38bdf8; }
+        .class-note { margin:0; color:#94a3b8; font-size:10px; line-height:1.35; }
+        .class-live-top { display:flex; align-items:center; gap:8px; padding:8px 9px; border:1px solid #334155; border-radius:10px; background:rgba(15,23,42,.84); }
+        .class-live-top .class-status { margin-left:auto; display:flex; align-items:center; gap:5px; color:#fbbf24; font-size:11px; font-weight:700; }
+        .class-status::before { content:''; width:8px; height:8px; border-radius:50%; background:currentColor; box-shadow:0 0 9px currentColor; }
+        .class-status.connected { color:#4ade80; }
+        .class-status.error { color:#fb7185; }
+        .class-room-line { display:flex; gap:7px; align-items:end; padding:9px; border:1px dashed #475569; border-radius:10px; background:rgba(30,41,59,.44); }
+        .class-room-line label { flex:1; }
+        #classCodeValue { letter-spacing:1.8px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:18px; font-weight:900; color:#a7f3d0; }
+        .class-room-line button { height:36px; padding:6px 9px; font-size:11px; }
+        .class-control-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+        .class-control-grid button { min-height:37px; padding:7px 8px; font-size:11px; }
+        .class-control-grid .class-wide { grid-column:1 / -1; }
+        #classPermissionBtn.unlocked { color:#052e16; background:#86efac; border-color:#bbf7d0; }
+        .class-end { color:#fee2e2; background:#7f1d1d; border-color:#ef4444; }
+        .class-end:hover { background:#b91c1c; }
+        .class-section-title { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#cbd5e1; font-size:11px; font-weight:800; }
+        #classParticipantCount { color:#7dd3fc; font-weight:700; }
+        .class-presence { margin:0; padding:8px 9px; border:1px dashed #475569; border-radius:9px; color:#94a3b8; font-size:11px; line-height:1.35; }
+        .class-chat { display:flex; flex-direction:column; gap:6px; }
+        #classChatMessages { min-height:78px; max-height:132px; overflow:auto; padding:7px; border:1px solid #334155; border-radius:9px; background:rgba(2,6,23,.58); display:flex; flex-direction:column; gap:5px; }
+        .class-chat-message { color:#e2e8f0; font-size:11px; line-height:1.35; word-break:break-word; }
+        .class-chat-message b { color:#7dd3fc; }
+        .class-chat-message.own b { color:#86efac; }
+        .class-chat-message.system { color:#94a3b8; font-style:italic; }
+        .class-chat-send { display:flex; gap:6px; }
+        .class-chat-send input { min-width:0; flex:1; padding:8px 9px; background:#020617; border-color:#475569; color:#fff; }
+        .class-chat-send button { padding:7px 10px; }
+        #btnClassroom.class-live { color:#052e16; background:#86efac; border-color:#bbf7d0; }
+        body.class-student-readonly [data-class-manage] { opacity:.48; pointer-events:none; filter:grayscale(.35); }
+
         /* Fullscreen modifications */
         :fullscreen #toolbar { position: fixed; top: 0; left: 0; width: 100%; opacity: 0; transition: opacity 0.3s; z-index: 9000; }
         :fullscreen #toolbar:hover { opacity: 1; }
         :fullscreen #notebook { width: 100%; max-width: none; padding-top: 20px; }
         :fullscreen #nb-launcher { display: none; }
         :fullscreen #recordingIndicator { top: 16px; }
+        :fullscreen #classPanel { top:12px; right:12px; max-height:calc(100vh - 24px); }
+        @media(max-width:560px){ #classPanel { top:54px; right:12px; max-height:calc(100vh - 66px); } }
     </style>
 </head>
 <body>
@@ -181,6 +231,9 @@
         </div>
         <div class="tool-group" style="border-right:none;">
             <button id="btnMathLab" onclick="toggleMathLab()" title="Gráficas, cálculo, álgebra, matrices, probabilidad y geometría 3D">✦ Math Lab</button>
+        </div>
+        <div class="tool-group" style="border-right:none;">
+            <button id="btnClassroom" onclick="toggleClassPanel()" title="Dar o recibir clases con pizarra y chat P2P">🎓 Aula virtual P2P</button>
         </div>
         <div class="tool-group">
             <button id="btnPen" class="active" onclick="setTool('pen')">✒️ Lapicera</button>
@@ -196,17 +249,17 @@
             <input type="range" id="eraserSize" min="6" max="120" value="24" onchange="updateEraserSize()" style="width: 80px;" title="Tamaño independiente de la goma">
         </div>
         <div class="tool-group">
-            <select id="bgType" onchange="changeBackgroundAll()">
+            <select id="bgType" data-class-manage onchange="changeBackgroundAll()">
                 <option value="rayada">Hoja Rayada</option>
                 <option value="cuadriculada">Hoja Cuadriculada</option>
                 <option value="blanca">Hoja Blanca</option>
             </select>
         </div>
         <div class="tool-group">
-            <button onclick="addPage()">➕ Nueva Hoja</button>
-            <button onclick="duplicatePage()">📑 Duplicar</button>
-            <button onclick="clearCurrentPage()" style="color:#ff6b6b;">🗑️ Limpiar</button>
-            <button onclick="document.getElementById('anyFileInput').click()">📎 Insertar Archivo/Imagen</button>
+            <button data-class-manage onclick="addPage()">➕ Nueva Hoja</button>
+            <button data-class-manage onclick="duplicatePage()">📑 Duplicar</button>
+            <button data-class-manage onclick="clearCurrentPage()" style="color:#ff6b6b;">🗑️ Limpiar</button>
+            <button data-class-manage onclick="document.getElementById('anyFileInput').click()">📎 Insertar Archivo/Imagen</button>
             <input type="file" id="anyFileInput" style="display:none" multiple onchange="handleAnyFile(event)">
         </div>
         <div class="tool-group">
@@ -232,6 +285,54 @@
     <div id="toast"></div>
     <div id="recordingIndicator"><span class="rec-dot"></span><span>GRABANDO</span><span id="recordingTime">00:00</span><button class="rec-fullscreen" onclick="toggleFullScreen()" title="Entrar/salir de pantalla completa durante la grabación">⛶</button></div>
     <div id="writingCursor" aria-hidden="true"></div>
+
+    <!-- AULA VIRTUAL: el código de la clase sólo identifica la sala P2P; no se guarda en el cuaderno. -->
+    <aside id="classPanel" aria-label="Aula virtual P2P">
+        <div class="class-head">
+            <div><strong>🎓 Aula virtual P2P</strong><small>Pizarra compartida y chat en tiempo real</small></div>
+            <button class="class-close" onclick="toggleClassPanel()" title="Ocultar aula">×</button>
+        </div>
+        <div class="class-body">
+            <div id="classSetup">
+                <p class="class-intro">La pizarra y el chat se conectan entre docente y alumnos por P2P. Sin cámara ni pantalla, la clase usa menos datos y el chat se mantiene fluido. El código cambia cada vez que el docente crea una clase.</p>
+                <div class="class-tabs">
+                    <button id="classTeacherTab" class="active" onclick="switchClassMode('teacher')">👩‍🏫 Soy docente</button>
+                    <button id="classStudentTab" onclick="switchClassMode('student')">🧑‍🎓 Soy alumno</button>
+                </div>
+                <section id="classTeacherSetup" class="class-form">
+                    <label>Clave de docente<input id="classTeacherPassword" type="password" autocomplete="current-password" placeholder="Ingresá tu clave" onkeydown="if(event.key==='Enter') startTeacherClass()"></label>
+                    <button class="class-primary" onclick="startTeacherClass()">Crear clase y generar código</button>
+                    <p class="class-note">El código aleatorio se genera al iniciar y podés compartirlo con los alumnos.</p>
+                </section>
+                <section id="classStudentSetup" class="class-form" style="display:none;">
+                    <label>Tu nombre<input id="classStudentName" maxlength="30" autocomplete="name" placeholder="Ej.: Braian"></label>
+                    <label>Código de la clase<input id="classJoinCode" maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="Ej.: M7K2R5P8" onkeydown="if(event.key==='Enter') startStudentClass()"></label>
+                    <button class="class-primary" onclick="startStudentClass()">Entrar a la clase</button>
+                    <p class="class-note">Al entrar se muestra la pizarra del docente sin reemplazar tus cuadernos guardados.</p>
+                </section>
+            </div>
+
+            <div id="classLiveView" style="display:none;">
+                <div class="class-live-top"><span id="classRoleLabel">Clase en vivo</span><span id="classStatus" class="class-status">Conectando</span></div>
+                <div id="classCodeRow" class="class-room-line" style="margin-top:9px;">
+                    <label>Código para los alumnos<span id="classCodeValue">------</span></label>
+                    <button onclick="copyClassCode()">Copiar</button>
+                </div>
+                <div class="class-control-grid" style="margin-top:9px;">
+                    <button id="classPermissionBtn" class="class-wide" onclick="toggleStudentBoardPermission()">🔒 Pizarra solo docente</button>
+                    <button class="class-wide" onclick="raiseClassHand()">✋ Levantar la mano</button>
+                    <button id="classEndBtn" class="class-end class-wide" onclick="endClassSession()">Finalizar clase</button>
+                </div>
+                <div class="class-section-title" style="margin-top:11px;"><span>Participantes</span><span id="classParticipantCount">0 conectados</span></div>
+                <p class="class-presence">Conectados por pizarra y chat P2P, sin cámara ni pantalla.</p>
+                <div class="class-section-title" style="margin-top:11px;"><span>Chat de la clase</span><span id="classChatHint"></span></div>
+                <div class="class-chat">
+                    <div id="classChatMessages"><div class="class-chat-message system">El chat se transmite sólo durante esta clase.</div></div>
+                    <div class="class-chat-send"><input id="classChatInput" maxlength="400" placeholder="Escribí un mensaje…" onkeydown="if(event.key==='Enter') sendClassChat()"><button onclick="sendClassChat()">Enviar</button></div>
+                </div>
+            </div>
+        </div>
+    </aside>
     <div id="notebook">
         <!-- Las hojas se generan dinámicamente -->
     </div>
@@ -269,7 +370,7 @@
         <input id="pdfFileInput" type="file" accept="application/pdf" style="width:160px; font-size:11px;">
         <button onclick="pdfPrevPage()">◀</button><span id="pdfPageLabel" style="font-size:12px; font-weight:bold; margin:0 5px;">Sin PDF</span><button onclick="pdfNextPage()">▶</button>
         <button id="pdfCropBtn" onclick="togglePdfCrop()" style="margin-left:auto; background:#2563eb; border-color:#3b82f6;">✂️ Recortar Área</button>
-        <button id="pdfPasteBtn" onclick="pastePdfCropToNotebook()" style="background:#059669; border-color:#10b981;">📋 Pegar Recorte</button>
+        <button id="pdfPasteBtn" data-class-manage onclick="pastePdfCropToNotebook()" style="background:#059669; border-color:#10b981;">📋 Pegar Recorte</button>
       </div>
       <div id="pdfLibrary"><div style="font-size:12px; color:#94a3b8;">Sube un PDF para verlo aquí.</div></div>
       <div id="pdfView" class="pdf-view"><div style="font-size:13px; color:#94a3b8;">Selecciona un PDF de la lista, busca en internet o carga uno nuevo.</div></div>
@@ -407,7 +508,7 @@
         <section class="math-output-column">
           <div class="math-output-caption">Resultado listo para pegar en el cuaderno</div>
           <div id="mathOutput"><div class="math-empty">Elegí un tema, completá los datos y tocá <b>Graficar</b> o <b>Calcular</b>. La pizarra seguirá escribiendo igual de fluida.</div></div>
-          <div class="math-output-tools"><button onclick="pasteMathResult()">📌 Pegar en cuaderno</button><button class="math-secondary" onclick="copyMathResult()" title="Copiar el resumen de texto">Copiar</button></div>
+          <div class="math-output-tools"><button data-class-manage onclick="pasteMathResult()">📌 Pegar en cuaderno</button><button class="math-secondary" onclick="copyMathResult()" title="Copiar el resumen de texto">Copiar</button></div>
         </section>
       </div>
     </aside>
@@ -458,6 +559,312 @@
             clearTimeout(window.__toastTimer);
             window.__toastTimer = setTimeout(() => el.classList.remove('show'), ms);
         }
+
+        // ================= AULA VIRTUAL P2P (pizarra + chat) =================
+        // PeerJS sólo resuelve el encuentro inicial. La pizarra y el chat viajan
+        // de par a par por WebRTC una vez establecida la conexión.
+        const CLASSROOM_TEACHER_PASSWORD = 'coto1977';
+        const CLASSROOM_PEER_PREFIX = 'cuaderno-aula-';
+        const classState = {
+            role:null, peer:null, roomCode:'', teacherPeerId:'', teacherConnection:null,
+            name:'', connections:new Map(), participants:new Map(), allowStudentsDraw:false, liveView:false,
+            applyingRemote:false, ending:false, syncTimer:0, snapshotChain:Promise.resolve(), liveStroke:null
+        };
+        let classroomPeerScriptPromise = null;
+
+        const classSessionActive = () => !!classState.role;
+        const classTransportReady = () => !!classState.peer;
+        const isStudentLiveView = () => classState.role === 'student' && classState.liveView;
+        const classCanManageBoard = () => !classSessionActive() || classState.role === 'teacher';
+        const classCanDrawBoard = () => !classSessionActive() || classState.role === 'teacher' || classState.allowStudentsDraw;
+        const classPageIndex = page => Math.max(0,pagesData.indexOf(page));
+        const classSafeName = value => String(value || '').replace(/[\r\n<>]/g,' ').trim().slice(0,30) || 'Alumno';
+        const classSafeText = value => String(value || '').replace(/[\r\n]/g,' ').trim().slice(0,400);
+
+        function normalizeClassCode(value){
+            let code=String(value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+            if(code.startsWith('AULA')) code=code.slice(4);
+            return code;
+        }
+        function generateClassCode(){
+            const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            const values=new Uint32Array(8);
+            if(window.crypto?.getRandomValues) window.crypto.getRandomValues(values);
+            else for(let i=0;i<values.length;i++) values[i]=Math.floor(Math.random()*0xffffffff);
+            return [...values].map(n=>alphabet[n%alphabet.length]).join('');
+        }
+        function classPeerIdFromCode(code){ return CLASSROOM_PEER_PREFIX+normalizeClassCode(code).toLowerCase(); }
+        function setClassStatus(message,tone=''){
+            const status=document.getElementById('classStatus');
+            if(!status)return;
+            status.textContent=message;
+            status.className='class-status'+(tone?' '+tone:'');
+        }
+        function resetClassChat(message='El chat se transmite sólo durante esta clase.'){
+            const box=document.getElementById('classChatMessages');
+            if(!box)return;
+            box.replaceChildren();
+            const line=document.createElement('div');line.className='class-chat-message system';line.textContent=message;box.appendChild(line);
+        }
+        function appendClassChat(name,text,{own=false,system=false}={}){
+            const box=document.getElementById('classChatMessages');if(!box)return;
+            const line=document.createElement('div');line.className='class-chat-message'+(own?' own':'')+(system?' system':'');
+            if(system) line.textContent=text;
+            else { const author=document.createElement('b');author.textContent=name+': ';line.append(author,document.createTextNode(text)); }
+            box.appendChild(line);box.scrollTop=box.scrollHeight;
+        }
+        function updateClassBoardAccess(){
+            const studentReadonly=isStudentLiveView() && !classState.allowStudentsDraw;
+            document.body.classList.toggle('class-student-readonly',studentReadonly);
+            document.querySelectorAll('[data-class-manage]').forEach(control=>{ control.disabled=!classCanManageBoard(); });
+        }
+        function updateClassUI(){
+            const inClass=classSessionActive(),isTeacher=classState.role==='teacher';
+            const setup=document.getElementById('classSetup'),live=document.getElementById('classLiveView');
+            if(setup)setup.style.display=inClass?'none':'block';
+            if(live)live.style.display=inClass?'block':'none';
+            document.getElementById('btnClassroom')?.classList.toggle('class-live',inClass);
+            if(!inClass){updateClassBoardAccess();return;}
+            const role=document.getElementById('classRoleLabel');if(role)role.textContent=isTeacher?'👩‍🏫 Clase como docente':'🧑‍🎓 Clase como alumno';
+            const codeRow=document.getElementById('classCodeRow');if(codeRow)codeRow.style.display=isTeacher?'flex':'none';
+            const code=document.getElementById('classCodeValue');if(code)code.textContent=classState.roomCode||'------';
+            const permission=document.getElementById('classPermissionBtn');
+            if(permission){
+                permission.style.display=isTeacher?'':'none';
+                permission.classList.toggle('unlocked',classState.allowStudentsDraw);
+                permission.textContent=classState.allowStudentsDraw?'✏️ Alumnos pueden escribir':'🔒 Pizarra solo docente';
+            }
+            const end=document.getElementById('classEndBtn');if(end)end.textContent=isTeacher?'Finalizar clase':'Salir de la clase';
+            const count=isTeacher?classState.connections.size:(classState.teacherConnection?.open?1:0);
+            const participants=document.getElementById('classParticipantCount');if(participants)participants.textContent=`${count} conectado${count===1?'':'s'}`;
+            const hint=document.getElementById('classChatHint');if(hint)hint.textContent='Chat P2P en vivo';
+            updateClassBoardAccess();
+        }
+        function classShowReadOnly(){ toast('🔒 La pizarra está en modo docente. Podés pedir permiso para escribir.',2200); }
+        function classLogicalSize(page){return {w:Math.max(1,page.drawCanvas.width/PIXEL_RATIO),h:Math.max(1,page.drawCanvas.height/PIXEL_RATIO)};}
+        function classNormalizePoint(page,x,y){const s=classLogicalSize(page);return {x:x/s.w,y:y/s.h,w:s.w,h:s.h};}
+        function classDenormalizePoint(page,x,y){const s=classLogicalSize(page);return {x:Number(x)*s.w,y:Number(y)*s.h,w:s.w,h:s.h};}
+
+        window.toggleClassPanel=function(){ document.getElementById('classPanel')?.classList.toggle('open');updateClassUI(); };
+        window.switchClassMode=function(mode){
+            if(classSessionActive())return;
+            const teacher=mode!=='student';
+            document.getElementById('classTeacherSetup').style.display=teacher?'flex':'none';
+            document.getElementById('classStudentSetup').style.display=teacher?'none':'flex';
+            document.getElementById('classTeacherTab').classList.toggle('active',teacher);
+            document.getElementById('classStudentTab').classList.toggle('active',!teacher);
+        };
+        window.copyClassCode=async function(){
+            if(classState.role!=='teacher'||!classState.roomCode)return;
+            try{await navigator.clipboard?.writeText(classState.roomCode);toast('✅ Código copiado');}
+            catch(_){const area=document.createElement('textarea');area.value=classState.roomCode;document.body.appendChild(area);area.select();document.execCommand('copy');area.remove();toast('✅ Código copiado');}
+        };
+
+        function ensurePeerLibrary(){
+            if(window.Peer)return Promise.resolve(window.Peer);
+            if(classroomPeerScriptPromise)return classroomPeerScriptPromise;
+            classroomPeerScriptPromise=new Promise((resolve,reject)=>{
+                const script=document.createElement('script');script.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';script.async=true;script.dataset.peerjsClassroom='true';
+                script.onload=()=>window.Peer?resolve(window.Peer):reject(new Error('PeerJS no se cargó'));
+                script.onerror=()=>reject(new Error('No se pudo cargar la conexión P2P'));
+                document.head.appendChild(script);
+            });
+            return classroomPeerScriptPromise;
+        }
+        async function createClassPeer(id){
+            const PeerCtor=await ensurePeerLibrary();
+            return new Promise((resolve,reject)=>{
+                let opened=false,settled=false;
+                let peer;
+                try{peer=id?new PeerCtor(id,{debug:1}):new PeerCtor({debug:1});}
+                catch(err){reject(err);return;}
+                peer.once('open',()=>{
+                    opened=true;settled=true;classState.peer=peer;installClassPeerEvents(peer);resolve(peer);
+                });
+                peer.on('error',err=>{
+                    console.warn('Aula P2P:',err);
+                    if(!settled){settled=true;try{peer.destroy();}catch(_){}reject(err);return;}
+                    if(!classState.ending)setClassStatus('Error de conexión','error');
+                });
+                peer.on('disconnected',()=>{if(opened&&!classState.ending)setClassStatus('Reconectando…');});
+            });
+        }
+        function installClassPeerEvents(peer){
+            peer.on('connection',connection=>{
+                if(classState.role!=='teacher' || connection.metadata?.role!=='student'){try{connection.close();}catch(_){}return;}
+                setupClassConnection(connection,true);
+            });
+        }
+        function safeClassSend(connection,message){
+            try{if(connection?.open){connection.send(message);return true;}}catch(err){console.warn('No se pudo enviar dato P2P',err);}return false;
+        }
+        function classBroadcast(message,excludePeer=''){
+            if(classState.role!=='teacher')return;
+            classState.connections.forEach((connection,peerId)=>{if(peerId!==excludePeer)safeClassSend(connection,message);});
+        }
+        function classSendToTeacher(message){ return safeClassSend(classState.teacherConnection,message); }
+        function setupClassConnection(connection,incoming){
+            connection.on('open',async()=>{
+                if(classState.ending)return;
+                if(classState.role==='teacher'){
+                    const info={name:classSafeName(connection.metadata?.name),joinedAt:Date.now()};
+                    classState.connections.set(connection.peer,connection);classState.participants.set(connection.peer,info);
+                    setClassStatus('Clase lista','connected');updateClassUI();appendClassChat('',`${info.name} se conectó a la clase.`,{system:true});
+                    safeClassSend(connection,{type:'room-settings',allowStudentsDraw:classState.allowStudentsDraw});
+                    await sendClassSnapshotTo(connection);
+                }else{
+                    if(connection.peer!==classState.teacherPeerId){try{connection.close();}catch(_){}return;}
+                    classState.teacherConnection=connection;setClassStatus('Conectado al docente','connected');updateClassUI();
+                    classSendToTeacher({type:'join',name:classState.name});
+                    classSendToTeacher({type:'snapshot-request'});
+                }
+            });
+            connection.on('data',message=>handleClassData(message,connection));
+            connection.on('close',()=>{
+                if(classState.ending)return;
+                if(classState.role==='teacher'){
+                    const info=classState.participants.get(connection.peer);classState.connections.delete(connection.peer);classState.participants.delete(connection.peer);
+                    if(info)appendClassChat('',`${info.name} salió de la clase.`,{system:true});updateClassUI();
+                }else if(classState.teacherConnection===connection){
+                    classState.teacherConnection=null;setClassStatus('Docente desconectado','error');updateClassUI();toast('La conexión con el docente terminó.',2600);
+                }
+            });
+            connection.on('error',()=>{if(!classState.ending){setClassStatus('Error de conexión','error');updateClassUI();}});
+        }
+        async function sendClassSnapshotTo(connection){
+            if(classState.role!=='teacher'||!connection?.open)return;
+            try{const {snapshot}=await snapshotNotebook();safeClassSend(connection,{type:'snapshot',snapshot});}
+            catch(err){console.error(err);safeClassSend(connection,{type:'notice',text:'No se pudo sincronizar la pizarra completa.'});}
+        }
+        async function broadcastClassSnapshot(){
+            if(classState.role!=='teacher'||classState.applyingRemote)return;
+            try{const {snapshot}=await snapshotNotebook();classBroadcast({type:'snapshot',snapshot});}
+            catch(err){console.error('No se pudo compartir la pizarra',err);}
+        }
+        function scheduleClassSnapshot(delay=650){
+            if(classState.role!=='teacher'||classState.applyingRemote)return;
+            clearTimeout(classState.syncTimer);classState.syncTimer=setTimeout(()=>broadcastClassSnapshot(),delay);
+        }
+        async function applyClassSnapshot(snapshot){
+            if(classState.role!=='student'||!snapshot?.pages)return;
+            classState.snapshotChain=classState.snapshotChain.then(async()=>{
+                const previousLoading=isLoadingNotebook;
+                classState.applyingRemote=true;isLoadingNotebook=true;
+                try{
+                    disposeCurrentPages();notebookEl.replaceChildren();pagesData=[];activePageContainer=null;activePastedElement=null;
+                    document.getElementById('bgType').value=snapshot.bg||'rayada';
+                    const remotePages=snapshot.pages.length?snapshot.pages:[{drawing:null,elements:[]}];
+                    for(const page of remotePages)await addPage(page.drawing??null,snapshot.bg||'rayada',page.elements||[]);
+                    updatePageIndicator();classState.liveView=true;appendClassChat('', 'Pizarra del docente sincronizada.',{system:true});
+                }catch(err){console.error('Error aplicando pizarra P2P',err);toast('⚠️ No se pudo mostrar una parte de la pizarra compartida',3000);}
+                finally{isLoadingNotebook=previousLoading;classState.applyingRemote=false;updateClassUI();}
+            });
+            return classState.snapshotChain;
+        }
+        function classPublishBoardOperation(operation){
+            if(!classSessionActive()||classState.applyingRemote||!classCanDrawBoard())return;
+            if(classState.role==='teacher')classBroadcast({type:'board',origin:classState.peer?.id||'teacher',operation});
+            else classSendToTeacher({type:'board',operation});
+        }
+        function applyClassBoardOperation(operation){
+            if(!operation||!Number.isInteger(operation.page)||!pagesData[operation.page]){
+                if(classState.role==='student')classSendToTeacher({type:'snapshot-request'});
+                return;
+            }
+            const page=pagesData[operation.page],ctx=page.drawCtx,tool=operation.tool==='eraser'?'eraser':(operation.tool==='pencil'?'pencil':'pen');
+            const paint=(x1,y1,x2,y2,widthRatio)=>{
+                const a=classDenormalizePoint(page,x1,y1),b=classDenormalizePoint(page,x2,y2);
+                ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+                if(tool==='eraser'){ctx.globalCompositeOperation='destination-out';ctx.globalAlpha=1;}
+                else {ctx.globalCompositeOperation='source-over';ctx.globalAlpha=tool==='pencil'?0.42:1;ctx.strokeStyle=operation.color||'#000000';}
+                ctx.lineWidth=Math.max(.4,Number(widthRatio||0.003)*a.w);ctx.stroke();
+            };
+            ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+            if(operation.kind==='segments')for(const segment of operation.segments||[])paint(segment[0],segment[1],segment[2],segment[3],segment[4]);
+            else if(operation.kind==='line')paint(operation.x1,operation.y1,operation.x2,operation.y2,operation.widthRatio);
+            ctx.restore();page._canvasDirty=true;
+            if(classState.role==='teacher')scheduleAutosave();
+        }
+        function handleClassData(message,connection){
+            if(!message||typeof message!=='object'||classState.ending)return;
+            const isTeacher=classState.role==='teacher';
+            if(isTeacher){
+                if(!classState.connections.has(connection.peer))return;
+                if(message.type==='join'){
+                    const info=classState.participants.get(connection.peer);if(info)info.name=classSafeName(message.name);updateClassUI();return;
+                }
+                if(message.type==='snapshot-request'){sendClassSnapshotTo(connection);return;}
+                if(message.type==='board'){
+                    if(!classState.allowStudentsDraw){safeClassSend(connection,{type:'notice',text:'La pizarra está en modo docente.'});return;}
+                    applyClassBoardOperation(message.operation);classBroadcast({type:'board',origin:connection.peer,operation:message.operation},connection.peer);return;
+                }
+                if(message.type==='chat'){
+                    const text=classSafeText(message.text);if(!text)return;const name=classState.participants.get(connection.peer)?.name||'Alumno';
+                    appendClassChat(name,text);classBroadcast({type:'chat',origin:connection.peer,name,text},connection.peer);return;
+                }
+                if(message.type==='hand'){
+                    const name=classState.participants.get(connection.peer)?.name||'Alumno';appendClassChat('',`✋ ${name} levantó la mano.`,{system:true});classBroadcast({type:'hand',origin:connection.peer,name},connection.peer);return;
+                }
+                return;
+            }
+            if(connection!==classState.teacherConnection)return;
+            if(message.type==='room-settings'){
+                classState.allowStudentsDraw=!!message.allowStudentsDraw;updateClassUI();appendClassChat('',classState.allowStudentsDraw?'El docente habilitó las anotaciones.':'El docente dejó la pizarra en modo lectura.',{system:true});return;
+            }
+            if(message.type==='snapshot'){applyClassSnapshot(message.snapshot);return;}
+            if(message.type==='board'){if(message.origin!==classState.peer?.id)applyClassBoardOperation(message.operation);return;}
+            if(message.type==='chat'){if(message.origin!==classState.peer?.id)appendClassChat(classSafeName(message.name||'Docente'),classSafeText(message.text));return;}
+            if(message.type==='hand'){if(message.origin!==classState.peer?.id)appendClassChat('',`✋ ${classSafeName(message.name||'Alumno')} levantó la mano.`,{system:true});return;}
+            if(message.type==='notice'){toast(classSafeText(message.text),2500);return;}
+            if(message.type==='room-ended'){endClassSession(true);}
+        }
+
+        window.sendClassChat=function(){
+            if(!classSessionActive())return;
+            const input=document.getElementById('classChatInput'),text=classSafeText(input?.value);if(!text)return;
+            if(input)input.value='';appendClassChat(classState.role==='teacher'?'Docente':classState.name,text,{own:true});
+            if(classState.role==='teacher')classBroadcast({type:'chat',origin:classState.peer?.id||'teacher',name:'Docente',text});
+            else classSendToTeacher({type:'chat',text});
+        };
+        window.raiseClassHand=function(){
+            if(!classSessionActive())return;
+            if(classState.role==='teacher'){appendClassChat('','✋ El docente llamó la atención del grupo.',{system:true});return;}
+            appendClassChat('','✋ Levantaste la mano.',{system:true});classSendToTeacher({type:'hand'});
+        };
+        window.toggleStudentBoardPermission=function(){
+            if(classState.role!=='teacher')return;
+            classState.allowStudentsDraw=!classState.allowStudentsDraw;
+            classBroadcast({type:'room-settings',allowStudentsDraw:classState.allowStudentsDraw});updateClassUI();toast(classState.allowStudentsDraw?'✏️ Anotaciones habilitadas para alumnos':'🔒 Pizarra bloqueada para alumnos');
+        };
+        window.startTeacherClass=async function(){
+            if(classSessionActive())return;
+            if(document.getElementById('classTeacherPassword').value!==CLASSROOM_TEACHER_PASSWORD){toast('⚠️ La clave de docente no es correcta.',2400);return;}
+            classState.role='teacher';classState.name='Docente';classState.roomCode=generateClassCode();classState.allowStudentsDraw=false;classState.liveView=false;resetClassChat();updateClassUI();setClassStatus('Creando sala…');
+            try{await createClassPeer(classPeerIdFromCode(classState.roomCode));setClassStatus('Clase lista','connected');updateClassUI();appendClassChat('','Sala creada. Compartí el código con tus alumnos.',{system:true});}
+            catch(err){console.error(err);toast('⚠️ No se pudo crear la sala P2P. Probá nuevamente.',3200);await endClassSession(true);}
+        };
+        window.startStudentClass=async function(){
+            if(classSessionActive())return;
+            const code=normalizeClassCode(document.getElementById('classJoinCode').value);if(code.length<5){toast('Ingresá el código aleatorio del docente.',2400);return;}
+            classState.role='student';classState.name=classSafeName(document.getElementById('classStudentName').value);classState.roomCode=code;classState.teacherPeerId=classPeerIdFromCode(code);classState.liveView=true;resetClassChat('Conectando con la clase…');clearTimeout(saveTimer);updateClassUI();setClassStatus('Buscando docente…');
+            try{
+                await createClassPeer();
+                const connection=classState.peer.connect(classState.teacherPeerId,{reliable:true,serialization:'binary',metadata:{role:'student',name:classState.name}});
+                setupClassConnection(connection,false);
+            }catch(err){console.error(err);toast('⚠️ No se pudo iniciar la conexión P2P.',3200);await endClassSession(true);}
+        };
+        window.endClassSession=async function(fromRemote=false){
+            if(!classSessionActive())return;
+            const wasStudent=classState.role==='student',restoreStudentView=wasStudent&&classState.liveView,oldPeer=classState.peer;
+            classState.ending=true;clearTimeout(classState.syncTimer);
+            if(!fromRemote&&classState.role==='teacher')classBroadcast({type:'room-ended'});
+            classState.connections.forEach(connection=>{try{connection.close();}catch(_){}});try{classState.teacherConnection?.close();}catch(_){}
+            try{oldPeer?.destroy();}catch(_){}
+            classState.connections=new Map();classState.participants=new Map();classState.peer=null;classState.teacherConnection=null;classState.role=null;classState.roomCode='';classState.teacherPeerId='';classState.name='';classState.allowStudentsDraw=false;classState.liveView=false;classState.applyingRemote=false;classState.ending=false;classState.liveStroke=null;classState.snapshotChain=Promise.resolve();
+            updateClassUI();resetClassChat();
+            if(restoreStudentView&&currentId){const item=readStore().items.find(x=>x.id===currentId);if(item)await loadNotebook(item);}
+            if(!fromRemote)toast(wasStudent?'Saliste de la clase.':'Clase finalizada.');
+        };
 
         function toggleFullScreen() {
             if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => toast('No se pudo activar pantalla completa'));
@@ -766,6 +1173,7 @@
         }
 
         async function addPage(savedDrawing = null, savedBg = null, savedElements = []) {
+            if(!classCanManageBoard() && !isLoadingNotebook){classShowReadOnly();return null;}
             const pageId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
             const container = document.createElement('div');
             container.className = 'page-container';
@@ -822,6 +1230,7 @@
             setupDrawingEvents(pageObj);
             updatePageIndicator();
             if (typeof isLoadingNotebook !== 'undefined' && !isLoadingNotebook) scheduleAutosave();
+            if(classState.role==='teacher' && !isLoadingNotebook && !classState.applyingRemote) scheduleClassSnapshot();
             return pageObj;
         }
 
@@ -876,8 +1285,10 @@
         }
 
         function changeBackgroundAll() {
+            if(!classCanManageBoard()){classShowReadOnly();return;}
             pagesData.forEach(drawBackground);
             scheduleAutosave();
+            scheduleClassSnapshot();
         }
 
         function drawBackground(page) {
@@ -925,6 +1336,7 @@
         }
 
         function clearCurrentPage() {
+            if(!classCanManageBoard()){classShowReadOnly();return;}
             if(!activePageContainer) return;
             const page = pagesData.find(p => p.container === activePageContainer);
             if(!page) return;
@@ -933,10 +1345,12 @@
             page._canvasDirty = true;
             page._elementsDirty = true;
             scheduleAutosave();
+            scheduleClassSnapshot();
             toast('🧹 Hoja limpiada');
         }
 
         async function duplicatePage(){
+            if(!classCanManageBoard()){classShowReadOnly();return;}
             const p = pagesData.find(x => x.container === activePageContainer) || pagesData.at(-1);
             if(!p) return;
             try {
@@ -944,6 +1358,7 @@
                 const elements = await serializeElements(p);
                 await addPage(drawing, document.getElementById('bgType').value, elements);
                 scheduleAutosave();
+                scheduleClassSnapshot();
                 toast('📑 Hoja duplicada');
             } catch(err) {
                 console.error(err); toast('⚠️ No se pudo duplicar la hoja');
@@ -995,6 +1410,7 @@
         }
 
         function startDrawing(e, page) {
+            if(!classCanDrawBoard()){classShowReadOnly();return;}
             if(e.target.tagName.toLowerCase()==='canvas') deselectPastedElements();
             activePageContainer=page.container;
             activeDrawingPointerId=e.pointerId;
@@ -1002,6 +1418,7 @@
             drawRectCache=page.drawCanvas.getBoundingClientRect();
             const pos=getMousePos(page.drawCanvas,e);
             lastX=pos.x;lastY=pos.y;
+            classState.liveStroke=classSessionActive()?{pageIndex:classPageIndex(page),tool:currentTool,color:strokeColor,strokeSize,eraserSize,startX:pos.x,startY:pos.y}:null;
             if(currentTool==='line'){
                 page.startX=pos.x;page.startY=pos.y;
                 const preview=ensureLinePreview(page);
@@ -1027,39 +1444,53 @@
                 pctx.beginPath();pctx.moveTo(page.startX,page.startY);pctx.lineTo(pos.x,pos.y);pctx.stroke();
                 return;
             }
+            const liveStroke=classState.liveStroke;
+            const liveSegments=[];
+            const logical=classLogicalSize(page);
             for(const ev of events){
                 const pos=getMousePos(page.drawCanvas,ev);
+                const fromX=lastX,fromY=lastY;
                 ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(pos.x,pos.y);
+                let localWidth=strokeSize;
                 if(currentTool==='eraser'){
-                    ctx.globalCompositeOperation='destination-out';ctx.lineWidth=eraserSize;ctx.strokeStyle='#000';ctx.globalAlpha=1;
+                    localWidth=eraserSize;ctx.globalCompositeOperation='destination-out';ctx.lineWidth=localWidth;ctx.strokeStyle='#000';ctx.globalAlpha=1;
                 } else {
                     ctx.globalCompositeOperation='source-over';ctx.strokeStyle=strokeColor;
-                    if(currentTool==='pen'){ctx.globalAlpha=1;ctx.lineWidth=strokeSize;}
+                    if(currentTool==='pen'){ctx.globalAlpha=1;ctx.lineWidth=localWidth;}
                     else if(currentTool==='pencil'){
                         const pressure=(typeof ev.pressure==='number' && ev.pressure>0)?ev.pressure:0.5;
-                        ctx.globalAlpha=.42;ctx.lineWidth=strokeSize*Math.max(.2,pressure);
+                        localWidth=strokeSize*Math.max(.2,pressure);ctx.globalAlpha=.42;ctx.lineWidth=localWidth;
                     }
                 }
-                ctx.stroke();lastX=pos.x;lastY=pos.y;
+                ctx.stroke();
+                if(liveStroke&&liveStroke.pageIndex===classPageIndex(page))liveSegments.push([fromX/logical.w,fromY/logical.h,pos.x/logical.w,pos.y/logical.h,localWidth/logical.w]);
+                lastX=pos.x;lastY=pos.y;
             }
+            if(liveStroke&&liveSegments.length)classPublishBoardOperation({kind:'segments',page:liveStroke.pageIndex,tool:liveStroke.tool,color:liveStroke.color,segments:liveSegments});
         }
 
         function stopDrawing(e){
             if(!isDrawing) return;
             if(e && typeof e.pointerId==='number' && e.pointerId!==activeDrawingPointerId) return;
             const page=pagesData.find(p=>p.container===activePageContainer);
+            const liveStroke=classState.liveStroke;
             if(page && currentTool==='line' && drawRectCache){
                 const ev=e||window.event;
                 if(ev && typeof ev.clientX==='number'){
                     const pos=getMousePos(page.drawCanvas,ev);
                     page.drawCtx.save();page.drawCtx.globalCompositeOperation='source-over';page.drawCtx.globalAlpha=1;page.drawCtx.strokeStyle=strokeColor;page.drawCtx.lineWidth=strokeSize;page.drawCtx.lineCap='round';page.drawCtx.lineJoin='round';
                     page.drawCtx.beginPath();page.drawCtx.moveTo(page.startX,page.startY);page.drawCtx.lineTo(pos.x,pos.y);page.drawCtx.stroke();page.drawCtx.restore();
+                    if(liveStroke&&liveStroke.tool==='line'){
+                        const logical=classLogicalSize(page);
+                        classPublishBoardOperation({kind:'line',page:liveStroke.pageIndex,tool:'pen',color:liveStroke.color,x1:page.startX/logical.w,y1:page.startY/logical.h,x2:pos.x/logical.w,y2:pos.y/logical.h,widthRatio:liveStroke.strokeSize/logical.w});
+                    }
                 }
                 if(page.linePreviewCtx) page.linePreviewCtx.clearRect(0,0,page.linePreview.width/PIXEL_RATIO,page.linePreview.height/PIXEL_RATIO);
                 if(page.linePreview) page.linePreview.style.display='none';
             }
             isDrawing=false;activeDrawingPointerId=null;drawRectCache=null;
             if(page) page._canvasDirty=true;
+            classState.liveStroke=null;
             scheduleAutosave();
         }
         window.addEventListener('pointerup', stopDrawing, {passive:true});
@@ -1098,9 +1529,11 @@
         }
 
         function markPastedElementChanged(wrapper){
+            if(!classCanManageBoard()){classShowReadOnly();return;}
             const page=pagesData.find(p=>p.container===wrapper.parentElement);
             if(page) page._elementsDirty=true;
             scheduleAutosave();
+            scheduleClassSnapshot();
         }
 
         function createPastedImage(src, container, x, y, w, h, locked=false, background=false) {
@@ -1133,6 +1566,7 @@
             tools.append(lockBtn,bgBtn,deleteBtn);
             wrapper.append(img,resizeHandle,tools);
             container.appendChild(wrapper);
+            if(classState.role==='teacher'&&!classState.applyingRemote&&!isLoadingNotebook)scheduleClassSnapshot();
 
             img.onload=()=>{
                 if(!h){
@@ -1147,9 +1581,9 @@
 
             deselectPastedElements();wrapper.classList.add('active-element');activePastedElement=wrapper;
 
-            lockBtn.onclick=e=>{e.stopPropagation();wrapper.classList.toggle('pdf-locked');lockBtn.textContent=wrapper.classList.contains('pdf-locked')?'🔓':'🔒';markPastedElementChanged(wrapper);};
-            bgBtn.onclick=e=>{e.stopPropagation();wrapper.classList.toggle('pdf-background');wrapper.classList.add('pdf-locked');lockBtn.textContent='🔓';markPastedElementChanged(wrapper);toast(wrapper.classList.contains('pdf-background')?'📌 Fijado como fondo':'Liberado de fondo');};
-            deleteBtn.onclick=e=>{e.stopPropagation();const page=pagesData.find(p=>p.container===container);if(page)page._elementsDirty=true;disposePastedElement(wrapper);wrapper.remove();activePastedElement=null;scheduleAutosave();toast('🗑️ Recorte eliminado');};
+            lockBtn.onclick=e=>{e.stopPropagation();if(!classCanManageBoard()){classShowReadOnly();return;}wrapper.classList.toggle('pdf-locked');lockBtn.textContent=wrapper.classList.contains('pdf-locked')?'🔓':'🔒';markPastedElementChanged(wrapper);};
+            bgBtn.onclick=e=>{e.stopPropagation();if(!classCanManageBoard()){classShowReadOnly();return;}wrapper.classList.toggle('pdf-background');wrapper.classList.add('pdf-locked');lockBtn.textContent='🔓';markPastedElementChanged(wrapper);toast(wrapper.classList.contains('pdf-background')?'📌 Fijado como fondo':'Liberado de fondo');};
+            deleteBtn.onclick=e=>{e.stopPropagation();if(!classCanManageBoard()){classShowReadOnly();return;}const page=pagesData.find(p=>p.container===container);if(page)page._elementsDirty=true;disposePastedElement(wrapper);wrapper.remove();activePastedElement=null;scheduleAutosave();scheduleClassSnapshot();toast('🗑️ Recorte eliminado');};
 
             let isDragging=false,dragPointerId=null,grabOffsetX=0,grabOffsetY=0,startLeft=0,startTop=0,pendingLeft=0,pendingTop=0,dragRaf=0;
             const applyDrag=()=>{
@@ -1173,6 +1607,7 @@
                 if(e.target===resizeHandle || e.target.closest('.object-tools')) return;
                 e.preventDefault();e.stopPropagation();
                 deselectPastedElements();wrapper.classList.add('active-element');activePastedElement=wrapper;
+                if(!classCanManageBoard()){classShowReadOnly();return;}
                 if(wrapper.classList.contains('pdf-locked')) return;
                 const parentRect=container.getBoundingClientRect(),rect=wrapper.getBoundingClientRect();
                 isDragging=true;dragPointerId=e.pointerId;grabOffsetX=e.clientX-rect.left;grabOffsetY=e.clientY-rect.top;
@@ -1197,6 +1632,7 @@
             };
             resizeHandle.addEventListener('pointerdown',e=>{
                 e.preventDefault();e.stopPropagation();
+                if(!classCanManageBoard()){classShowReadOnly();return;}
                 if(wrapper.classList.contains('pdf-locked')) return;
                 isResizing=true;resizePointerId=e.pointerId;startResX=e.clientX;startW=wrapper.getBoundingClientRect().width;startH=wrapper.getBoundingClientRect().height;startLeftPx=wrapper.offsetLeft;startTopPx=wrapper.offsetTop;
                 resizeHandle.setPointerCapture?.(e.pointerId);
@@ -1247,11 +1683,14 @@
 
         window.addEventListener('keydown',e=>{
             if((e.key==='Delete'||e.key==='Backspace') && activePastedElement && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName||'')){
+                if(!classCanManageBoard()){classShowReadOnly();e.preventDefault();return;}
                 const el=activePastedElement;const page=pagesData.find(p=>p.container===el.parentElement);if(page)page._elementsDirty=true;activePastedElement=null;disposePastedElement(el);el.remove();scheduleAutosave();e.preventDefault();
+                scheduleClassSnapshot();
             }
         });
 
         async function handleAnyFile(e) {
+            if(!classCanManageBoard()){classShowReadOnly();e.target.value='';return;}
             const files=[...(e.target.files||[])];
             if(!files.length) return;
             for(const file of files){
@@ -1350,6 +1789,7 @@
         }
 
         function scheduleAutosave(){
+            if(isStudentLiveView()) return;
             clearTimeout(saveTimer);
             saveTimer=setTimeout(()=>{
                 const run=()=>flushNotebookNow();
@@ -1358,6 +1798,7 @@
         }
 
         function flushNotebookNow(){
+            if(isStudentLiveView()) return Promise.resolve(false);
             const targetId=currentId;
             if(!targetId || isLoadingNotebook) return Promise.resolve(false);
             saveChain=saveChain.then(async()=>{
@@ -1404,6 +1845,7 @@
             } finally { isLoadingNotebook=false; }
             // Si venía del formato viejo, el próximo guardado lo migra sin pérdida.
             scheduleAutosave();
+            if(classState.role==='teacher')scheduleClassSnapshot();
         }
 
         window.toggleNotebookManager=function(){document.getElementById('nb-drawer').classList.toggle('open');document.getElementById('nb-overlay').classList.toggle('open');renderList();};
@@ -1421,6 +1863,7 @@
         }
 
         window.switchNotebook=async function(id){
+            if(!classCanManageBoard()){classShowReadOnly();return;}
             if(id===currentId){toggleNotebookManager();return;}
             await flushNotebookNow();
             const st=readStore(),item=st.items.find(x=>x.id===id);
@@ -1428,6 +1871,7 @@
             toggleNotebookManager();
         };
         window.createNotebook=async function(){
+            if(!classCanManageBoard()){classShowReadOnly();return;}
             await flushNotebookNow();
             const name=prompt('Nombre de la materia / cuaderno:','Nueva Materia');if(!name?.trim())return;
             const st=readStore(),item={id:uid(),name:name.trim(),bg:'rayada',pageCount:0,storage:'idb'};
@@ -1436,10 +1880,12 @@
             await loadNotebook(item);toggleNotebookManager();
         };
         window.renameCurrentNotebook=function(){
+            if(!classCanManageBoard()){classShowReadOnly();return;}
             const st=readStore(),it=st.items.find(x=>x.id===currentId);if(!it)return;
             const n=prompt('Nuevo nombre:',it.name);if(!n?.trim())return;it.name=n.trim();writeStore(st);renderList();toast('✏️ Nombre actualizado');
         };
         window.deleteCurrentNotebook=async function(){
+            if(!classCanManageBoard()){classShowReadOnly();return;}
             const st=readStore(),it=st.items.find(x=>x.id===currentId);if(!it)return;
             if(!confirm(`¿Eliminar el cuaderno “${it.name}”?
 
@@ -1623,6 +2069,7 @@ Se borrarán sus hojas, imágenes y PDFs guardados. Esta acción no se puede des
         };
 
         window.pastePdfCropToNotebook=async function(){
+            if(!classCanManageBoard()){classShowReadOnly();return;}
             if(!pdfDoc||!pdfCropRect||pdfCropRect.w<8||pdfCropRect.h<8){toast('⚠️ Selecciona un área válida del PDF');return;}
             const wrap=document.getElementById('pdfView').querySelector('.pdf-page-wrap'),canvas=wrap?.querySelector('canvas');if(!wrap||!canvas)return;
             const bounds=wrap.getBoundingClientRect(),sx=canvas.width/bounds.width,sy=canvas.height/bounds.height;
@@ -1631,7 +2078,7 @@ Se borrarán sus hojas, imágenes y PDFs guardados. Esta acción no se puede des
             const src=await canvasToBlob(out,'image/png',1);
             const target=getVisibleContainer();if(!target)return;
             const maxW=Math.max(50,target.clientWidth-40),maxH=Math.max(50,target.clientHeight-40);const scale=Math.min(maxW/sw,maxH/sh,1);const finalW=Math.max(20,sw*scale),finalH=Math.max(20,sh*scale);const pos=getCenterPosRelative(target,finalW,finalH);
-            createPastedImage(src,target,pos.x,pos.y,finalW,finalH);const page=pagesData.find(p=>p.container===target);if(page)page._elementsDirty=true;scheduleAutosave();
+            createPastedImage(src,target,pos.x,pos.y,finalW,finalH);const page=pagesData.find(p=>p.container===target);if(page)page._elementsDirty=true;scheduleAutosave();scheduleClassSnapshot();
             pdfCrop=false;const btn=document.getElementById('pdfCropBtn');btn.textContent='✂️ Recortar Área';btn.style.background='#2563eb';wrap.querySelector('.pdf-crop-box').style.display='none';toast('📋 Recorte pegado y centrado');
         };
 
@@ -2007,12 +2454,13 @@ Se borrarán sus hojas, imágenes y PDFs guardados. Esta acción no se puede des
         window.mathLoadExample=mlLoadExample;
         window.updateProbabilityFields=mlSwitchProbabilityFields;
         window.pasteMathResult=function(){
+            if(!classCanManageBoard()){classShowReadOnly();return;}
             if(!mathLastAsset){toast('Primero generá un resultado para pegar.');return;}
             const target=getVisibleContainer();if(!target){toast('No hay una hoja disponible.');return;}
             const width=Math.min(Math.max(220,target.clientWidth-40),760),position=getCenterPosRelative(target,width,360);
             createPastedImage(mathLastAsset,target,position.x,position.y,width,null);
             const page=pagesData.find(p=>p.container===target);if(page)page._elementsDirty=true;
-            scheduleAutosave();toast('📌 Resultado pegado: podés moverlo y redimensionarlo.');
+            scheduleAutosave();scheduleClassSnapshot();toast('📌 Resultado pegado: podés moverlo y redimensionarlo.');
         };
         window.copyMathResult=async function(){
             if(!mathLastText){toast('No hay resultado para copiar.');return;}
