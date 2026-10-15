@@ -167,6 +167,12 @@
         /* Aula virtual P2P: la señalización usa PeerJS y la pizarra con el chat viajan directamente entre pares. */
         #classPanel { position:fixed; top:72px; right:16px; z-index:9600; width:min(390px,calc(100vw - 24px)); max-height:calc(100vh - 88px); display:none; flex-direction:column; overflow:hidden; color:#e5edf8; background:linear-gradient(155deg,#0f172a,#111827 58%,#0b1220); border:1px solid #334155; border-radius:15px; box-shadow:0 26px 75px rgba(0,0,0,.68); }
         #classPanel.open { display:flex; }
+        #classEntryOverlay { position:fixed; inset:0; z-index:9590; display:none; background:rgba(2,6,23,.78); backdrop-filter:blur(8px); }
+        #classEntryOverlay.open { display:block; }
+        body.class-entry-open { overflow:hidden; }
+        body.class-entry-open #classPanel { top:50%; right:auto; left:50%; width:min(430px,calc(100vw - 24px)); max-height:calc(100vh - 24px); transform:translate(-50%,-50%); }
+        .class-entry-kicker { margin:0 0 -4px; color:#7dd3fc; font-size:10px; font-weight:900; letter-spacing:1.1px; }
+        .class-setup-title { margin:0; color:#f8fafc; font-size:18px; line-height:1.15; }
         .class-head { min-height:48px; display:flex; align-items:center; gap:9px; padding:0 12px; background:rgba(2,6,23,.76); border-bottom:1px solid #334155; }
         .class-head strong { font-size:15px; letter-spacing:.1px; }
         .class-head small { display:block; margin-top:2px; color:#94a3b8; font-size:10px; }
@@ -287,28 +293,31 @@
     <div id="writingCursor" aria-hidden="true"></div>
 
     <!-- AULA VIRTUAL: el código de la clase sólo identifica la sala P2P; no se guarda en el cuaderno. -->
+    <div id="classEntryOverlay" aria-hidden="true" onclick="closeClassEntry()"></div>
     <aside id="classPanel" aria-label="Aula virtual P2P">
         <div class="class-head">
             <div><strong>🎓 Aula virtual P2P</strong><small>Pizarra compartida y chat en tiempo real</small></div>
-            <button class="class-close" onclick="toggleClassPanel()" title="Ocultar aula">×</button>
+            <button class="class-close" onclick="closeClassEntry()" title="Continuar sin entrar" aria-label="Continuar sin entrar">×</button>
         </div>
         <div class="class-body">
             <div id="classSetup">
-                <p class="class-intro">La pizarra y el chat se conectan entre docente y alumnos por P2P. Sin cámara ni pantalla, la clase usa menos datos y el chat se mantiene fluido. El código cambia cada vez que el docente crea una clase.</p>
+                <p class="class-entry-kicker">INGRESO A CLASE VIRTUAL</p>
+                <h2 class="class-setup-title">¿Cómo querés ingresar?</h2>
+                <p class="class-intro">Elegí tu rol. El profesor crea una clase y recibe un código aleatorio; los alumnos usan ese código para entrar.</p>
                 <div class="class-tabs">
-                    <button id="classTeacherTab" class="active" onclick="switchClassMode('teacher')">👩‍🏫 Soy docente</button>
-                    <button id="classStudentTab" onclick="switchClassMode('student')">🧑‍🎓 Soy alumno</button>
+                    <button id="classTeacherTab" class="active" onclick="switchClassMode('teacher')">👩‍🏫 Profesor</button>
+                    <button id="classStudentTab" onclick="switchClassMode('student')">🧑‍🎓 Alumno</button>
                 </div>
                 <section id="classTeacherSetup" class="class-form">
-                    <label>Clave de docente<input id="classTeacherPassword" type="password" autocomplete="current-password" placeholder="Ingresá tu clave" onkeydown="if(event.key==='Enter') startTeacherClass()"></label>
-                    <button class="class-primary" onclick="startTeacherClass()">Crear clase y generar código</button>
-                    <p class="class-note">El código aleatorio se genera al iniciar y podés compartirlo con los alumnos.</p>
+                    <label>Clave del profesor<input id="classTeacherPassword" type="password" autocomplete="current-password" placeholder="Ingresá tu clave" onkeydown="if(event.key==='Enter') startTeacherClass()"></label>
+                    <button class="class-primary" onclick="startTeacherClass()">Ingresar como profesor y crear código</button>
+                    <p class="class-note">Al ingresar se genera un código aleatorio para compartir solamente con tus alumnos.</p>
                 </section>
                 <section id="classStudentSetup" class="class-form" style="display:none;">
                     <label>Tu nombre<input id="classStudentName" maxlength="30" autocomplete="name" placeholder="Ej.: Braian"></label>
-                    <label>Código de la clase<input id="classJoinCode" maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="Ej.: M7K2R5P8" onkeydown="if(event.key==='Enter') startStudentClass()"></label>
-                    <button class="class-primary" onclick="startStudentClass()">Entrar a la clase</button>
-                    <p class="class-note">Al entrar se muestra la pizarra del docente sin reemplazar tus cuadernos guardados.</p>
+                    <label>Código generado por el profesor<input id="classJoinCode" maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="Ej.: M7K2R5P8" onkeydown="if(event.key==='Enter') startStudentClass()"></label>
+                    <button class="class-primary" onclick="startStudentClass()">Ingresar a la clase</button>
+                    <p class="class-note">Pedile el código al profesor. Al ingresar verás su pizarra y el chat de la clase.</p>
                 </section>
             </div>
 
@@ -645,7 +654,23 @@
         function classNormalizePoint(page,x,y){const s=classLogicalSize(page);return {x:x/s.w,y:y/s.h,w:s.w,h:s.h};}
         function classDenormalizePoint(page,x,y){const s=classLogicalSize(page);return {x:Number(x)*s.w,y:Number(y)*s.h,w:s.w,h:s.h};}
 
-        window.toggleClassPanel=function(){ document.getElementById('classPanel')?.classList.toggle('open');updateClassUI(); };
+        function dismissClassEntry(keepPanel=false){
+            const overlay=document.getElementById('classEntryOverlay'),panel=document.getElementById('classPanel');
+            overlay?.classList.remove('open');overlay?.setAttribute('aria-hidden','true');document.body.classList.remove('class-entry-open');
+            if(!keepPanel)panel?.classList.remove('open');
+        }
+        window.openClassEntry=function(){
+            const overlay=document.getElementById('classEntryOverlay'),panel=document.getElementById('classPanel');
+            if(classSessionActive()){panel?.classList.add('open');updateClassUI();return;}
+            overlay?.classList.add('open');overlay?.setAttribute('aria-hidden','false');document.body.classList.add('class-entry-open');panel?.classList.add('open');
+            window.switchClassMode('teacher');updateClassUI();
+        };
+        window.closeClassEntry=function(){dismissClassEntry(false);updateClassUI();};
+        function beginClassFromEntry(){dismissClassEntry(true);}
+        window.toggleClassPanel=function(){
+            if(document.body.classList.contains('class-entry-open')){window.closeClassEntry();return;}
+            document.getElementById('classPanel')?.classList.toggle('open');updateClassUI();
+        };
         window.switchClassMode=function(mode){
             if(classSessionActive())return;
             const teacher=mode!=='student';
@@ -839,19 +864,21 @@
         window.startTeacherClass=async function(){
             if(classSessionActive())return;
             if(document.getElementById('classTeacherPassword').value!==CLASSROOM_TEACHER_PASSWORD){toast('⚠️ La clave de docente no es correcta.',2400);return;}
+            beginClassFromEntry();
             classState.role='teacher';classState.name='Docente';classState.roomCode=generateClassCode();classState.allowStudentsDraw=false;classState.liveView=false;resetClassChat();updateClassUI();setClassStatus('Creando sala…');
             try{await createClassPeer(classPeerIdFromCode(classState.roomCode));setClassStatus('Clase lista','connected');updateClassUI();appendClassChat('','Sala creada. Compartí el código con tus alumnos.',{system:true});}
-            catch(err){console.error(err);toast('⚠️ No se pudo crear la sala P2P. Probá nuevamente.',3200);await endClassSession(true);}
+            catch(err){console.error(err);toast('⚠️ No se pudo crear la sala P2P. Probá nuevamente.',3200);await endClassSession(true);window.openClassEntry();}
         };
         window.startStudentClass=async function(){
             if(classSessionActive())return;
             const code=normalizeClassCode(document.getElementById('classJoinCode').value);if(code.length<5){toast('Ingresá el código aleatorio del docente.',2400);return;}
+            beginClassFromEntry();
             classState.role='student';classState.name=classSafeName(document.getElementById('classStudentName').value);classState.roomCode=code;classState.teacherPeerId=classPeerIdFromCode(code);classState.liveView=true;resetClassChat('Conectando con la clase…');clearTimeout(saveTimer);updateClassUI();setClassStatus('Buscando docente…');
             try{
                 await createClassPeer();
                 const connection=classState.peer.connect(classState.teacherPeerId,{reliable:true,serialization:'binary',metadata:{role:'student',name:classState.name}});
                 setupClassConnection(connection,false);
-            }catch(err){console.error(err);toast('⚠️ No se pudo iniciar la conexión P2P.',3200);await endClassSession(true);}
+            }catch(err){console.error(err);toast('⚠️ No se pudo iniciar la conexión P2P.',3200);await endClassSession(true);window.openClassEntry();}
         };
         window.endClassSession=async function(fromRemote=false){
             if(!classSessionActive())return;
@@ -1921,7 +1948,7 @@ Se borrarán sus hojas, imágenes y PDFs guardados. Esta acción no se puede des
             }
             renderList();
         }
-        window.addEventListener('load',()=>{bootstrap().catch(err=>{console.error(err);toast('⚠️ Error iniciando el cuaderno',3000);});});
+        window.addEventListener('load',()=>{window.openClassEntry();bootstrap().catch(err=>{console.error(err);toast('⚠️ Error iniciando el cuaderno',3000);});});
         window.addEventListener('pagehide',()=>{flushNotebookNow();});
         document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushNotebookNow();});
 
