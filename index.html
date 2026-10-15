@@ -200,7 +200,7 @@
         .class-control-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
         .class-control-grid button { min-height:37px; padding:7px 8px; font-size:11px; }
         .class-control-grid .class-wide { grid-column:1 / -1; }
-        #classPermissionBtn.unlocked { color:#052e16; background:#86efac; border-color:#bbf7d0; }
+        #classRequestDrawBtn.unlocked, #classRequestUploadBtn.unlocked { color:#052e16; background:#86efac; border-color:#bbf7d0; }
         .class-end { color:#fee2e2; background:#7f1d1d; border-color:#ef4444; }
         .class-end:hover { background:#b91c1c; }
         .class-section-title { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#cbd5e1; font-size:11px; font-weight:800; }
@@ -215,6 +215,15 @@
         .class-chat-send { display:flex; gap:6px; }
         .class-chat-send input { min-width:0; flex:1; padding:8px 9px; background:#020617; border-color:#475569; color:#fff; }
         .class-chat-send button { padding:7px 10px; }
+        .class-permission-list { display:flex; flex-direction:column; gap:7px; }
+        .class-permission-empty { margin:0; padding:9px; border:1px dashed #475569; border-radius:9px; color:#94a3b8; font-size:11px; text-align:center; }
+        .class-permission-card { padding:9px; border:1px solid #475569; border-radius:10px; background:rgba(15,23,42,.84); }
+        .class-permission-card strong { display:block; color:#e0f2fe; font-size:12px; }
+        .class-permission-card span { display:block; margin-top:2px; color:#94a3b8; font-size:10px; line-height:1.35; }
+        .class-permission-actions { display:flex; gap:6px; margin-top:8px; }
+        .class-permission-actions button { flex:1; padding:6px 8px; font-size:10px; font-weight:800; }
+        .class-permission-allow { color:#052e16; background:#86efac; border-color:#bbf7d0; }
+        .class-permission-deny { color:#fee2e2; background:#7f1d1d; border-color:#ef4444; }
         #btnClassroom.class-live { color:#052e16; background:#86efac; border-color:#bbf7d0; }
         body.class-student-readonly [data-class-manage] { opacity:.48; pointer-events:none; filter:grayscale(.35); }
 
@@ -265,8 +274,8 @@
             <button data-class-manage onclick="addPage()">➕ Nueva Hoja</button>
             <button data-class-manage onclick="duplicatePage()">📑 Duplicar</button>
             <button data-class-manage onclick="clearCurrentPage()" style="color:#ff6b6b;">🗑️ Limpiar</button>
-            <button data-class-manage onclick="document.getElementById('anyFileInput').click()">📎 Insertar Archivo/Imagen</button>
-            <input type="file" id="anyFileInput" style="display:none" multiple onchange="handleAnyFile(event)">
+            <button onclick="requestClassFilePicker()">📎 Insertar Archivo/Imagen</button>
+            <input type="file" id="anyFileInput" style="display:none" onchange="handleAnyFile(event)">
         </div>
         <div class="tool-group">
             <button id="btnRecord" onclick="toggleTaskRecording()" title="Graba esta pestaña/pantalla en un formato listo para YouTube">⏺ Grabar tarea</button>
@@ -328,12 +337,17 @@
                     <button onclick="copyClassCode()">Copiar</button>
                 </div>
                 <div class="class-control-grid" style="margin-top:9px;">
-                    <button id="classPermissionBtn" class="class-wide" onclick="toggleStudentBoardPermission()">🔒 Pizarra solo docente</button>
+                    <button id="classRequestDrawBtn" class="class-wide" onclick="requestClassPermission('draw')">✏️ Pedir permiso para escribir</button>
+                    <button id="classRequestUploadBtn" class="class-wide" onclick="requestClassPermission('upload')">📎 Pedir permiso para subir un archivo</button>
                     <button class="class-wide" onclick="raiseClassHand()">✋ Levantar la mano</button>
                     <button id="classEndBtn" class="class-end class-wide" onclick="endClassSession()">Finalizar clase</button>
                 </div>
+                <div id="classTeacherPermissionRequests" style="display:none;">
+                    <div class="class-section-title" style="margin-top:11px;"><span>Solicitudes para autorizar</span><span id="classPermissionRequestCount">0</span></div>
+                    <div id="classPermissionRequests" class="class-permission-list"><p class="class-permission-empty">No hay solicitudes pendientes.</p></div>
+                </div>
                 <div class="class-section-title" style="margin-top:11px;"><span>Participantes</span><span id="classParticipantCount">0 conectados</span></div>
-                <p class="class-presence">Conectados por pizarra y chat P2P, sin cámara ni pantalla.</p>
+                <p id="classPermissionSummary" class="class-presence">Conectados por pizarra y chat P2P, sin cámara ni pantalla.</p>
                 <div class="class-section-title" style="margin-top:11px;"><span>Chat de la clase</span><span id="classChatHint"></span></div>
                 <div class="class-chat">
                     <div id="classChatMessages"><div class="class-chat-message system">El chat se transmite sólo durante esta clase.</div></div>
@@ -574,9 +588,15 @@
         // de par a par por WebRTC una vez establecida la conexión.
         const CLASSROOM_TEACHER_PASSWORD = 'coto1977';
         const CLASSROOM_PEER_PREFIX = 'cuaderno-aula-';
+        const CLASSROOM_MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+        const CLASSROOM_PERMISSION_RULES = Object.freeze({
+            draw:{label:'escribir y usar lápices',uses:0},
+            upload:{label:'subir un archivo, imagen o PDF',uses:1}
+        });
         const classState = {
             role:null, peer:null, roomCode:'', teacherPeerId:'', teacherConnection:null,
-            name:'', connections:new Map(), participants:new Map(), allowStudentsDraw:false, liveView:false,
+            name:'', connections:new Map(), participants:new Map(), participantPermissions:new Map(), permissionRequests:new Map(),
+            grantedPermissions:new Map(), pendingPermissions:new Map(), liveView:false,
             applyingRemote:false, ending:false, syncTimer:0, snapshotChain:Promise.resolve(), liveStroke:null
         };
         let classroomPeerScriptPromise = null;
@@ -585,7 +605,7 @@
         const classTransportReady = () => !!classState.peer;
         const isStudentLiveView = () => classState.role === 'student' && classState.liveView;
         const classCanManageBoard = () => !classSessionActive() || classState.role === 'teacher';
-        const classCanDrawBoard = () => !classSessionActive() || classState.role === 'teacher' || classState.allowStudentsDraw;
+        const classCanDrawBoard = () => !classSessionActive() || classState.role === 'teacher' || classHasStudentPermission('draw');
         const classPageIndex = page => Math.max(0,pagesData.indexOf(page));
         const classSafeName = value => String(value || '').replace(/[\r\n<>]/g,' ').trim().slice(0,30) || 'Alumno';
         const classSafeText = value => String(value || '').replace(/[\r\n]/g,' ').trim().slice(0,400);
@@ -622,8 +642,81 @@
             else { const author=document.createElement('b');author.textContent=name+': ';line.append(author,document.createTextNode(text)); }
             box.appendChild(line);box.scrollTop=box.scrollHeight;
         }
+        function classPermissionRule(action){return CLASSROOM_PERMISSION_RULES[action]||null;}
+        function classPermissionLabel(action){return classPermissionRule(action)?.label||'esa acción';}
+        function classHasStudentPermission(action){
+            const grant=classState.grantedPermissions.get(action);
+            return !!grant&&(grant.uses===0||grant.uses>0);
+        }
+        function classPeerHasPermission(peerId,action){
+            const grant=classState.participantPermissions.get(peerId)?.get(action);
+            return !!grant&&(grant.uses===0||grant.uses>0);
+        }
+        function classGrantPeerPermission(peerId,action,uses){
+            let grants=classState.participantPermissions.get(peerId);
+            if(!grants){grants=new Map();classState.participantPermissions.set(peerId,grants);}
+            grants.set(action,{uses:Number.isInteger(uses)?Math.max(0,uses):classPermissionRule(action)?.uses||0});
+        }
+        function classConsumeStudentPermission(action,notifyTeacher=true){
+            if(classState.role!=='student')return true;
+            const grant=classState.grantedPermissions.get(action);if(!grant)return false;
+            if(grant.uses===0)return true;
+            grant.uses-=1;if(grant.uses<=0)classState.grantedPermissions.delete(action);
+            if(notifyTeacher)classSendToTeacher({type:'permission-used',action});
+            updateClassUI();return true;
+        }
+        function classConsumePeerPermission(peerId,action){
+            const grant=classState.participantPermissions.get(peerId)?.get(action);if(!grant)return false;
+            if(grant.uses===0)return true;
+            grant.uses-=1;if(grant.uses<=0)classState.participantPermissions.get(peerId)?.delete(action);
+            return true;
+        }
+        function renderClassPermissionRequests(){
+            const list=document.getElementById('classPermissionRequests'),count=document.getElementById('classPermissionRequestCount');
+            if(!list||classState.role!=='teacher')return;
+            const requests=[...classState.permissionRequests.values()].filter(request=>classState.connections.has(request.peerId));
+            if(count)count.textContent=String(requests.length);
+            list.replaceChildren();
+            if(!requests.length){const empty=document.createElement('p');empty.className='class-permission-empty';empty.textContent='No hay solicitudes pendientes.';list.appendChild(empty);return;}
+            for(const request of requests){
+                const card=document.createElement('div');card.className='class-permission-card';
+                const title=document.createElement('strong');title.textContent=`${request.name} solicita permiso`;
+                const detail=document.createElement('span');detail.textContent=`Acción: ${classPermissionLabel(request.action)}.`;
+                const actions=document.createElement('div');actions.className='class-permission-actions';
+                const allow=document.createElement('button');allow.className='class-permission-allow';allow.textContent='✓ Autorizar';allow.onclick=()=>window.respondClassPermission(request.id,true);
+                const deny=document.createElement('button');deny.className='class-permission-deny';deny.textContent='✕ Rechazar';deny.onclick=()=>window.respondClassPermission(request.id,false);
+                actions.append(allow,deny);card.append(title,detail,actions);list.appendChild(card);
+            }
+        }
+        window.requestClassPermission=function(action){
+            const rule=classPermissionRule(action);if(!rule)return;
+            if(classState.role!=='student'){if(classState.role==='teacher')toast('Como profesor ya tenés esta acción habilitada.');return;}
+            if(classHasStudentPermission(action)){toast(`✅ Ya tenés permiso para ${classPermissionLabel(action)}.`,2200);return;}
+            if(classState.pendingPermissions.has(action)){toast('⌛ Tu solicitud ya fue enviada al profesor.',2200);return;}
+            if(!classState.teacherConnection?.open){toast('⚠️ Esperá a que se conecte el profesor.',2400);return;}
+            const requestId=`perm_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+            classState.pendingPermissions.set(action,requestId);
+            if(!classSendToTeacher({type:'permission-request',requestId,action})){classState.pendingPermissions.delete(action);toast('⚠️ No se pudo enviar la solicitud.',2400);return;}
+            appendClassChat('','⌛ Pediste permiso para '+classPermissionLabel(action)+'.',{system:true});updateClassUI();
+        };
+        window.respondClassPermission=function(requestId,approved){
+            if(classState.role!=='teacher')return;
+            const request=classState.permissionRequests.get(requestId);if(!request)return;
+            classState.permissionRequests.delete(requestId);
+            const connection=classState.connections.get(request.peerId),rule=classPermissionRule(request.action);
+            if(!connection||!rule){renderClassPermissionRequests();return;}
+            if(approved){
+                classGrantPeerPermission(request.peerId,request.action,rule.uses);
+                safeClassSend(connection,{type:'permission-granted',requestId,action:request.action,uses:rule.uses});
+                appendClassChat('',`✅ Autorizaste a ${request.name} a ${classPermissionLabel(request.action)}.`,{system:true});
+            }else{
+                safeClassSend(connection,{type:'permission-denied',requestId,action:request.action});
+                appendClassChat('',`🚫 Rechazaste la solicitud de ${request.name}.`,{system:true});
+            }
+            renderClassPermissionRequests();updateClassUI();
+        };
         function updateClassBoardAccess(){
-            const studentReadonly=isStudentLiveView() && !classState.allowStudentsDraw;
+            const studentReadonly=isStudentLiveView()&&!classHasStudentPermission('draw');
             document.body.classList.toggle('class-student-readonly',studentReadonly);
             document.querySelectorAll('[data-class-manage]').forEach(control=>{ control.disabled=!classCanManageBoard(); });
         }
@@ -637,19 +730,22 @@
             const role=document.getElementById('classRoleLabel');if(role)role.textContent=isTeacher?'👩‍🏫 Clase como docente':'🧑‍🎓 Clase como alumno';
             const codeRow=document.getElementById('classCodeRow');if(codeRow)codeRow.style.display=isTeacher?'flex':'none';
             const code=document.getElementById('classCodeValue');if(code)code.textContent=classState.roomCode||'------';
-            const permission=document.getElementById('classPermissionBtn');
-            if(permission){
-                permission.style.display=isTeacher?'':'none';
-                permission.classList.toggle('unlocked',classState.allowStudentsDraw);
-                permission.textContent=classState.allowStudentsDraw?'✏️ Alumnos pueden escribir':'🔒 Pizarra solo docente';
-            }
+            const teacherRequests=document.getElementById('classTeacherPermissionRequests');if(teacherRequests)teacherRequests.style.display=isTeacher?'':'none';
+            const drawRequest=document.getElementById('classRequestDrawBtn'),uploadRequest=document.getElementById('classRequestUploadBtn');
+            if(drawRequest){const granted=classHasStudentPermission('draw'),pending=classState.pendingPermissions.has('draw');drawRequest.style.display=isTeacher?'none':'';drawRequest.disabled=granted||pending;drawRequest.classList.toggle('unlocked',granted);drawRequest.textContent=granted?'✏️ Escritura autorizada':pending?'⌛ Solicitud de escritura enviada':'✏️ Pedir permiso para escribir';}
+            if(uploadRequest){const granted=classHasStudentPermission('upload'),pending=classState.pendingPermissions.has('upload');uploadRequest.style.display=isTeacher?'none':'';uploadRequest.disabled=granted||pending;uploadRequest.classList.toggle('unlocked',granted);uploadRequest.textContent=granted?'📎 Podés subir 1 archivo autorizado':pending?'⌛ Solicitud de archivo enviada':'📎 Pedir permiso para subir un archivo';}
             const end=document.getElementById('classEndBtn');if(end)end.textContent=isTeacher?'Finalizar clase':'Salir de la clase';
             const count=isTeacher?classState.connections.size:(classState.teacherConnection?.open?1:0);
             const participants=document.getElementById('classParticipantCount');if(participants)participants.textContent=`${count} conectado${count===1?'':'s'}`;
-            const hint=document.getElementById('classChatHint');if(hint)hint.textContent='Chat P2P en vivo';
+            const summary=document.getElementById('classPermissionSummary');if(summary)summary.textContent=isTeacher?'Vos autorizás la escritura y cada archivo que envían los alumnos.':'Pedí permiso antes de escribir o subir un archivo al aula.';
+            const hint=document.getElementById('classChatHint');if(hint)hint.textContent=isTeacher?'Autorizás cada solicitud':'Pedí permiso antes de actuar';
+            if(isTeacher)renderClassPermissionRequests();
             updateClassBoardAccess();
         }
-        function classShowReadOnly(){ toast('🔒 La pizarra está en modo docente. Podés pedir permiso para escribir.',2200); }
+        function classShowReadOnly(action='manage'){
+            if(action==='draw'&&isStudentLiveView()){window.requestClassPermission('draw');return;}
+            toast('🔒 Esta acción la realiza solamente el profesor.',2200);
+        }
         function classLogicalSize(page){return {w:Math.max(1,page.drawCanvas.width/PIXEL_RATIO),h:Math.max(1,page.drawCanvas.height/PIXEL_RATIO)};}
         function classNormalizePoint(page,x,y){const s=classLogicalSize(page);return {x:x/s.w,y:y/s.h,w:s.w,h:s.h};}
         function classDenormalizePoint(page,x,y){const s=classLogicalSize(page);return {x:Number(x)*s.w,y:Number(y)*s.h,w:s.w,h:s.h};}
@@ -733,9 +829,8 @@
                 if(classState.ending)return;
                 if(classState.role==='teacher'){
                     const info={name:classSafeName(connection.metadata?.name),joinedAt:Date.now()};
-                    classState.connections.set(connection.peer,connection);classState.participants.set(connection.peer,info);
+                    classState.connections.set(connection.peer,connection);classState.participants.set(connection.peer,info);classState.participantPermissions.set(connection.peer,new Map());
                     setClassStatus('Clase lista','connected');updateClassUI();appendClassChat('',`${info.name} se conectó a la clase.`,{system:true});
-                    safeClassSend(connection,{type:'room-settings',allowStudentsDraw:classState.allowStudentsDraw});
                     await sendClassSnapshotTo(connection);
                 }else{
                     if(connection.peer!==classState.teacherPeerId){try{connection.close();}catch(_){}return;}
@@ -748,7 +843,8 @@
             connection.on('close',()=>{
                 if(classState.ending)return;
                 if(classState.role==='teacher'){
-                    const info=classState.participants.get(connection.peer);classState.connections.delete(connection.peer);classState.participants.delete(connection.peer);
+                    const info=classState.participants.get(connection.peer);classState.connections.delete(connection.peer);classState.participants.delete(connection.peer);classState.participantPermissions.delete(connection.peer);
+                    [...classState.permissionRequests.entries()].forEach(([id,request])=>{if(request.peerId===connection.peer)classState.permissionRequests.delete(id);});
                     if(info)appendClassChat('',`${info.name} salió de la clase.`,{system:true});updateClassUI();
                 }else if(classState.teacherConnection===connection){
                     classState.teacherConnection=null;setClassStatus('Docente desconectado','error');updateClassUI();toast('La conexión con el docente terminó.',2600);
@@ -810,6 +906,42 @@
             ctx.restore();page._canvasDirty=true;
             if(classState.role==='teacher')scheduleAutosave();
         }
+        function classTransferBuffer(value){
+            if(value instanceof ArrayBuffer)return value;
+            if(ArrayBuffer.isView(value))return value.buffer.slice(value.byteOffset,value.byteOffset+value.byteLength);
+            return null;
+        }
+        function classSafeFileName(value){return String(value||'archivo').replace(/[\\/:*?"<>|\r\n]/g,'_').slice(0,100)||'archivo';}
+        async function classReceiveStudentFile(file,studentName){
+            if(file.type.startsWith('image/')){
+                const target=getVisibleContainer();if(!target)throw new Error('No hay una hoja activa para insertar la imagen.');
+                const width=Math.min(Math.max(80,target.clientWidth-40),300),pos=getCenterPosRelative(target,width,200);
+                createPastedImage(file,target,pos.x,pos.y,width,null);
+                const page=pagesData.find(p=>p.container===target);if(page)page._elementsDirty=true;
+                scheduleAutosave();scheduleClassSnapshot();appendClassChat('',`🖼️ ${studentName} subió una imagen autorizada.`,{system:true});toast('🖼️ Imagen del alumno agregada a la pizarra.');return;
+            }
+            if(file.type==='application/pdf'){
+                await window.loadFile(file);
+                if(!document.getElementById('pdfStudio').classList.contains('open'))await window.togglePdfStudio();
+                appendClassChat('',`📄 ${studentName} subió un PDF autorizado.`,{system:true});toast('📄 PDF del alumno recibido.');return;
+            }
+            throw new Error('El formato recibido no está permitido.');
+        }
+        async function classSendStudentFile(file){
+            if(!isStudentLiveView()||!classHasStudentPermission('upload')){window.requestClassPermission('upload');return false;}
+            if(!file||(!file.type.startsWith('image/')&&file.type!=='application/pdf')){toast('⚠️ Solo se permiten imágenes o PDFs.',2600);return false;}
+            if(file.size>CLASSROOM_MAX_UPLOAD_BYTES){toast('⚠️ El archivo supera el límite de 8 MB para el aula P2P.',3000);return false;}
+            try{
+                const bytes=await file.arrayBuffer();
+                const sent=classSendToTeacher({type:'student-file',action:'upload',name:classSafeFileName(file.name),mime:file.type,bytes});
+                if(!sent){toast('⚠️ No se pudo enviar el archivo al profesor.',2600);return false;}
+                classConsumeStudentPermission('upload',false);appendClassChat('','📤 Enviaste un archivo al profesor para incorporarlo a la clase.',{system:true});return true;
+            }catch(err){console.error(err);toast('⚠️ No se pudo leer el archivo.',2600);return false;}
+        }
+        window.requestClassFilePicker=function(){
+            if(isStudentLiveView()&&!classHasStudentPermission('upload')){window.requestClassPermission('upload');return;}
+            document.getElementById('anyFileInput')?.click();
+        };
         function handleClassData(message,connection){
             if(!message||typeof message!=='object'||classState.ending)return;
             const isTeacher=classState.role==='teacher';
@@ -819,9 +951,31 @@
                     const info=classState.participants.get(connection.peer);if(info)info.name=classSafeName(message.name);updateClassUI();return;
                 }
                 if(message.type==='snapshot-request'){sendClassSnapshotTo(connection);return;}
+                if(message.type==='permission-request'){
+                    const action=String(message.action||''),requestId=String(message.requestId||'');
+                    if(!classPermissionRule(action)||!requestId)return;
+                    const name=classState.participants.get(connection.peer)?.name||'Alumno';
+                    classState.permissionRequests.set(requestId,{id:requestId,peerId:connection.peer,name,action,createdAt:Date.now()});
+                    appendClassChat('',`⌛ ${name} pidió permiso para ${classPermissionLabel(action)}.`,{system:true});updateClassUI();return;
+                }
+                if(message.type==='permission-used'){
+                    const action=String(message.action||'');if(classPermissionRule(action))classConsumePeerPermission(connection.peer,action);
+                    updateClassUI();return;
+                }
                 if(message.type==='board'){
-                    if(!classState.allowStudentsDraw){safeClassSend(connection,{type:'notice',text:'La pizarra está en modo docente.'});return;}
+                    if(!classPeerHasPermission(connection.peer,'draw')){safeClassSend(connection,{type:'notice',text:'Pedí permiso al profesor para escribir en la pizarra.'});return;}
                     applyClassBoardOperation(message.operation);classBroadcast({type:'board',origin:connection.peer,operation:message.operation},connection.peer);return;
+                }
+                if(message.type==='student-file'){
+                    if(message.action!=='upload'||!classPeerHasPermission(connection.peer,'upload')){safeClassSend(connection,{type:'notice',text:'Pedí permiso al profesor antes de subir un archivo.'});return;}
+                    const bytes=classTransferBuffer(message.bytes),mime=String(message.mime||'').toLowerCase(),name=classSafeFileName(message.name);
+                    if(!bytes||bytes.byteLength>CLASSROOM_MAX_UPLOAD_BYTES||(!mime.startsWith('image/')&&mime!=='application/pdf')){safeClassSend(connection,{type:'notice',text:'El archivo no es válido o supera el límite de 8 MB.'});return;}
+                    const studentName=classState.participants.get(connection.peer)?.name||'Alumno';
+                    classConsumePeerPermission(connection.peer,'upload');
+                    classReceiveStudentFile(new File([bytes],name,{type:mime}),studentName)
+                        .then(()=>safeClassSend(connection,{type:'file-received',name}))
+                        .catch(err=>{console.error(err);safeClassSend(connection,{type:'notice',text:'No se pudo incorporar el archivo a la clase.'});});
+                    updateClassUI();return;
                 }
                 if(message.type==='chat'){
                     const text=classSafeText(message.text);if(!text)return;const name=classState.participants.get(connection.peer)?.name||'Alumno';
@@ -833,13 +987,19 @@
                 return;
             }
             if(connection!==classState.teacherConnection)return;
-            if(message.type==='room-settings'){
-                classState.allowStudentsDraw=!!message.allowStudentsDraw;updateClassUI();appendClassChat('',classState.allowStudentsDraw?'El docente habilitó las anotaciones.':'El docente dejó la pizarra en modo lectura.',{system:true});return;
+            if(message.type==='permission-granted'){
+                const action=String(message.action||''),rule=classPermissionRule(action);if(!rule)return;
+                classState.pendingPermissions.delete(action);classState.grantedPermissions.set(action,{uses:Number.isInteger(message.uses)?Math.max(0,message.uses):rule.uses});
+                appendClassChat('',`✅ El profesor autorizó: ${classPermissionLabel(action)}.`,{system:true});updateClassUI();return;
+            }
+            if(message.type==='permission-denied'){
+                const action=String(message.action||'');classState.pendingPermissions.delete(action);appendClassChat('',`🚫 El profesor rechazó tu solicitud para ${classPermissionLabel(action)}.`,{system:true});updateClassUI();return;
             }
             if(message.type==='snapshot'){applyClassSnapshot(message.snapshot);return;}
             if(message.type==='board'){if(message.origin!==classState.peer?.id)applyClassBoardOperation(message.operation);return;}
             if(message.type==='chat'){if(message.origin!==classState.peer?.id)appendClassChat(classSafeName(message.name||'Docente'),classSafeText(message.text));return;}
             if(message.type==='hand'){if(message.origin!==classState.peer?.id)appendClassChat('',`✋ ${classSafeName(message.name||'Alumno')} levantó la mano.`,{system:true});return;}
+            if(message.type==='file-received'){appendClassChat('',`✅ El profesor recibió tu archivo: ${classSafeFileName(message.name)}.`,{system:true});toast('✅ Archivo enviado al profesor.');return;}
             if(message.type==='notice'){toast(classSafeText(message.text),2500);return;}
             if(message.type==='room-ended'){endClassSession(true);}
         }
@@ -856,16 +1016,11 @@
             if(classState.role==='teacher'){appendClassChat('','✋ El docente llamó la atención del grupo.',{system:true});return;}
             appendClassChat('','✋ Levantaste la mano.',{system:true});classSendToTeacher({type:'hand'});
         };
-        window.toggleStudentBoardPermission=function(){
-            if(classState.role!=='teacher')return;
-            classState.allowStudentsDraw=!classState.allowStudentsDraw;
-            classBroadcast({type:'room-settings',allowStudentsDraw:classState.allowStudentsDraw});updateClassUI();toast(classState.allowStudentsDraw?'✏️ Anotaciones habilitadas para alumnos':'🔒 Pizarra bloqueada para alumnos');
-        };
         window.startTeacherClass=async function(){
             if(classSessionActive())return;
             if(document.getElementById('classTeacherPassword').value!==CLASSROOM_TEACHER_PASSWORD){toast('⚠️ La clave de docente no es correcta.',2400);return;}
             beginClassFromEntry();
-            classState.role='teacher';classState.name='Docente';classState.roomCode=generateClassCode();classState.allowStudentsDraw=false;classState.liveView=false;resetClassChat();updateClassUI();setClassStatus('Creando sala…');
+            classState.role='teacher';classState.name='Docente';classState.roomCode=generateClassCode();classState.participantPermissions=new Map();classState.permissionRequests=new Map();classState.grantedPermissions=new Map();classState.pendingPermissions=new Map();classState.liveView=false;resetClassChat();updateClassUI();setClassStatus('Creando sala…');
             try{await createClassPeer(classPeerIdFromCode(classState.roomCode));setClassStatus('Clase lista','connected');updateClassUI();appendClassChat('','Sala creada. Compartí el código con tus alumnos.',{system:true});}
             catch(err){console.error(err);toast('⚠️ No se pudo crear la sala P2P. Probá nuevamente.',3200);await endClassSession(true);window.openClassEntry();}
         };
@@ -873,7 +1028,7 @@
             if(classSessionActive())return;
             const code=normalizeClassCode(document.getElementById('classJoinCode').value);if(code.length<5){toast('Ingresá el código aleatorio del docente.',2400);return;}
             beginClassFromEntry();
-            classState.role='student';classState.name=classSafeName(document.getElementById('classStudentName').value);classState.roomCode=code;classState.teacherPeerId=classPeerIdFromCode(code);classState.liveView=true;resetClassChat('Conectando con la clase…');clearTimeout(saveTimer);updateClassUI();setClassStatus('Buscando docente…');
+            classState.role='student';classState.name=classSafeName(document.getElementById('classStudentName').value);classState.roomCode=code;classState.teacherPeerId=classPeerIdFromCode(code);classState.participantPermissions=new Map();classState.permissionRequests=new Map();classState.grantedPermissions=new Map();classState.pendingPermissions=new Map();classState.liveView=true;resetClassChat('Conectando con la clase…');clearTimeout(saveTimer);updateClassUI();setClassStatus('Buscando docente…');
             try{
                 await createClassPeer();
                 const connection=classState.peer.connect(classState.teacherPeerId,{reliable:true,serialization:'binary',metadata:{role:'student',name:classState.name}});
@@ -887,7 +1042,7 @@
             if(!fromRemote&&classState.role==='teacher')classBroadcast({type:'room-ended'});
             classState.connections.forEach(connection=>{try{connection.close();}catch(_){}});try{classState.teacherConnection?.close();}catch(_){}
             try{oldPeer?.destroy();}catch(_){}
-            classState.connections=new Map();classState.participants=new Map();classState.peer=null;classState.teacherConnection=null;classState.role=null;classState.roomCode='';classState.teacherPeerId='';classState.name='';classState.allowStudentsDraw=false;classState.liveView=false;classState.applyingRemote=false;classState.ending=false;classState.liveStroke=null;classState.snapshotChain=Promise.resolve();
+            classState.connections=new Map();classState.participants=new Map();classState.participantPermissions=new Map();classState.permissionRequests=new Map();classState.grantedPermissions=new Map();classState.pendingPermissions=new Map();classState.peer=null;classState.teacherConnection=null;classState.role=null;classState.roomCode='';classState.teacherPeerId='';classState.name='';classState.liveView=false;classState.applyingRemote=false;classState.ending=false;classState.liveStroke=null;classState.snapshotChain=Promise.resolve();
             updateClassUI();resetClassChat();
             if(restoreStudentView&&currentId){const item=readStore().items.find(x=>x.id===currentId);if(item)await loadNotebook(item);}
             if(!fromRemote)toast(wasStudent?'Saliste de la clase.':'Clase finalizada.');
@@ -1085,6 +1240,7 @@
         };
 
         function setTool(tool) {
+            if(isStudentLiveView()&&!classHasStudentPermission('draw')){classShowReadOnly('draw');return;}
             currentTool = tool;
             ['btnPen','btnPencil','btnLine','btnEraser'].forEach(id => document.getElementById(id)?.classList.remove('active'));
             document.getElementById('btn' + tool.charAt(0).toUpperCase() + tool.slice(1))?.classList.add('active');
@@ -1437,7 +1593,7 @@
         }
 
         function startDrawing(e, page) {
-            if(!classCanDrawBoard()){classShowReadOnly();return;}
+            if(!classCanDrawBoard()){classShowReadOnly('draw');return;}
             if(e.target.tagName.toLowerCase()==='canvas') deselectPastedElements();
             activePageContainer=page.container;
             activeDrawingPointerId=e.pointerId;
@@ -1717,9 +1873,13 @@
         });
 
         async function handleAnyFile(e) {
-            if(!classCanManageBoard()){classShowReadOnly();e.target.value='';return;}
             const files=[...(e.target.files||[])];
             if(!files.length) return;
+            if(isStudentLiveView()){
+                if(!classHasStudentPermission('upload')){window.requestClassPermission('upload');e.target.value='';return;}
+                await classSendStudentFile(files[0]);e.target.value='';return;
+            }
+            if(!classCanManageBoard()){classShowReadOnly();e.target.value='';return;}
             for(const file of files){
                 if(file.type.startsWith('image/')){
                     const notebookId=currentId;
@@ -2087,7 +2247,17 @@ Se borrarán sus hojas, imágenes y PDFs guardados. Esta acción no se puede des
             if(notebookId!==currentId){toast('⚠️ Cambiaste de cuaderno; el PDF no se guardó');return;}
             const rec={id:'pdf_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),notebook:notebookId,name:f.name,bytes};await dbPut(rec);await openPdfRecord(rec);toast('📄 PDF guardado');
         };
-        document.getElementById('pdfFileInput').addEventListener('change',async e=>{for(const f of e.target.files||[])if(f.type==='application/pdf')await window.loadFile(f);e.target.value='';});
+        document.getElementById('pdfFileInput').addEventListener('click',e=>{
+            if(isStudentLiveView()&&!classHasStudentPermission('upload')){e.preventDefault();e.stopImmediatePropagation();window.requestClassPermission('upload');}
+        },true);
+        document.getElementById('pdfFileInput').addEventListener('change',async e=>{
+            const files=[...(e.target.files||[])];
+            if(isStudentLiveView()){
+                if(!classHasStudentPermission('upload')){window.requestClassPermission('upload');e.target.value='';return;}
+                const pdf=files.find(f=>f.type==='application/pdf');if(pdf)await classSendStudentFile(pdf);e.target.value='';return;
+            }
+            for(const f of files)if(f.type==='application/pdf')await window.loadFile(f);e.target.value='';
+        });
         window.pdfPrevPage=()=>pdfDoc&&renderPdfPage(pdfPage-1);window.pdfNextPage=()=>pdfDoc&&renderPdfPage(pdfPage+1);
         window.togglePdfCrop=function(){
             if(!pdfDoc){toast('Abrí un PDF primero');return;}pdfCrop=!pdfCrop;pdfCropRect=null;
