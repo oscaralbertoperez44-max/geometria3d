@@ -161,11 +161,21 @@
         #classTimer .class-timer-dot { width:7px; height:7px; border-radius:50%; background:#4ade80; box-shadow:0 0 8px #4ade80; }
         #classTimer.paused .class-timer-dot { background:#fbbf24; box-shadow:0 0 8px #fbbf24; }
         #classTimerMode { color:#bae6fd; font-size:9px; font-weight:900; letter-spacing:.07em; }
-        #classTimerValue { min-width:49px; color:#fff; font:800 14px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; letter-spacing:.04em; }
+        #classTimerValue { min-width:72px; color:#fff; font:800 14px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; letter-spacing:.04em; white-space:nowrap; }
         .class-timer-controls { display:flex; gap:4px; margin-left:1px; }
         .class-timer-controls button { width:25px; height:24px; padding:0; border-color:#3b82f6; border-radius:6px; background:#172554; color:#dbeafe; font-size:12px; line-height:1; }
         .class-timer-controls button:hover { background:#1d4ed8; border-color:#93c5fd; }
         #classTimer.student .class-timer-controls { display:none; }
+        #classCelebrationLayer { position:fixed; inset:0; z-index:9800; display:none; overflow:hidden; pointer-events:none; }
+        #classCelebrationLayer.show { display:block; }
+        .class-celebration-message { position:absolute; top:18%; left:50%; z-index:2; min-width:min(340px,calc(100vw - 34px)); padding:14px 20px; border:1px solid rgba(255,255,255,.7); border-radius:16px; color:#fff; background:linear-gradient(135deg,rgba(88,28,135,.94),rgba(14,116,144,.94)); box-shadow:0 18px 48px rgba(0,0,0,.42); font-size:clamp(21px,4vw,38px); font-weight:900; letter-spacing:.02em; text-align:center; text-shadow:0 2px 3px rgba(0,0,0,.35); transform:translateX(-50%); animation:classCelebrationPop 4.7s ease both; }
+        .class-celebration-piece { position:absolute; z-index:1; top:-13vh; left:var(--piece-left); display:block; opacity:0; pointer-events:none; will-change:transform,opacity; animation:classCelebrationFall var(--piece-duration) cubic-bezier(.12,.74,.3,1) var(--piece-delay) forwards; }
+        .class-celebration-piece.paper { width:var(--piece-w); height:var(--piece-h); border-radius:2px; background:var(--piece-color); box-shadow:0 2px 5px rgba(0,0,0,.17); }
+        .class-celebration-piece.symbol { color:var(--piece-color); font-size:var(--symbol-size); font-weight:900; line-height:1; text-shadow:0 2px 5px rgba(0,0,0,.28); }
+        .class-celebration-piece.rising { top:auto; bottom:-13vh; animation-name:classCelebrationRise; }
+        @keyframes classCelebrationFall { 0% { opacity:0; transform:translate3d(0,0,0) rotate(0deg) scale(.58); } 8%,82% { opacity:1; } 100% { opacity:0; transform:translate3d(var(--piece-drift),116vh,0) rotate(var(--piece-rotation)) scale(1.08); } }
+        @keyframes classCelebrationRise { 0% { opacity:0; transform:translate3d(0,0,0) rotate(0deg) scale(.65); } 9%,80% { opacity:1; } 100% { opacity:0; transform:translate3d(var(--piece-drift),-118vh,0) rotate(var(--piece-rotation)) scale(1.08); } }
+        @keyframes classCelebrationPop { 0% { opacity:0; transform:translate(-50%,-22px) scale(.72); } 11%,78% { opacity:1; transform:translate(-50%,0) scale(1); } 100% { opacity:0; transform:translate(-50%,-12px) scale(.94); } }
         #writingCursor { position: fixed; left: 0; top: 0; width: 44px; height: 44px; z-index: 9200; display: none; pointer-events: none; user-select: none; transform: translate3d(-100px,-100px,0); filter: drop-shadow(0 2px 2px rgba(0,0,0,.22)); will-change: transform; }
         #writingCursor svg { display: block; width: 44px; height: 44px; overflow: visible; }
         .class-remote-pencil { position:absolute; z-index:14; left:0; top:0; display:flex; align-items:flex-end; gap:2px; pointer-events:none; user-select:none; opacity:0; transform:translate(-7px,-38px); transition:opacity .12s ease; filter:drop-shadow(0 2px 2px rgba(0,0,0,.32)); will-change:left,top,opacity; }
@@ -238,6 +248,20 @@
         .class-permission-actions button { flex:1; padding:6px 8px; font-size:10px; font-weight:800; }
         .class-permission-allow { color:#052e16; background:#86efac; border-color:#bbf7d0; }
         .class-permission-deny { color:#fee2e2; background:#7f1d1d; border-color:#ef4444; }
+        .class-celebration-controls { display:flex; flex-direction:column; gap:7px; margin-top:11px; padding:10px; border:1px solid rgba(196,181,253,.55); border-radius:10px; background:linear-gradient(135deg,rgba(91,33,182,.18),rgba(14,116,144,.15)); }
+        .class-celebration-controls label { display:flex; flex-direction:column; gap:4px; color:#e9d5ff; font-size:11px; font-weight:800; }
+        .class-celebration-controls select { width:100%; box-sizing:border-box; border-color:#8b5cf6; background:#17112c; }
+        .class-celebration-launch { color:#fff; border-color:#c4b5fd; background:linear-gradient(90deg,#7c3aed,#0e7490); font-weight:850; }
+        .class-celebration-launch:hover { border-color:#f5d0fe; background:linear-gradient(90deg,#8b5cf6,#0891b2); }
+        .class-audio-controls { display:flex; flex-direction:column; gap:8px; margin-top:9px; padding:10px; border:1px solid rgba(74,222,128,.48); border-radius:10px; background:linear-gradient(135deg,rgba(6,78,59,.28),rgba(8,47,73,.3)); }
+        .class-audio-status { color:#fbbf24; font-size:10px; font-weight:850; }
+        .class-audio-status.connected { color:#86efac; }
+        .class-audio-status.error { color:#fda4af; }
+        .class-audio-actions { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+        .class-audio-actions button { min-height:36px; padding:7px 8px; font-size:11px; font-weight:800; }
+        #classAudioToggle.audio-on { color:#052e16; border-color:#bbf7d0; background:#86efac; }
+        #classAudioListen { color:#dbeafe; border-color:#60a5fa; background:#172554; }
+        #classAudioListen:hover { border-color:#bfdbfe; background:#1d4ed8; }
         #btnClassroom.class-live { color:#052e16; background:#86efac; border-color:#bbf7d0; }
         body.class-student-readonly [data-class-manage] { opacity:.48; pointer-events:none; filter:grayscale(.35); }
 
@@ -249,7 +273,8 @@
         :fullscreen #recordingIndicator { top: 16px; }
         :fullscreen #classTimer { right:12px; bottom:12px; left:auto; top:auto; }
         :fullscreen #classPanel { top:12px; right:12px; max-height:calc(100vh - 24px); }
-        @media(max-width:560px){ #classTimer { right:8px; bottom:12px; left:auto; top:auto; } #classPanel { top:54px; right:12px; max-height:calc(100vh - 66px); } }
+        @media(max-width:560px){ #classTimer { right:8px; bottom:12px; left:auto; top:auto; } .class-celebration-message { top:23%; min-width:min(300px,calc(100vw - 28px)); padding:12px 15px; } #classPanel { top:54px; right:12px; max-height:calc(100vh - 66px); } }
+        @media(prefers-reduced-motion:reduce){ .class-celebration-piece { animation-duration:1.9s; } .class-celebration-message { animation-duration:2.1s; } }
     </style>
 </head>
 <body>
@@ -315,9 +340,10 @@
     <div id="toast"></div>
     <div id="recordingIndicator"><span class="rec-dot"></span><span>GRABANDO</span><span id="recordingTime">00:00</span><button class="rec-fullscreen" onclick="toggleFullScreen()" title="Entrar/salir de pantalla completa durante la grabación">⛶</button></div>
     <div id="classTimer" aria-label="Cronómetro compartido de la clase">
-        <span class="class-timer-dot" aria-hidden="true"></span><span id="classTimerMode">EN CURSO</span><strong id="classTimerValue">00:00</strong>
+        <span class="class-timer-dot" aria-hidden="true"></span><span id="classTimerMode">EN CURSO</span><strong id="classTimerValue">00:00:00</strong>
         <div class="class-timer-controls"><button id="classTimerToggle" onclick="toggleClassTimer()" title="Pausar cronómetro" aria-label="Pausar cronómetro">Ⅱ</button><button onclick="resetClassTimer()" title="Reiniciar cronómetro" aria-label="Reiniciar cronómetro">↺</button></div>
     </div>
+    <div id="classCelebrationLayer" aria-hidden="true"></div>
     <div id="writingCursor" aria-hidden="true"></div>
 
     <!-- AULA VIRTUAL: el código de la clase sólo identifica la sala P2P; no se guarda en el cuaderno. -->
@@ -351,6 +377,11 @@
 
             <div id="classLiveView" style="display:none;">
                 <div class="class-live-top"><span id="classRoleLabel">Clase en vivo</span><span id="classStatus" class="class-status">Conectando</span></div>
+                <div class="class-audio-controls" aria-live="polite">
+                    <div class="class-section-title"><span>🎙️ Voz en vivo <small style="color:#94a3b8; font-weight:600;">sin cámara</small></span><span id="classAudioStatus" class="class-audio-status">Micrófono apagado</span></div>
+                    <div class="class-audio-actions"><button id="classAudioToggle" onclick="toggleClassAudio()">🎙️ Activar micrófono</button><button id="classAudioListen" onclick="enableClassListening()">🔊 Habilitar escucha</button></div>
+                    <p id="classAudioHint" class="class-note">Cada participante activa su micrófono para hablar. No se solicita ni transmite cámara.</p>
+                </div>
                 <div id="classCodeRow" class="class-room-line" style="margin-top:9px;">
                     <label>Código para los alumnos<span id="classCodeValue">------</span></label>
                     <button onclick="copyClassCode()">Copiar</button>
@@ -360,6 +391,20 @@
                     <button id="classRequestUploadBtn" class="class-wide" onclick="requestClassPermission('upload')">📎 Pedir permiso para subir un archivo</button>
                     <button class="class-wide" onclick="raiseClassHand()">✋ Levantar la mano</button>
                     <button id="classEndBtn" class="class-end class-wide" onclick="endClassSession()">Finalizar clase</button>
+                </div>
+                <div id="classTeacherCelebration" class="class-celebration-controls" style="display:none;">
+                    <div class="class-section-title"><span>🎉 Festejo por hora</span><span>Solo profesor</span></div>
+                    <label>Elegí el efecto que verá la clase
+                        <select id="classCelebrationType" onchange="setClassCelebrationType(this.value)">
+                            <option value="confetti">🎊 Papel picado</option>
+                            <option value="stars">⭐ Estrellas</option>
+                            <option value="balloons">🎈 Globos</option>
+                            <option value="hearts">💜 Corazones</option>
+                            <option value="sparkles">✨ Destellos</option>
+                        </select>
+                    </label>
+                    <button class="class-celebration-launch" onclick="launchClassCelebration()">🎉 Lanzar festejo ahora</button>
+                    <p class="class-note">Se activa automáticamente al completar cada hora y se ve también en los alumnos conectados.</p>
                 </div>
                 <div id="classTeacherPermissionRequests" style="display:none;">
                     <div class="class-section-title" style="margin-top:11px;"><span>Solicitudes para autorizar</span><span id="classPermissionRequestCount">0</span></div>
@@ -618,7 +663,9 @@
             grantedPermissions:new Map(), pendingPermissions:new Map(), liveView:false,
             applyingRemote:false, ending:false, syncTimer:0, snapshotChain:Promise.resolve(), liveStroke:null,
             cursorSentAt:0, remoteCursors:new Map(), sharedTeacherFiles:new Map(),
-            timerRunning:false, timerElapsedMs:0, timerStartedAt:0, timerTickId:0, timerLastSyncAt:0
+            timerRunning:false, timerElapsedMs:0, timerStartedAt:0, timerTickId:0, timerLastSyncAt:0, timerLastCelebratedHour:0,
+            celebrationType:'confetti', celebrationHideTimer:0,
+            audioLocalStream:null, audioEnabled:false, audioPeerIds:new Set(), audioOutgoingCalls:new Map(), audioIncomingCalls:new Map(), audioRemotePlayers:new Map(), audioRetryAttempts:new Map(), audioPlayBlocked:false, audioLastError:''
         };
         let classroomPeerScriptPromise = null;
 
@@ -630,7 +677,15 @@
         const classPageIndex = page => Math.max(0,pagesData.indexOf(page));
         const classSafeName = value => String(value || '').replace(/[\r\n<>]/g,' ').trim().slice(0,30) || 'Alumno';
         const classSafeText = value => String(value || '').replace(/[\r\n]/g,' ').trim().slice(0,400);
-        const CLASSROOM_TIMER_MAX_MS = 99 * 60 * 60 * 1000;
+        const CLASSROOM_HOUR_MS = 60 * 60 * 1000;
+        const CLASSROOM_TIMER_MAX_MS = 9999 * CLASSROOM_HOUR_MS;
+        const CLASSROOM_CELEBRATION_EFFECTS = Object.freeze({
+            confetti:{label:'papel picado',kind:'paper',colors:['#f43f5e','#f59e0b','#fde047','#22c55e','#38bdf8','#8b5cf6','#ec4899']},
+            stars:{label:'estrellas',kind:'symbol',symbols:['★','✦','✧','✹'],colors:['#fef08a','#fbbf24','#fde68a','#fff']},
+            balloons:{label:'globos',kind:'symbol',symbols:['🎈','🎈','🎈','🎈'],colors:['#fda4af','#a5b4fc','#86efac','#fcd34d'],rising:true},
+            hearts:{label:'corazones',kind:'symbol',symbols:['♥','❤','❥','♡'],colors:['#fb7185','#f472b6','#c084fc','#fda4af']},
+            sparkles:{label:'destellos',kind:'symbol',symbols:['✦','✧','✺','✹'],colors:['#67e8f9','#c4b5fd','#fef08a','#fff']}
+        });
 
         function classTimerElapsedMs(){
             const active=classState.timerRunning?Math.max(0,performance.now()-classState.timerStartedAt):0;
@@ -638,9 +693,67 @@
         }
         function classTimerText(milliseconds){
             const seconds=Math.floor(milliseconds/1000),hours=Math.floor(seconds/3600),minutes=Math.floor((seconds%3600)/60),secs=seconds%60;
-            const two=value=>String(value).padStart(2,'0');return hours?`${two(hours)}:${two(minutes)}:${two(secs)}`:`${two(minutes)}:${two(secs)}`;
+            const two=value=>String(value).padStart(2,'0');return `${String(hours).padStart(2,'0')}:${two(minutes)}:${two(secs)}`;
         }
         function classTimerPayload(){return {type:'timer',running:classState.timerRunning,elapsedMs:classTimerElapsedMs()};}
+        function classCelebrationKey(value){return Object.prototype.hasOwnProperty.call(CLASSROOM_CELEBRATION_EFFECTS,value)?value:'confetti';}
+        function clearClassCelebration(){
+            clearTimeout(classState.celebrationHideTimer);classState.celebrationHideTimer=0;
+            const layer=document.getElementById('classCelebrationLayer');if(!layer)return;
+            layer.classList.remove('show');layer.replaceChildren();
+        }
+        function classCelebrationText(hour,manual){
+            if(!manual&&hour>0)return `🎉 ¡${hour} ${hour===1?'hora':'horas'} de clase!`;
+            return '🎉 ¡Festejo del profesor!';
+        }
+        function playClassCelebration(effectValue,{hour=0,manual=false}={}){
+            const layer=document.getElementById('classCelebrationLayer');if(!layer)return;
+            const effect=CLASSROOM_CELEBRATION_EFFECTS[classCelebrationKey(effectValue)];
+            clearClassCelebration();layer.classList.add('show');
+            const message=document.createElement('div');message.className='class-celebration-message';message.setAttribute('role','status');message.textContent=classCelebrationText(hour,manual);layer.appendChild(message);
+            const screenArea=Math.max(1,window.innerWidth*window.innerHeight),pieces=Math.max(46,Math.min(118,Math.round(screenArea/20500)));
+            for(let index=0;index<pieces;index++){
+                const piece=document.createElement('span'),color=effect.colors[index%effect.colors.length];
+                piece.className='class-celebration-piece '+(effect.kind==='paper'?'paper':'symbol')+(effect.rising?' rising':'');
+                piece.style.setProperty('--piece-left',`${Math.round(Math.random()*1000)/10}%`);
+                piece.style.setProperty('--piece-drift',`${Math.round((Math.random()-.5)*270)}px`);
+                piece.style.setProperty('--piece-rotation',`${Math.round((Math.random()-.5)*1280)}deg`);
+                piece.style.setProperty('--piece-delay',`${Math.round(Math.random()*900)}ms`);
+                piece.style.setProperty('--piece-duration',`${(3.5+Math.random()*1.9).toFixed(2)}s`);
+                piece.style.setProperty('--piece-color',color);
+                if(effect.kind==='paper'){
+                    piece.style.setProperty('--piece-w',`${7+Math.round(Math.random()*9)}px`);
+                    piece.style.setProperty('--piece-h',`${9+Math.round(Math.random()*13)}px`);
+                }else{
+                    piece.textContent=effect.symbols[index%effect.symbols.length];
+                    piece.style.setProperty('--symbol-size',`${20+Math.round(Math.random()*17)}px`);
+                }
+                layer.appendChild(piece);
+            }
+            classState.celebrationHideTimer=window.setTimeout(()=>clearClassCelebration(),5700);
+        }
+        function classLaunchCelebration(effectValue,{hour=0,automatic=false,broadcast=false}={}){
+            const effect=classCelebrationKey(effectValue);playClassCelebration(effect,{hour,manual:!automatic});
+            if(automatic)toast(`🎉 ${hour} ${hour===1?'hora':'horas'} de clase: ¡festejo!`,2800);
+            if(broadcast&&classState.role==='teacher')classBroadcast({type:'celebration',effect,hour:automatic?hour:0,automatic:!!automatic});
+        }
+        function classCheckHourlyCelebration(elapsedMs=classTimerElapsedMs()){
+            if(classState.role!=='teacher'||!classState.timerRunning)return;
+            const completedHours=Math.floor(elapsedMs/CLASSROOM_HOUR_MS);
+            if(completedHours<1||completedHours<=classState.timerLastCelebratedHour)return;
+            classState.timerLastCelebratedHour=completedHours;
+            classLaunchCelebration(classState.celebrationType,{hour:completedHours,automatic:true,broadcast:true});
+        }
+        window.setClassCelebrationType=function(value){
+            if(classState.role!=='teacher')return;
+            classState.celebrationType=classCelebrationKey(value);
+            const select=document.getElementById('classCelebrationType');if(select)select.value=classState.celebrationType;
+            toast(`🎉 Festejo elegido: ${CLASSROOM_CELEBRATION_EFFECTS[classState.celebrationType].label}.`,1800);
+        };
+        window.launchClassCelebration=function(){
+            if(classState.role!=='teacher')return;
+            classLaunchCelebration(classState.celebrationType,{broadcast:true});
+        };
         function updateClassTimerUI(){
             const timer=document.getElementById('classTimer');if(!timer)return;
             const active=classSessionActive(),isTeacher=classState.role==='teacher';
@@ -656,14 +769,18 @@
             if(!classSessionActive()){stopClassTimerTicker();updateClassTimerUI();return;}
             updateClassTimerUI();
             const now=performance.now();
-            if(classState.role==='teacher'&&classState.timerRunning&&now-classState.timerLastSyncAt>=10000){classState.timerLastSyncAt=now;classBroadcast(classTimerPayload());}
+            if(classState.role==='teacher'&&classState.timerRunning){
+                classCheckHourlyCelebration(classTimerElapsedMs());
+                if(now-classState.timerLastSyncAt>=10000){classState.timerLastSyncAt=now;classBroadcast(classTimerPayload());}
+            }
         }
         function syncClassTimerTicker(){
             stopClassTimerTicker();
             if(classSessionActive()&&classState.timerRunning)classState.timerTickId=setInterval(classTimerTick,250);
         }
         function classSetTimerState({running=false,elapsedMs=0}={},broadcast=false){
-            const elapsed=Number(elapsedMs);classState.timerElapsedMs=Number.isFinite(elapsed)?clamp(Math.floor(elapsed),0,CLASSROOM_TIMER_MAX_MS):0;
+            const previousElapsed=classTimerElapsedMs(),elapsed=Number(elapsedMs);classState.timerElapsedMs=Number.isFinite(elapsed)?clamp(Math.floor(elapsed),0,CLASSROOM_TIMER_MAX_MS):0;
+            if(classState.timerElapsedMs<previousElapsed)classState.timerLastCelebratedHour=Math.floor(classState.timerElapsedMs/CLASSROOM_HOUR_MS);
             classState.timerRunning=!!running;classState.timerStartedAt=classState.timerRunning?performance.now():0;classState.timerLastSyncAt=performance.now();
             syncClassTimerTicker();updateClassTimerUI();
             if(broadcast&&classState.role==='teacher')classBroadcast(classTimerPayload());
@@ -787,17 +904,166 @@
             document.body.classList.toggle('class-student-readonly',studentReadonly);
             document.querySelectorAll('[data-class-manage]').forEach(control=>{ control.disabled=!classCanManageBoard(); });
         }
+        function classAudioSelfId(){return String(classState.peer?.id||'');}
+        function classAudioHasLiveInput(){
+            const tracks=classState.audioLocalStream?.getAudioTracks?.()||[];
+            return !!classState.audioEnabled&&tracks.some(track=>track.readyState==='live'&&track.enabled);
+        }
+        function classAudioPeerAllowed(peerId){
+            const id=String(peerId||''),self=classAudioSelfId();
+            if(!id||id===self||!classSessionActive())return false;
+            if(classState.role==='teacher')return classState.connections.has(id);
+            return id===classState.teacherPeerId||classState.audioPeerIds.has(id);
+        }
+        function classAudioRosterPeers(){
+            const self=classAudioSelfId();
+            return [...new Set([self,...classState.connections.keys()].filter(Boolean))];
+        }
+        function classScheduleAudioRetry(peerId){
+            if(!classAudioHasLiveInput()||!classAudioPeerAllowed(peerId))return;
+            const attempt=(classState.audioRetryAttempts.get(peerId)||0)+1;if(attempt>2)return;
+            classState.audioRetryAttempts.set(peerId,attempt);
+            window.setTimeout(()=>{if(classAudioHasLiveInput()&&classAudioPeerAllowed(peerId)&&!classState.audioOutgoingCalls.has(peerId))startClassOutgoingAudioCall(peerId);},700*attempt);
+        }
+        function classClearRemoteAudioPlayer(peerId){
+            const record=classState.audioRemotePlayers.get(peerId);if(!record)return;
+            classState.audioRemotePlayers.delete(peerId);
+            try{record.audio.pause();record.audio.srcObject=null;record.audio.remove();}catch(_){}
+        }
+        function classCloseOutgoingAudioCall(peerId){
+            const call=classState.audioOutgoingCalls.get(peerId);if(!call)return;
+            classState.audioOutgoingCalls.delete(peerId);try{call.close();}catch(_){}
+        }
+        function classCloseIncomingAudioCall(peerId){
+            const call=classState.audioIncomingCalls.get(peerId);if(!call)return;
+            classState.audioIncomingCalls.delete(peerId);try{call.close();}catch(_){}
+        }
+        function classCloseAudioPeer(peerId){
+            classState.audioRetryAttempts.delete(peerId);classCloseOutgoingAudioCall(peerId);classCloseIncomingAudioCall(peerId);classClearRemoteAudioPlayer(peerId);
+        }
+        function classSetAudioPeerRoster(peerIds){
+            const self=classAudioSelfId(),next=new Set((Array.isArray(peerIds)?peerIds:[]).map(peerId=>String(peerId||'')).filter(peerId=>peerId&&peerId!==self));
+            if(classState.role==='student'&&classState.teacherPeerId&&classState.teacherPeerId!==self)next.add(classState.teacherPeerId);
+            const previous=classState.audioPeerIds;classState.audioPeerIds=next;
+            previous.forEach(peerId=>{if(!next.has(peerId))classCloseAudioPeer(peerId);});
+            syncClassOutgoingAudio();updateClassAudioUI();
+        }
+        function classBroadcastAudioRoster(){
+            if(classState.role!=='teacher'||!classState.peer?.id)return;
+            const peers=classAudioRosterPeers();classSetAudioPeerRoster(peers);classBroadcast({type:'audio-roster',peers});
+        }
+        function classAttachRemoteAudio(peerId,stream){
+            if(!stream?.getAudioTracks?.().length)return;
+            const previous=classState.audioRemotePlayers.get(peerId);if(previous?.stream===stream)return;
+            classClearRemoteAudioPlayer(peerId);
+            const audio=document.createElement('audio');audio.autoplay=true;audio.playsInline=true;audio.setAttribute('aria-hidden','true');audio.style.cssText='position:fixed;left:-9999px;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;';audio.srcObject=stream;document.body.appendChild(audio);
+            classState.audioRemotePlayers.set(peerId,{audio,stream});
+            const played=audio.play();if(played&&typeof played.catch==='function')played.catch(()=>{classState.audioPlayBlocked=true;updateClassAudioUI();});
+            stream.getAudioTracks().forEach(track=>track.addEventListener('ended',()=>{if(classState.audioRemotePlayers.get(peerId)?.stream===stream)classClearRemoteAudioPlayer(peerId);updateClassAudioUI();},{once:true}));
+            updateClassAudioUI();
+        }
+        function classAudioCallAllowed(call){
+            const metadata=call?.metadata||{};
+            return classAudioPeerAllowed(call?.peer)&&metadata.kind==='class-audio'&&metadata.room===classState.roomCode;
+        }
+        function handleClassAudioCall(call){
+            if(!classAudioCallAllowed(call)){try{call?.close();}catch(_){}return;}
+            const peerId=String(call.peer),previous=classState.audioIncomingCalls.get(peerId);if(previous&&previous!==call){try{previous.close();}catch(_){}}
+            classState.audioIncomingCalls.set(peerId,call);
+            call.on('stream',stream=>classAttachRemoteAudio(peerId,stream));
+            call.on('close',()=>{if(classState.audioIncomingCalls.get(peerId)===call){classState.audioIncomingCalls.delete(peerId);classClearRemoteAudioPlayer(peerId);updateClassAudioUI();}});
+            call.on('error',()=>{if(classState.audioIncomingCalls.get(peerId)===call){classState.audioIncomingCalls.delete(peerId);classClearRemoteAudioPlayer(peerId);updateClassAudioUI();}});
+            try{call.answer();}catch(err){console.warn('No se pudo aceptar el audio P2P',err);classState.audioLastError='No se pudo aceptar el audio P2P.';updateClassAudioUI();}
+        }
+        function startClassOutgoingAudioCall(peerId){
+            if(!classAudioHasLiveInput()||!classAudioPeerAllowed(peerId)||classState.audioOutgoingCalls.has(peerId))return;
+            try{
+                const call=classState.peer?.call(peerId,classState.audioLocalStream,{metadata:{kind:'class-audio',room:classState.roomCode,from:classState.name}});if(!call)return;
+                classState.audioOutgoingCalls.set(peerId,call);
+                call.on('close',()=>{if(classState.audioOutgoingCalls.get(peerId)===call){classState.audioOutgoingCalls.delete(peerId);classScheduleAudioRetry(peerId);updateClassAudioUI();}});
+                call.on('error',()=>{if(classState.audioOutgoingCalls.get(peerId)===call){classState.audioOutgoingCalls.delete(peerId);classState.audioLastError='No se pudo conectar el audio con un participante.';classScheduleAudioRetry(peerId);updateClassAudioUI();}});
+                window.setTimeout(()=>{if(classState.audioOutgoingCalls.get(peerId)!==call)return;if(call.open){classState.audioRetryAttempts.delete(peerId);return;}classCloseOutgoingAudioCall(peerId);classScheduleAudioRetry(peerId);},4500);
+            }catch(err){console.warn('No se pudo iniciar el audio P2P',err);classState.audioLastError='No se pudo iniciar el audio P2P.';updateClassAudioUI();}
+        }
+        function syncClassOutgoingAudio(){
+            const targets=new Set(classAudioHasLiveInput()?[...classState.audioPeerIds].filter(classAudioPeerAllowed):[]);
+            [...classState.audioOutgoingCalls.keys()].forEach(peerId=>{if(!targets.has(peerId))classCloseOutgoingAudioCall(peerId);});
+            targets.forEach(startClassOutgoingAudioCall);updateClassAudioUI();
+        }
+        function stopClassAudio({stopTracks=false,clearPeers=false}={}){
+            [...classState.audioOutgoingCalls.keys()].forEach(classCloseOutgoingAudioCall);
+            [...classState.audioIncomingCalls.keys()].forEach(classCloseIncomingAudioCall);
+            [...classState.audioRemotePlayers.keys()].forEach(classClearRemoteAudioPlayer);
+            if(stopTracks){classState.audioLocalStream?.getTracks?.().forEach(track=>track.stop());classState.audioLocalStream=null;classState.audioEnabled=false;}
+            if(clearPeers)classState.audioPeerIds=new Set();
+            classState.audioRetryAttempts=new Map();classState.audioPlayBlocked=false;classState.audioLastError='';updateClassAudioUI();
+        }
+        function classAudioErrorText(error){
+            if(error?.name==='NotAllowedError')return 'Permití el uso del micrófono en el navegador.';
+            if(error?.name==='NotFoundError')return 'No se encontró un micrófono disponible.';
+            if(error?.name==='NotReadableError')return 'El micrófono está ocupado por otra aplicación.';
+            if(error?.name==='SecurityError')return 'El audio necesita abrir la página por HTTPS.';
+            return 'No se pudo activar el micrófono.';
+        }
+        async function enableClassMicrophone(){
+            if(!classSessionActive())return;
+            if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){classState.audioLastError='El audio necesita abrir la página por HTTPS o localhost.';updateClassAudioUI();toast('⚠️ Abrí la página publicada con HTTPS para usar el micrófono.',3400);return;}
+            try{
+                let stream=classState.audioLocalStream,tracks=stream?.getAudioTracks?.()||[];
+                if(!stream||!tracks.some(track=>track.readyState==='live')){
+                    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+                    classState.audioLocalStream=stream;tracks=stream.getAudioTracks();
+                    tracks.forEach(track=>track.addEventListener('ended',()=>{if(!(classState.audioLocalStream?.getAudioTracks?.()||[]).some(item=>item.readyState==='live')){classState.audioEnabled=false;syncClassOutgoingAudio();updateClassAudioUI();}},{once:true}));
+                }
+                tracks.forEach(track=>track.enabled=true);classState.audioEnabled=true;classState.audioRetryAttempts=new Map();classState.audioLastError='';
+                await resumeClassRemoteAudio(false);syncClassOutgoingAudio();updateClassAudioUI();toast('🎙️ Micrófono activo. La cámara no se usa.',2400);
+            }catch(error){console.warn('Micrófono del aula:',error);classState.audioLastError=classAudioErrorText(error);updateClassAudioUI();toast('⚠️ '+classState.audioLastError,3400);}
+        }
+        function disableClassMicrophone(){
+            classState.audioEnabled=false;classState.audioLocalStream?.getAudioTracks?.().forEach(track=>track.enabled=false);syncClassOutgoingAudio();updateClassAudioUI();toast('🔇 Micrófono silenciado. Seguís pudiendo escuchar.',2000);
+        }
+        async function resumeClassRemoteAudio(showFeedback=true){
+            const players=[...classState.audioRemotePlayers.values()];
+            if(!players.length){if(showFeedback)toast('🔊 Todavía no llegó audio de otro participante.',2200);return;}
+            const results=await Promise.all(players.map(record=>Promise.resolve(record.audio.play()).then(()=>true).catch(()=>false)));
+            classState.audioPlayBlocked=results.some(result=>!result);updateClassAudioUI();
+            if(showFeedback)toast(classState.audioPlayBlocked?'⚠️ Tocá el permiso de sonido del navegador.':'🔊 Escucha habilitada.',2400);
+        }
+        function updateClassAudioUI(){
+            const inClass=classSessionActive(),active=classAudioHasLiveInput(),remoteCount=classState.audioRemotePlayers.size;
+            const toggle=document.getElementById('classAudioToggle'),listen=document.getElementById('classAudioListen'),status=document.getElementById('classAudioStatus'),hint=document.getElementById('classAudioHint');
+            if(toggle){toggle.disabled=!inClass;toggle.classList.toggle('audio-on',active);toggle.textContent=active?'🔇 Silenciar micrófono':'🎙️ Activar micrófono';}
+            if(listen)listen.disabled=!inClass;
+            if(status){
+                status.className='class-audio-status'+(classState.audioLastError?' error':(active||remoteCount?' connected':''));
+                if(!inClass)status.textContent='Audio inactivo';
+                else if(classState.audioLastError)status.textContent=classState.audioLastError;
+                else if(active)status.textContent=`🎙️ Micrófono activo${remoteCount?` · ${remoteCount} voz${remoteCount===1?'':'es'}`:' · esperando'}`;
+                else if(remoteCount)status.textContent=`🔊 Escuchando ${remoteCount} voz${remoteCount===1?'':'es'}`;
+                else status.textContent='Micrófono apagado';
+            }
+            if(hint){
+                if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia)hint.textContent='Para usar voz, abrí la página publicada con HTTPS (o localhost).';
+                else if(classState.audioPlayBlocked)hint.textContent='El navegador bloqueó el sonido automático: presioná “Habilitar escucha”.';
+                else if(active)hint.textContent='Tu voz se transmite P2P sin cámara. Usá auriculares si están cerca para evitar eco.';
+                else hint.textContent='Cada participante activa su micrófono para hablar. No se solicita ni transmite cámara.';
+            }
+        }
+        window.toggleClassAudio=async function(){if(!classSessionActive())return;if(classAudioHasLiveInput())disableClassMicrophone();else await enableClassMicrophone();};
+        window.enableClassListening=async function(){if(!classSessionActive())return;await resumeClassRemoteAudio(true);};
         function updateClassUI(){
             const inClass=classSessionActive(),isTeacher=classState.role==='teacher';
             const setup=document.getElementById('classSetup'),live=document.getElementById('classLiveView');
             if(setup)setup.style.display=inClass?'none':'block';
             if(live)live.style.display=inClass?'block':'none';
             document.getElementById('btnClassroom')?.classList.toggle('class-live',inClass);
-            if(!inClass){updateClassBoardAccess();updateClassTimerUI();return;}
+            if(!inClass){updateClassBoardAccess();updateClassTimerUI();updateClassAudioUI();return;}
             const role=document.getElementById('classRoleLabel');if(role)role.textContent=isTeacher?'👩‍🏫 Clase como docente':'🧑‍🎓 Clase como alumno';
             const codeRow=document.getElementById('classCodeRow');if(codeRow)codeRow.style.display=isTeacher?'flex':'none';
             const code=document.getElementById('classCodeValue');if(code)code.textContent=classState.roomCode||'------';
             const teacherRequests=document.getElementById('classTeacherPermissionRequests');if(teacherRequests)teacherRequests.style.display=isTeacher?'':'none';
+            const celebrationControls=document.getElementById('classTeacherCelebration');if(celebrationControls)celebrationControls.style.display=isTeacher?'flex':'none';
+            const celebrationType=document.getElementById('classCelebrationType');if(celebrationType&&isTeacher)celebrationType.value=classState.celebrationType;
             const drawRequest=document.getElementById('classRequestDrawBtn'),uploadRequest=document.getElementById('classRequestUploadBtn');
             if(drawRequest){const granted=classHasStudentPermission('draw'),pending=classState.pendingPermissions.has('draw');drawRequest.style.display=isTeacher?'none':'';drawRequest.disabled=granted||pending;drawRequest.classList.toggle('unlocked',granted);drawRequest.textContent=granted?'✏️ Escritura autorizada':pending?'⌛ Solicitud de escritura enviada':'✏️ Pedir permiso para escribir';}
             if(uploadRequest){const granted=classHasStudentPermission('upload'),pending=classState.pendingPermissions.has('upload');uploadRequest.style.display=isTeacher?'none':'';uploadRequest.disabled=granted||pending;uploadRequest.classList.toggle('unlocked',granted);uploadRequest.textContent=granted?'📎 Podés subir 1 archivo autorizado':pending?'⌛ Solicitud de archivo enviada':'📎 Pedir permiso para subir un archivo';}
@@ -809,6 +1075,7 @@
             if(isTeacher)renderClassPermissionRequests();
             updateClassBoardAccess();
             updateClassTimerUI();
+            updateClassAudioUI();
         }
         function classShowReadOnly(action='manage'){
             if(action==='draw'&&isStudentLiveView()){window.requestClassPermission('draw');return;}
@@ -883,6 +1150,7 @@
                 if(classState.role!=='teacher' || connection.metadata?.role!=='student'){try{connection.close();}catch(_){}return;}
                 setupClassConnection(connection,true);
             });
+            peer.on('call',call=>handleClassAudioCall(call));
         }
         function safeClassSend(connection,message){
             try{if(connection?.open){connection.send(message);return true;}}catch(err){console.warn('No se pudo enviar dato P2P',err);}return false;
@@ -900,11 +1168,11 @@
                 if(classState.role==='teacher'){
                     const info={name:classSafeName(connection.metadata?.name),joinedAt:Date.now()};
                     classState.connections.set(connection.peer,connection);classState.participants.set(connection.peer,info);classState.participantPermissions.set(connection.peer,new Map());
-                    setClassStatus('Clase lista','connected');updateClassUI();appendClassChat('',`${info.name} se conectó a la clase.`,{system:true});
+                    classBroadcastAudioRoster();setClassStatus('Clase lista','connected');updateClassUI();appendClassChat('',`${info.name} se conectó a la clase.`,{system:true});
                     await sendClassSnapshotTo(connection);
                 }else{
                     if(connection.peer!==classState.teacherPeerId){try{connection.close();}catch(_){}return;}
-                    classState.teacherConnection=connection;setClassStatus('Conectado al docente','connected');updateClassUI();
+                    classState.teacherConnection=connection;classSetAudioPeerRoster([classState.teacherPeerId]);setClassStatus('Conectado al docente','connected');updateClassUI();
                     classSendToTeacher({type:'join',name:classState.name});
                 }
             });
@@ -913,18 +1181,18 @@
                 if(classState.ending)return;
                 if(classState.role==='teacher'){
                     const info=classState.participants.get(connection.peer);classState.connections.delete(connection.peer);classState.participants.delete(connection.peer);classState.participantPermissions.delete(connection.peer);
-                    classRemoveRemoteCursor(connection.peer);
+                    classRemoveRemoteCursor(connection.peer);classCloseAudioPeer(connection.peer);classBroadcastAudioRoster();
                     [...classState.permissionRequests.entries()].forEach(([id,request])=>{if(request.peerId===connection.peer)classState.permissionRequests.delete(id);});
                     if(info)appendClassChat('',`${info.name} salió de la clase.`,{system:true});updateClassUI();
                 }else if(classState.teacherConnection===connection){
-                    classState.teacherConnection=null;clearClassRemoteCursors();setClassStatus('Docente desconectado','error');updateClassUI();toast('La conexión con el docente terminó.',2600);
+                    classState.teacherConnection=null;clearClassRemoteCursors();classCloseAudioPeer(connection.peer);classState.audioPeerIds=new Set();syncClassOutgoingAudio();setClassStatus('Docente desconectado','error');updateClassUI();toast('La conexión con el docente terminó.',2600);
                 }
             });
             connection.on('error',()=>{if(!classState.ending){setClassStatus('Error de conexión','error');updateClassUI();}});
         }
         async function sendClassSnapshotTo(connection){
             if(classState.role!=='teacher'||!connection?.open)return;
-            try{const {snapshot}=await snapshotNotebook();safeClassSend(connection,{type:'snapshot',snapshot});safeClassSend(connection,classTimerPayload());sendClassSharedTeacherFilesTo(connection);}
+            try{const {snapshot}=await snapshotNotebook();safeClassSend(connection,{type:'snapshot',snapshot});safeClassSend(connection,classTimerPayload());safeClassSend(connection,{type:'audio-roster',peers:classAudioRosterPeers()});sendClassSharedTeacherFilesTo(connection);}
             catch(err){console.error(err);safeClassSend(connection,{type:'notice',text:'No se pudo sincronizar la pizarra completa.'});}
         }
         async function broadcastClassSnapshot(){
@@ -1134,8 +1402,15 @@
             if(message.type==='permission-denied'){
                 const action=String(message.action||'');classState.pendingPermissions.delete(action);appendClassChat('',`🚫 El profesor rechazó tu solicitud para ${classPermissionLabel(action)}.`,{system:true});updateClassUI();return;
             }
+            if(message.type==='audio-roster'){classSetAudioPeerRoster(message.peers);return;}
             if(message.type==='snapshot'){applyClassSnapshot(message.snapshot);return;}
             if(message.type==='timer'){classSetTimerState(message);return;}
+            if(message.type==='celebration'){
+                const hour=Math.max(0,Math.floor(Number(message.hour)||0));
+                playClassCelebration(message.effect,{hour,manual:message.automatic!==true});
+                if(message.automatic&&hour>0)toast(`🎉 ¡Se cumplió ${hour} ${hour===1?'hora':'horas'} de clase!`,2800);
+                return;
+            }
             if(message.type==='board'){if(message.origin!==classState.peer?.id)applyClassBoardOperation(message.operation);return;}
             if(message.type==='cursor'){if(message.origin!==classState.peer?.id)classShowRemoteCursor(message);return;}
             if(message.type==='chat'){if(message.origin!==classState.peer?.id)appendClassChat(classSafeName(message.name||'Docente'),classSafeText(message.text));return;}
@@ -1168,7 +1443,7 @@
             beginClassFromEntry();
             classState.role='teacher';classState.name='Docente';classState.roomCode=generateClassCode();classState.participantPermissions=new Map();classState.permissionRequests=new Map();classState.grantedPermissions=new Map();classState.pendingPermissions=new Map();classState.remoteCursors=new Map();classState.sharedTeacherFiles=new Map();classState.cursorSentAt=0;classState.liveView=false;resetClassChat();updateClassUI();setClassStatus('Creando sala…');
             classSetTimerState({running:true,elapsedMs:0});
-            try{await createClassPeer(classPeerIdFromCode(classState.roomCode));setClassStatus('Clase lista','connected');updateClassUI();appendClassChat('','Sala creada. Compartí el código con tus alumnos.',{system:true});}
+            try{await createClassPeer(classPeerIdFromCode(classState.roomCode));classSetAudioPeerRoster([classState.peer.id]);setClassStatus('Clase lista','connected');updateClassUI();appendClassChat('','Sala creada. Compartí el código con tus alumnos.',{system:true});}
             catch(err){console.error(err);toast('⚠️ No se pudo crear la sala P2P. Probá nuevamente.',3200);await endClassSession(true);window.openClassEntry();}
         };
         window.startStudentClass=async function(){
@@ -1178,7 +1453,7 @@
             classState.role='student';classState.name=classSafeName(document.getElementById('classStudentName').value);classState.roomCode=code;classState.teacherPeerId=classPeerIdFromCode(code);classState.participantPermissions=new Map();classState.permissionRequests=new Map();classState.grantedPermissions=new Map();classState.pendingPermissions=new Map();classState.remoteCursors=new Map();classState.sharedTeacherFiles=new Map();classState.cursorSentAt=0;classState.liveView=true;resetClassChat('Conectando con la clase…');clearTimeout(saveTimer);updateClassUI();setClassStatus('Buscando docente…');
             classSetTimerState({running:false,elapsedMs:0});
             try{
-                await createClassPeer();
+                await createClassPeer();classSetAudioPeerRoster([classState.teacherPeerId]);
                 const connection=classState.peer.connect(classState.teacherPeerId,{reliable:true,serialization:'binary',metadata:{role:'student',name:classState.name}});
                 setupClassConnection(connection,false);
             }catch(err){console.error(err);toast('⚠️ No se pudo iniciar la conexión P2P.',3200);await endClassSession(true);window.openClassEntry();}
@@ -1191,8 +1466,10 @@
             classState.connections.forEach(connection=>{try{connection.close();}catch(_){}});try{classState.teacherConnection?.close();}catch(_){}
             try{oldPeer?.destroy();}catch(_){}
             clearClassRemoteCursors();
+            stopClassAudio({stopTracks:true,clearPeers:true});
             stopClassTimerTicker();
-            classState.connections=new Map();classState.participants=new Map();classState.participantPermissions=new Map();classState.permissionRequests=new Map();classState.grantedPermissions=new Map();classState.pendingPermissions=new Map();classState.sharedTeacherFiles=new Map();classState.peer=null;classState.teacherConnection=null;classState.role=null;classState.roomCode='';classState.teacherPeerId='';classState.name='';classState.liveView=false;classState.applyingRemote=false;classState.ending=false;classState.liveStroke=null;classState.cursorSentAt=0;classState.timerRunning=false;classState.timerElapsedMs=0;classState.timerStartedAt=0;classState.timerLastSyncAt=0;classState.snapshotChain=Promise.resolve();
+            clearClassCelebration();
+            classState.connections=new Map();classState.participants=new Map();classState.participantPermissions=new Map();classState.permissionRequests=new Map();classState.grantedPermissions=new Map();classState.pendingPermissions=new Map();classState.sharedTeacherFiles=new Map();classState.peer=null;classState.teacherConnection=null;classState.role=null;classState.roomCode='';classState.teacherPeerId='';classState.name='';classState.liveView=false;classState.applyingRemote=false;classState.ending=false;classState.liveStroke=null;classState.cursorSentAt=0;classState.timerRunning=false;classState.timerElapsedMs=0;classState.timerStartedAt=0;classState.timerLastSyncAt=0;classState.timerLastCelebratedHour=0;classState.audioPeerIds=new Set();classState.audioOutgoingCalls=new Map();classState.audioIncomingCalls=new Map();classState.audioRemotePlayers=new Map();classState.audioRetryAttempts=new Map();classState.audioPlayBlocked=false;classState.audioLastError='';classState.snapshotChain=Promise.resolve();
             updateClassUI();resetClassChat();
             if(restoreStudentView&&currentId){const item=readStore().items.find(x=>x.id===currentId);if(item)await loadNotebook(item);}
             if(!fromRemote)toast(wasStudent?'Saliste de la clase.':'Clase finalizada.');
