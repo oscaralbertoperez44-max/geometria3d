@@ -156,6 +156,16 @@
         #recordingIndicator .rec-dot { width: 10px; height: 10px; border-radius: 50%; background: #ef4444; animation: recPulse 1.1s infinite alternate; }
         #recordingIndicator .rec-fullscreen { min-width: 32px; height: 28px; padding: 2px 7px; margin-left: 2px; border-radius: 6px; font-size: 15px; line-height: 1; }
         @keyframes recPulse { from { opacity: .45; transform: scale(.9); } to { opacity: 1; transform: scale(1.12); } }
+        #classTimer { position:fixed; top:70px; left:14px; z-index:9400; display:none; align-items:center; gap:7px; min-height:30px; padding:6px 8px; border:1px solid rgba(125,211,252,.62); border-radius:10px; color:#f8fafc; background:rgba(8,18,32,.86); box-shadow:0 8px 26px rgba(0,0,0,.28); backdrop-filter:blur(8px); user-select:none; }
+        #classTimer.visible { display:flex; }
+        #classTimer .class-timer-dot { width:7px; height:7px; border-radius:50%; background:#4ade80; box-shadow:0 0 8px #4ade80; }
+        #classTimer.paused .class-timer-dot { background:#fbbf24; box-shadow:0 0 8px #fbbf24; }
+        #classTimerMode { color:#bae6fd; font-size:9px; font-weight:900; letter-spacing:.07em; }
+        #classTimerValue { min-width:49px; color:#fff; font:800 14px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; letter-spacing:.04em; }
+        .class-timer-controls { display:flex; gap:4px; margin-left:1px; }
+        .class-timer-controls button { width:25px; height:24px; padding:0; border-color:#3b82f6; border-radius:6px; background:#172554; color:#dbeafe; font-size:12px; line-height:1; }
+        .class-timer-controls button:hover { background:#1d4ed8; border-color:#93c5fd; }
+        #classTimer.student .class-timer-controls { display:none; }
         #writingCursor { position: fixed; left: 0; top: 0; width: 44px; height: 44px; z-index: 9200; display: none; pointer-events: none; user-select: none; transform: translate3d(-100px,-100px,0); filter: drop-shadow(0 2px 2px rgba(0,0,0,.22)); will-change: transform; }
         #writingCursor svg { display: block; width: 44px; height: 44px; overflow: visible; }
         .class-remote-pencil { position:absolute; z-index:14; left:0; top:0; display:flex; align-items:flex-end; gap:2px; pointer-events:none; user-select:none; opacity:0; transform:translate(-7px,-38px); transition:opacity .12s ease; filter:drop-shadow(0 2px 2px rgba(0,0,0,.32)); will-change:left,top,opacity; }
@@ -237,8 +247,9 @@
         :fullscreen #notebook { width: 100%; max-width: none; padding-top: 20px; }
         :fullscreen #nb-launcher { display: none; }
         :fullscreen #recordingIndicator { top: 16px; }
+        :fullscreen #classTimer { top:12px; left:12px; }
         :fullscreen #classPanel { top:12px; right:12px; max-height:calc(100vh - 24px); }
-        @media(max-width:560px){ #classPanel { top:54px; right:12px; max-height:calc(100vh - 66px); } }
+        @media(max-width:560px){ #classTimer { top:54px; left:8px; } #classPanel { top:54px; right:12px; max-height:calc(100vh - 66px); } }
     </style>
 </head>
 <body>
@@ -303,6 +314,10 @@
     <div id="pageIndicator">Hoja 0 / 0</div>
     <div id="toast"></div>
     <div id="recordingIndicator"><span class="rec-dot"></span><span>GRABANDO</span><span id="recordingTime">00:00</span><button class="rec-fullscreen" onclick="toggleFullScreen()" title="Entrar/salir de pantalla completa durante la grabación">⛶</button></div>
+    <div id="classTimer" aria-label="Cronómetro compartido de la clase">
+        <span class="class-timer-dot" aria-hidden="true"></span><span id="classTimerMode">EN CURSO</span><strong id="classTimerValue">00:00</strong>
+        <div class="class-timer-controls"><button id="classTimerToggle" onclick="toggleClassTimer()" title="Pausar cronómetro" aria-label="Pausar cronómetro">Ⅱ</button><button onclick="resetClassTimer()" title="Reiniciar cronómetro" aria-label="Reiniciar cronómetro">↺</button></div>
+    </div>
     <div id="writingCursor" aria-hidden="true"></div>
 
     <!-- AULA VIRTUAL: el código de la clase sólo identifica la sala P2P; no se guarda en el cuaderno. -->
@@ -602,7 +617,8 @@
             name:'', connections:new Map(), participants:new Map(), participantPermissions:new Map(), permissionRequests:new Map(),
             grantedPermissions:new Map(), pendingPermissions:new Map(), liveView:false,
             applyingRemote:false, ending:false, syncTimer:0, snapshotChain:Promise.resolve(), liveStroke:null,
-            cursorSentAt:0, remoteCursors:new Map(), sharedTeacherFiles:new Map()
+            cursorSentAt:0, remoteCursors:new Map(), sharedTeacherFiles:new Map(),
+            timerRunning:false, timerElapsedMs:0, timerStartedAt:0, timerTickId:0, timerLastSyncAt:0
         };
         let classroomPeerScriptPromise = null;
 
@@ -614,6 +630,52 @@
         const classPageIndex = page => Math.max(0,pagesData.indexOf(page));
         const classSafeName = value => String(value || '').replace(/[\r\n<>]/g,' ').trim().slice(0,30) || 'Alumno';
         const classSafeText = value => String(value || '').replace(/[\r\n]/g,' ').trim().slice(0,400);
+        const CLASSROOM_TIMER_MAX_MS = 99 * 60 * 60 * 1000;
+
+        function classTimerElapsedMs(){
+            const active=classState.timerRunning?Math.max(0,performance.now()-classState.timerStartedAt):0;
+            return clamp(Math.round(classState.timerElapsedMs+active),0,CLASSROOM_TIMER_MAX_MS);
+        }
+        function classTimerText(milliseconds){
+            const seconds=Math.floor(milliseconds/1000),hours=Math.floor(seconds/3600),minutes=Math.floor((seconds%3600)/60),secs=seconds%60;
+            const two=value=>String(value).padStart(2,'0');return hours?`${two(hours)}:${two(minutes)}:${two(secs)}`:`${two(minutes)}:${two(secs)}`;
+        }
+        function classTimerPayload(){return {type:'timer',running:classState.timerRunning,elapsedMs:classTimerElapsedMs()};}
+        function updateClassTimerUI(){
+            const timer=document.getElementById('classTimer');if(!timer)return;
+            const active=classSessionActive(),isTeacher=classState.role==='teacher';
+            timer.classList.toggle('visible',active);timer.classList.toggle('paused',!classState.timerRunning);timer.classList.toggle('student',!isTeacher);
+            if(!active)return;
+            const value=document.getElementById('classTimerValue'),mode=document.getElementById('classTimerMode'),toggle=document.getElementById('classTimerToggle');
+            if(value)value.textContent=classTimerText(classTimerElapsedMs());
+            if(mode)mode.textContent=classState.timerRunning?'EN CURSO':'PAUSA';
+            if(toggle){toggle.textContent=classState.timerRunning?'Ⅱ':'▶';toggle.title=classState.timerRunning?'Pausar cronómetro':'Reanudar cronómetro';toggle.setAttribute('aria-label',toggle.title);}
+        }
+        function stopClassTimerTicker(){if(classState.timerTickId){clearInterval(classState.timerTickId);classState.timerTickId=0;}}
+        function classTimerTick(){
+            if(!classSessionActive()){stopClassTimerTicker();updateClassTimerUI();return;}
+            updateClassTimerUI();
+            const now=performance.now();
+            if(classState.role==='teacher'&&classState.timerRunning&&now-classState.timerLastSyncAt>=10000){classState.timerLastSyncAt=now;classBroadcast(classTimerPayload());}
+        }
+        function syncClassTimerTicker(){
+            stopClassTimerTicker();
+            if(classSessionActive()&&classState.timerRunning)classState.timerTickId=setInterval(classTimerTick,250);
+        }
+        function classSetTimerState({running=false,elapsedMs=0}={},broadcast=false){
+            const elapsed=Number(elapsedMs);classState.timerElapsedMs=Number.isFinite(elapsed)?clamp(Math.floor(elapsed),0,CLASSROOM_TIMER_MAX_MS):0;
+            classState.timerRunning=!!running;classState.timerStartedAt=classState.timerRunning?performance.now():0;classState.timerLastSyncAt=performance.now();
+            syncClassTimerTicker();updateClassTimerUI();
+            if(broadcast&&classState.role==='teacher')classBroadcast(classTimerPayload());
+        }
+        window.toggleClassTimer=function(){
+            if(classState.role!=='teacher')return;
+            classSetTimerState({running:!classState.timerRunning,elapsedMs:classTimerElapsedMs()},true);
+        };
+        window.resetClassTimer=function(){
+            if(classState.role!=='teacher')return;
+            classSetTimerState({running:classState.timerRunning,elapsedMs:0},true);
+        };
 
         function normalizeClassCode(value){
             let code=String(value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -731,7 +793,7 @@
             if(setup)setup.style.display=inClass?'none':'block';
             if(live)live.style.display=inClass?'block':'none';
             document.getElementById('btnClassroom')?.classList.toggle('class-live',inClass);
-            if(!inClass){updateClassBoardAccess();return;}
+            if(!inClass){updateClassBoardAccess();updateClassTimerUI();return;}
             const role=document.getElementById('classRoleLabel');if(role)role.textContent=isTeacher?'👩‍🏫 Clase como docente':'🧑‍🎓 Clase como alumno';
             const codeRow=document.getElementById('classCodeRow');if(codeRow)codeRow.style.display=isTeacher?'flex':'none';
             const code=document.getElementById('classCodeValue');if(code)code.textContent=classState.roomCode||'------';
@@ -746,6 +808,7 @@
             const hint=document.getElementById('classChatHint');if(hint){const chatReady=isTeacher?count>0:!!classState.teacherConnection?.open;hint.textContent=chatReady?'● Chat P2P conectado':isTeacher?'Esperando alumnos…':'Conectando chat P2P…';}
             if(isTeacher)renderClassPermissionRequests();
             updateClassBoardAccess();
+            updateClassTimerUI();
         }
         function classShowReadOnly(action='manage'){
             if(action==='draw'&&isStudentLiveView()){window.requestClassPermission('draw');return;}
@@ -861,7 +924,7 @@
         }
         async function sendClassSnapshotTo(connection){
             if(classState.role!=='teacher'||!connection?.open)return;
-            try{const {snapshot}=await snapshotNotebook();safeClassSend(connection,{type:'snapshot',snapshot});sendClassSharedTeacherFilesTo(connection);}
+            try{const {snapshot}=await snapshotNotebook();safeClassSend(connection,{type:'snapshot',snapshot});safeClassSend(connection,classTimerPayload());sendClassSharedTeacherFilesTo(connection);}
             catch(err){console.error(err);safeClassSend(connection,{type:'notice',text:'No se pudo sincronizar la pizarra completa.'});}
         }
         async function broadcastClassSnapshot(){
@@ -1072,6 +1135,7 @@
                 const action=String(message.action||'');classState.pendingPermissions.delete(action);appendClassChat('',`🚫 El profesor rechazó tu solicitud para ${classPermissionLabel(action)}.`,{system:true});updateClassUI();return;
             }
             if(message.type==='snapshot'){applyClassSnapshot(message.snapshot);return;}
+            if(message.type==='timer'){classSetTimerState(message);return;}
             if(message.type==='board'){if(message.origin!==classState.peer?.id)applyClassBoardOperation(message.operation);return;}
             if(message.type==='cursor'){if(message.origin!==classState.peer?.id)classShowRemoteCursor(message);return;}
             if(message.type==='chat'){if(message.origin!==classState.peer?.id)appendClassChat(classSafeName(message.name||'Docente'),classSafeText(message.text));return;}
@@ -1103,6 +1167,7 @@
             if(document.getElementById('classTeacherPassword').value!==CLASSROOM_TEACHER_PASSWORD){toast('⚠️ La clave de docente no es correcta.',2400);return;}
             beginClassFromEntry();
             classState.role='teacher';classState.name='Docente';classState.roomCode=generateClassCode();classState.participantPermissions=new Map();classState.permissionRequests=new Map();classState.grantedPermissions=new Map();classState.pendingPermissions=new Map();classState.remoteCursors=new Map();classState.sharedTeacherFiles=new Map();classState.cursorSentAt=0;classState.liveView=false;resetClassChat();updateClassUI();setClassStatus('Creando sala…');
+            classSetTimerState({running:true,elapsedMs:0});
             try{await createClassPeer(classPeerIdFromCode(classState.roomCode));setClassStatus('Clase lista','connected');updateClassUI();appendClassChat('','Sala creada. Compartí el código con tus alumnos.',{system:true});}
             catch(err){console.error(err);toast('⚠️ No se pudo crear la sala P2P. Probá nuevamente.',3200);await endClassSession(true);window.openClassEntry();}
         };
@@ -1111,6 +1176,7 @@
             const code=normalizeClassCode(document.getElementById('classJoinCode').value);if(code.length<5){toast('Ingresá el código aleatorio del docente.',2400);return;}
             beginClassFromEntry();
             classState.role='student';classState.name=classSafeName(document.getElementById('classStudentName').value);classState.roomCode=code;classState.teacherPeerId=classPeerIdFromCode(code);classState.participantPermissions=new Map();classState.permissionRequests=new Map();classState.grantedPermissions=new Map();classState.pendingPermissions=new Map();classState.remoteCursors=new Map();classState.sharedTeacherFiles=new Map();classState.cursorSentAt=0;classState.liveView=true;resetClassChat('Conectando con la clase…');clearTimeout(saveTimer);updateClassUI();setClassStatus('Buscando docente…');
+            classSetTimerState({running:false,elapsedMs:0});
             try{
                 await createClassPeer();
                 const connection=classState.peer.connect(classState.teacherPeerId,{reliable:true,serialization:'binary',metadata:{role:'student',name:classState.name}});
@@ -1125,7 +1191,8 @@
             classState.connections.forEach(connection=>{try{connection.close();}catch(_){}});try{classState.teacherConnection?.close();}catch(_){}
             try{oldPeer?.destroy();}catch(_){}
             clearClassRemoteCursors();
-            classState.connections=new Map();classState.participants=new Map();classState.participantPermissions=new Map();classState.permissionRequests=new Map();classState.grantedPermissions=new Map();classState.pendingPermissions=new Map();classState.sharedTeacherFiles=new Map();classState.peer=null;classState.teacherConnection=null;classState.role=null;classState.roomCode='';classState.teacherPeerId='';classState.name='';classState.liveView=false;classState.applyingRemote=false;classState.ending=false;classState.liveStroke=null;classState.cursorSentAt=0;classState.snapshotChain=Promise.resolve();
+            stopClassTimerTicker();
+            classState.connections=new Map();classState.participants=new Map();classState.participantPermissions=new Map();classState.permissionRequests=new Map();classState.grantedPermissions=new Map();classState.pendingPermissions=new Map();classState.sharedTeacherFiles=new Map();classState.peer=null;classState.teacherConnection=null;classState.role=null;classState.roomCode='';classState.teacherPeerId='';classState.name='';classState.liveView=false;classState.applyingRemote=false;classState.ending=false;classState.liveStroke=null;classState.cursorSentAt=0;classState.timerRunning=false;classState.timerElapsedMs=0;classState.timerStartedAt=0;classState.timerLastSyncAt=0;classState.snapshotChain=Promise.resolve();
             updateClassUI();resetClassChat();
             if(restoreStudentView&&currentId){const item=readStore().items.find(x=>x.id===currentId);if(item)await loadNotebook(item);}
             if(!fromRemote)toast(wasStudent?'Saliste de la clase.':'Clase finalizada.');
