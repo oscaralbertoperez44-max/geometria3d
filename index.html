@@ -21,6 +21,7 @@
 
         /* Contenedor del Cuaderno */
         #notebook { display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 24px 12px 80px; width: 96%; max-width: 1400px; }
+        body.class-timer-space #notebook { padding-top: 78px; }
         
         /* Estructura de la Hoja Optimizada */
         .page-container { position: relative; width: 100%; aspect-ratio: 1 / 1.414; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 6px; overflow: hidden; contain: strict; content-visibility: auto; contain-intrinsic-size: 1000px 1414px; transform: translateZ(0); }
@@ -245,6 +246,7 @@
         :fullscreen #toolbar { position: fixed; top: 0; left: 0; width: 100%; opacity: 0; transition: opacity 0.3s; z-index: 9000; }
         :fullscreen #toolbar:hover { opacity: 1; }
         :fullscreen #notebook { width: 100%; max-width: none; padding-top: 20px; }
+        :fullscreen body.class-timer-space #notebook { padding-top:70px; }
         :fullscreen #nb-launcher { display: none; }
         :fullscreen #recordingIndicator { top: 16px; }
         :fullscreen #classTimer { top:12px; left:12px; }
@@ -644,6 +646,7 @@
         function updateClassTimerUI(){
             const timer=document.getElementById('classTimer');if(!timer)return;
             const active=classSessionActive(),isTeacher=classState.role==='teacher';
+            document.body.classList.toggle('class-timer-space',active);
             timer.classList.toggle('visible',active);timer.classList.toggle('paused',!classState.timerRunning);timer.classList.toggle('student',!isTeacher);
             if(!active)return;
             const value=document.getElementById('classTimerValue'),mode=document.getElementById('classTimerMode'),toggle=document.getElementById('classTimerToggle');
