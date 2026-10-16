@@ -21,7 +21,6 @@
 
         /* Contenedor del Cuaderno */
         #notebook { display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 24px 12px 80px; width: 96%; max-width: 1400px; }
-        body.class-timer-space #notebook { padding-top: 78px; }
         
         /* Estructura de la Hoja Optimizada */
         .page-container { position: relative; width: 100%; aspect-ratio: 1 / 1.414; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 6px; overflow: hidden; contain: strict; content-visibility: auto; contain-intrinsic-size: 1000px 1414px; transform: translateZ(0); }
@@ -157,7 +156,7 @@
         #recordingIndicator .rec-dot { width: 10px; height: 10px; border-radius: 50%; background: #ef4444; animation: recPulse 1.1s infinite alternate; }
         #recordingIndicator .rec-fullscreen { min-width: 32px; height: 28px; padding: 2px 7px; margin-left: 2px; border-radius: 6px; font-size: 15px; line-height: 1; }
         @keyframes recPulse { from { opacity: .45; transform: scale(.9); } to { opacity: 1; transform: scale(1.12); } }
-        #classTimer { position:fixed; top:70px; left:172px; z-index:9400; display:none; align-items:center; gap:7px; min-height:30px; padding:6px 8px; border:1px solid rgba(125,211,252,.62); border-radius:10px; color:#f8fafc; background:rgba(8,18,32,.86); box-shadow:0 8px 26px rgba(0,0,0,.28); backdrop-filter:blur(8px); user-select:none; }
+        #classTimer { position:fixed; right:16px; bottom:16px; left:auto; top:auto; z-index:9400; display:none; align-items:center; gap:7px; min-height:30px; padding:6px 8px; border:1px solid rgba(125,211,252,.62); border-radius:10px; color:#f8fafc; background:rgba(8,18,32,.86); box-shadow:0 8px 26px rgba(0,0,0,.28); backdrop-filter:blur(8px); user-select:none; }
         #classTimer.visible { display:flex; }
         #classTimer .class-timer-dot { width:7px; height:7px; border-radius:50%; background:#4ade80; box-shadow:0 0 8px #4ade80; }
         #classTimer.paused .class-timer-dot { background:#fbbf24; box-shadow:0 0 8px #fbbf24; }
@@ -246,12 +245,11 @@
         :fullscreen #toolbar { position: fixed; top: 0; left: 0; width: 100%; opacity: 0; transition: opacity 0.3s; z-index: 9000; }
         :fullscreen #toolbar:hover { opacity: 1; }
         :fullscreen #notebook { width: 100%; max-width: none; padding-top: 20px; }
-        :fullscreen body.class-timer-space #notebook { padding-top:70px; }
         :fullscreen #nb-launcher { display: none; }
         :fullscreen #recordingIndicator { top: 16px; }
-        :fullscreen #classTimer { top:12px; left:12px; }
+        :fullscreen #classTimer { right:12px; bottom:12px; left:auto; top:auto; }
         :fullscreen #classPanel { top:12px; right:12px; max-height:calc(100vh - 24px); }
-        @media(max-width:560px){ body.class-timer-space #notebook { padding-top:126px; } #classTimer { top:115px; left:8px; } #classPanel { top:54px; right:12px; max-height:calc(100vh - 66px); } }
+        @media(max-width:560px){ #classTimer { right:8px; bottom:12px; left:auto; top:auto; } #classPanel { top:54px; right:12px; max-height:calc(100vh - 66px); } }
     </style>
 </head>
 <body>
@@ -646,7 +644,6 @@
         function updateClassTimerUI(){
             const timer=document.getElementById('classTimer');if(!timer)return;
             const active=classSessionActive(),isTeacher=classState.role==='teacher';
-            document.body.classList.toggle('class-timer-space',active);
             timer.classList.toggle('visible',active);timer.classList.toggle('paused',!classState.timerRunning);timer.classList.toggle('student',!isTeacher);
             if(!active)return;
             const value=document.getElementById('classTimerValue'),mode=document.getElementById('classTimerMode'),toggle=document.getElementById('classTimerToggle');
